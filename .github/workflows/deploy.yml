@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - master  # или master, в зависимости от вашей основной ветки
+      - master
     paths-ignore:
       - 'README.md'
       - '.gitignore'
@@ -76,101 +76,172 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy project
+      - name: Create deployment script
         run: |
-          # Создаем временный скрипт деплоя
           cat > deploy.sh << 'EOL'
           #!/bin/bash
           set -e
-          
-          cd ${{ secrets.SERVER_PATH }}
-          
-          # Сохраняем текущую версию кода
+
+          # Проверка существования директории проекта
+          if [ ! -d "$SERVER_PATH" ]; then
+            echo "Creating project directory..."
+            mkdir -p "$SERVER_PATH"
+          fi
+
+          cd "$SERVER_PATH"
+
+          # Проверка и инициализация git репозитория
+          if [ ! -d ".git" ]; then
+            echo "Initializing git repository..."
+            git init
+            git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          fi
+
+          # Проверка удаленного репозитория
+          REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+          if [ "$REMOTE_URL" != "https://github.com/$GITHUB_REPOSITORY.git" ]; then
+            echo "Updating remote URL..."
+            git remote set-url origin "https://github.com/$GITHUB_REPOSITORY.git" || git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          fi
+
+          # Получаем последнюю версию кода
+          echo "Fetching latest code..."
           git fetch origin
-          CURRENT_COMMIT=$(git rev-parse HEAD)
-          
+
+          # Проверяем, есть ли локальная ветка master
+          if ! git rev-parse --verify master >/dev/null 2>&1; then
+            echo "Creating local branch: master"
+            git checkout -b master origin/master
+          else
+            echo "Checking out local branch: master"
+            git checkout master
+          fi
+
+          # Сохраняем текущую версию кода
+          CURRENT_COMMIT=$(git rev-parse HEAD || echo "initial")
+
           # Обновляем код из репозитория
+          echo "Updating code..."
           git pull origin master
-          
-          # Флаги для сервисов, которые нужно перезапустить
-          RESTART_API=false
-          RESTART_SCHEDULE_API=false
-          RESTART_TICKET_API=false
-          RESTART_DASHBOARD=false
-          RESTART_LANDING=false
-          RESTART_NGINX=false
-          
-          # Определяем, какие сервисы нужно перезапустить на основе выходных данных предыдущего шага
-          if [[ "${{ needs.detect-changes.outputs.dashboard_service }}" == "true" ]]; then
-            RESTART_API=true
+
+          # Проверяем наличие docker-compose.yml
+          if [ ! -f "docker-compose.yml" ]; then
+            echo "Error: docker-compose.yml not found in project directory!"
+            exit 1
           fi
+
+          # Функция безопасного перезапуска сервиса
+          safe_restart_service() {
+            local service=$1
+            echo "Safely restarting service: $service"
           
-          if [[ "${{ needs.detect-changes.outputs.schedule_service }}" == "true" ]]; then
-            RESTART_SCHEDULE_API=true
-          fi
+            # Проверяем существование контейнера
+            if docker-compose ps -q "$service" > /dev/null 2>&1; then
+              echo "Stopping and removing existing container..."
+              # Останавливаем и удаляем контейнер, игнорируя ошибки
+              docker-compose stop "$service" || true
+              docker-compose rm -f "$service" || true
+            fi
           
-          if [[ "${{ needs.detect-changes.outputs.ticket_service }}" == "true" ]]; then
-            RESTART_TICKET_API=true
-          fi
+            # Принудительно удаляем контейнер, если он все еще существует
+            CONTAINER_NAME="teacher_journal_${service}"
+            if docker ps -a -q --filter "name=$CONTAINER_NAME" | grep -q .; then
+              echo "Forcing removal of container $CONTAINER_NAME..."
+              docker rm -f "$CONTAINER_NAME" || true
+            fi
           
-          if [[ "${{ needs.detect-changes.outputs.dashboard_frontend_changed }}" == "true" ]]; then
-            RESTART_DASHBOARD=true
-          fi
+            # Пересоздаем контейнер
+            echo "Rebuilding and starting container..."
+            docker-compose up -d --build "$service"
           
-          if [[ "${{ needs.detect-changes.outputs.landing_frontend_changed }}" == "true" ]]; then
-            RESTART_LANDING=true
-          fi
+            # Проверяем статус
+            if [ $? -eq 0 ]; then
+              echo "✅ Service $service successfully restarted"
+            else
+              echo "❌ Failed to restart service $service"
+              # Дополнительная отладочная информация
+              echo "Showing Docker Compose logs for service $service:"
+              docker-compose logs --tail=50 "$service"
+              return 1
+            fi
+          }
+
+          # Если изменились конфигурации Docker, перезапускаем все сервисы с полной очисткой
+          if [ "$DOCKER_CONFIGS_CHANGED" = "true" ]; then
+            echo "Docker configurations changed, safely rebuilding all services"
           
-          if [[ "${{ needs.detect-changes.outputs.nginx_configs_changed }}" == "true" ]]; then
-            RESTART_NGINX=true
-          fi
+            # Сохраняем важные данные (если нужно)
+            echo "Backing up important data before rebuild..."
           
-          # Если изменились конфигурации Docker, перезапускаем все сервисы
-          if [[ "${{ needs.detect-changes.outputs.docker_configs_changed }}" == "true" ]]; then
-            echo "Docker configurations changed, rebuilding all services"
-            docker-compose down
+            # Останавливаем все контейнеры
+            docker-compose down --remove-orphans
+          
+            # Удаляем неиспользуемые образы и объемы, чтобы очистить систему
+            docker system prune -f
+          
+            # Перезапускаем все с чистого листа
             docker-compose up -d --build
+          
+            echo "All services have been rebuilt and restarted"
             exit 0
           fi
-          
-          # Перезапускаем только те сервисы, которые были изменены
+
+          # Перезапускаем только те сервисы, которые были изменены, используя безопасный метод
           SERVICES_TO_RESTART=""
-          
-          if [[ "$RESTART_API" == "true" ]]; then
+
+          # Добавляем сервисы для перезапуска в зависимости от выходных данных предыдущего шага
+          if [ "$DASHBOARD_SERVICE" = "true" ]; then
             SERVICES_TO_RESTART="$SERVICES_TO_RESTART api"
           fi
-          
-          if [[ "$RESTART_SCHEDULE_API" == "true" ]]; then
+
+          if [ "$SCHEDULE_SERVICE" = "true" ]; then
             SERVICES_TO_RESTART="$SERVICES_TO_RESTART schedule_api"
           fi
-          
-          if [[ "$RESTART_TICKET_API" == "true" ]]; then
+
+          if [ "$TICKET_SERVICE" = "true" ]; then
             SERVICES_TO_RESTART="$SERVICES_TO_RESTART ticket_api"
           fi
-          
-          if [[ "$RESTART_DASHBOARD" == "true" ]]; then
+
+          if [ "$DASHBOARD_FRONTEND_CHANGED" = "true" ]; then
             SERVICES_TO_RESTART="$SERVICES_TO_RESTART dashboard"
           fi
-          
-          if [[ "$RESTART_LANDING" == "true" ]]; then
+
+          if [ "$LANDING_FRONTEND_CHANGED" = "true" ]; then
             SERVICES_TO_RESTART="$SERVICES_TO_RESTART landing"
           fi
-          
-          if [[ "$RESTART_NGINX" == "true" ]]; then
+
+          if [ "$NGINX_CONFIGS_CHANGED" = "true" ]; then
             SERVICES_TO_RESTART="$SERVICES_TO_RESTART nginx"
           fi
-          
-          if [[ -n "$SERVICES_TO_RESTART" ]]; then
+
+          if [ -n "$SERVICES_TO_RESTART" ]; then
             echo "Restarting services: $SERVICES_TO_RESTART"
-            docker-compose up -d --build $SERVICES_TO_RESTART
+          
+            # Перезапускаем каждый сервис отдельно
+            for service in $SERVICES_TO_RESTART; do
+              safe_restart_service "$service"
+            done
           else
             echo "No services need to be restarted"
           fi
-          
+
           echo "Deployment completed successfully!"
           EOL
           
-          # Передаем скрипт на сервер и выполняем его
           chmod +x deploy.sh
+
+      - name: Deploy to server
+        env:
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DASHBOARD_SERVICE: ${{ needs.detect-changes.outputs.dashboard_service }}
+          SCHEDULE_SERVICE: ${{ needs.detect-changes.outputs.schedule_service }}
+          TICKET_SERVICE: ${{ needs.detect-changes.outputs.ticket_service }}
+          DASHBOARD_FRONTEND_CHANGED: ${{ needs.detect-changes.outputs.dashboard_frontend_changed }}
+          LANDING_FRONTEND_CHANGED: ${{ needs.detect-changes.outputs.landing_frontend_changed }}
+          NGINX_CONFIGS_CHANGED: ${{ needs.detect-changes.outputs.nginx_configs_changed }}
+          DOCKER_CONFIGS_CHANGED: ${{ needs.detect-changes.outputs.docker_configs_changed }}
+        run: |
+          # Передаем скрипт на сервер и выполняем его с переменными окружения
           scp deploy.sh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/deploy.sh
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "export SERVER_PATH='$SERVER_PATH' GITHUB_REPOSITORY='$GITHUB_REPOSITORY' DASHBOARD_SERVICE='$DASHBOARD_SERVICE' SCHEDULE_SERVICE='$SCHEDULE_SERVICE' TICKET_SERVICE='$TICKET_SERVICE' DASHBOARD_FRONTEND_CHANGED='$DASHBOARD_FRONTEND_CHANGED' LANDING_FRONTEND_CHANGED='$LANDING_FRONTEND_CHANGED' NGINX_CONFIGS_CHANGED='$NGINX_CONFIGS_CHANGED' DOCKER_CONFIGS_CHANGED='$DOCKER_CONFIGS_CHANGED' && chmod +x /tmp/deploy.sh && /tmp/deploy.sh"

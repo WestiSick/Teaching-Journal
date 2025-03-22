@@ -29,30 +29,117 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy specific service
+      - name: Create deployment script
         run: |
-          SERVICE="${{ steps.extract-service.outputs.SERVICE }}"
-          echo "Deploying service: $SERVICE"
-          
-          # Создаем скрипт для деплоя конкретного сервиса
           cat > deploy_service.sh << 'EOL'
           #!/bin/bash
           set -e
-          
-          cd ${{ secrets.SERVER_PATH }}
-          
+
+          # Проверка существования директории проекта
+          if [ ! -d "$SERVER_PATH" ]; then
+            echo "Creating project directory..."
+            mkdir -p "$SERVER_PATH"
+          fi
+
+          cd "$SERVER_PATH"
+
+          # Проверка и инициализация git репозитория
+          if [ ! -d ".git" ]; then
+            echo "Initializing git repository..."
+            git init
+            git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          fi
+
+          # Проверка удаленного репозитория
+          REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+          if [ "$REMOTE_URL" != "https://github.com/$GITHUB_REPOSITORY.git" ]; then
+            echo "Updating remote URL..."
+            git remote set-url origin "https://github.com/$GITHUB_REPOSITORY.git" || git remote add origin "https://github.com/$GITHUB_REPOSITORY.git"
+          fi
+
           # Обновляем код из репозитория
+          echo "Fetching latest code..."
           git fetch --all
-          git checkout ${{ github.sha }}
+
+          # Проверяем, есть ли локальная ветка master
+          if ! git rev-parse --verify master >/dev/null 2>&1; then
+            echo "Creating local branch: master"
+            git checkout -b master origin/master
+          else
+            echo "Checking out local branch: master"
+            git checkout master
+          fi
+
+          # Обновляем код
+          echo "Updating code..."
+          git pull origin master
+
+          # Переходим на нужный коммит
+          echo "Checking out commit: $GITHUB_SHA"
+          git checkout "$GITHUB_SHA"
+
+          # Проверяем наличие docker-compose.yml
+          if [ ! -f "docker-compose.yml" ]; then
+            echo "Error: docker-compose.yml not found in project directory!"
+            exit 1
+          fi
+
+          # Функция безопасного перезапуска сервиса
+          safe_restart_service() {
+            local service=$1
+            echo "Safely restarting service: $service"
           
+            # Проверяем существование контейнера
+            if docker-compose ps -q "$service" > /dev/null 2>&1; then
+              echo "Stopping and removing existing container..."
+              # Останавливаем и удаляем контейнер, игнорируя ошибки
+              docker-compose stop "$service" || true
+              docker-compose rm -f "$service" || true
+            fi
+          
+            # Принудительно удаляем контейнер, если он все еще существует
+            CONTAINER_NAME="teacher_journal_${service}"
+            if docker ps -a -q --filter "name=$CONTAINER_NAME" | grep -q .; then
+              echo "Forcing removal of container $CONTAINER_NAME..."
+              docker rm -f "$CONTAINER_NAME" || true
+            fi
+          
+            # Очищаем неиспользуемые образы и кэш сборки
+            echo "Cleaning up Docker resources..."
+            docker system prune -f || true
+          
+            # Пересоздаем контейнер
+            echo "Rebuilding and starting container..."
+            docker-compose up -d --build "$service"
+          
+            # Проверяем статус
+            if [ $? -eq 0 ]; then
+              echo "✅ Service $service successfully restarted"
+            else
+              echo "❌ Failed to restart service $service"
+              # Дополнительная отладочная информация
+              echo "Showing Docker Compose logs for service $service:"
+              docker-compose logs --tail=50 "$service"
+              return 1
+            fi
+          }
+
           # Перезапускаем указанный сервис
-          echo "Rebuilding and restarting ${{ steps.extract-service.outputs.SERVICE }}"
-          docker-compose up -d --build ${{ steps.extract-service.outputs.SERVICE }}
-          
-          echo "Service ${{ steps.extract-service.outputs.SERVICE }} has been updated successfully!"
+          echo "Rebuilding and restarting $SERVICE"
+          safe_restart_service "$SERVICE"
+
+          echo "Service $SERVICE has been updated successfully!"
           EOL
           
-          # Передаем скрипт на сервер и выполняем его
           chmod +x deploy_service.sh
+
+      - name: Deploy specific service
+        env:
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          SERVICE: ${{ steps.extract-service.outputs.SERVICE }}
+        run: |
+          # Передаем скрипт на сервер и выполняем его с переменными окружения
           scp deploy_service.sh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/deploy_service.sh
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chmod +x /tmp/deploy_service.sh && /tmp/deploy_service.sh"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "export SERVER_PATH='$SERVER_PATH' GITHUB_REPOSITORY='$GITHUB_REPOSITORY' GITHUB_SHA='$GITHUB_SHA' SERVICE='$SERVICE' && chmod +x /tmp/deploy_service.sh && /tmp/deploy_service.sh"
