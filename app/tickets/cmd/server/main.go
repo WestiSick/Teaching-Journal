@@ -58,7 +58,7 @@ func main() {
 
 	// CORS setup for React frontend
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // Allow all origins
+		AllowedOrigins:   []string{"80.87.200.2"}, // Allow all origins
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"*"}, // Allow all headers
 		AllowCredentials: true,
