@@ -198,10 +198,10 @@ export const adminService = {
         api.get(`/admin/teachers/${id}/labs`),
 };
 
-// Schedule API services (running on port 8091)
+// Schedule API services (using relative URLs)
 export const scheduleService = {
     getSchedule: (params) =>
-        axios.get('http://localhost:8091/api/schedule', {
+        axios.get('/api/schedule', {
             params,
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -209,45 +209,45 @@ export const scheduleService = {
         }),
 
     startAsyncFetch: (data) =>
-        axios.post('http://localhost:8091/api/schedule/async', data, {
+        axios.post('/api/schedule/async', data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         }),
 
     getProgress: (jobId) =>
-        axios.get(`http://localhost:8091/api/schedule/progress/${jobId}`, {
+        axios.get(`/api/schedule/progress/${jobId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         }),
 
     getResults: (jobId) =>
-        axios.get(`http://localhost:8091/api/schedule/results/${jobId}`, {
+        axios.get(`/api/schedule/results/${jobId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         }),
 
     addLesson: (data) =>
-        axios.post('http://localhost:8091/api/schedule/lesson', data, {
+        axios.post('/api/schedule/lesson', data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         }),
 
     addAllLessons: (data) =>
-        axios.post('http://localhost:8091/api/schedule/lessons', data, {
+        axios.post('/api/schedule/lessons', data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         }),
 };
 
-// Ticket services (running on port 8090)
+// Ticket services (using relative URLs)
 export const ticketService = {
     getTickets: (params) =>
-        axios.get('http://localhost:8090/api/tickets', {
+        axios.get('/api/tickets', {
             params,
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -258,7 +258,7 @@ export const ticketService = {
         }),
 
     getTicket: (id) =>
-        axios.get(`http://localhost:8090/api/tickets/${id}`, {
+        axios.get(`/api/tickets/${id}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -268,7 +268,7 @@ export const ticketService = {
         }),
 
     createTicket: (data) =>
-        axios.post('http://localhost:8090/api/tickets', data, {
+        axios.post('/api/tickets', data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
@@ -279,7 +279,7 @@ export const ticketService = {
         }),
 
     updateTicket: (id, data) =>
-        axios.put(`http://localhost:8090/api/tickets/${id}`, data, {
+        axios.put(`/api/tickets/${id}`, data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
@@ -290,7 +290,7 @@ export const ticketService = {
         }),
 
     deleteTicket: (id) =>
-        axios.delete(`http://localhost:8090/api/tickets/${id}`, {
+        axios.delete(`/api/tickets/${id}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -300,7 +300,7 @@ export const ticketService = {
         }),
 
     getComments: (id) =>
-        axios.get(`http://localhost:8090/api/tickets/${id}/comments`, {
+        axios.get(`/api/tickets/${id}/comments`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -310,7 +310,7 @@ export const ticketService = {
         }),
 
     addComment: (id, data) =>
-        axios.post(`http://localhost:8090/api/tickets/${id}/comments`, data, {
+        axios.post(`/api/tickets/${id}/comments`, data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
@@ -321,7 +321,7 @@ export const ticketService = {
         }),
 
     getAttachments: (id) =>
-        axios.get(`http://localhost:8090/api/tickets/${id}/attachments`, {
+        axios.get(`/api/tickets/${id}/attachments`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -331,7 +331,7 @@ export const ticketService = {
         }),
 
     addAttachment: (id, formData) =>
-        axios.post(`http://localhost:8090/api/tickets/${id}/attachments`, formData, {
+        axios.post(`/api/tickets/${id}/attachments`, formData, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 // Note: Do not set Content-Type for multipart/form-data
@@ -343,7 +343,7 @@ export const ticketService = {
         }),
 
     downloadAttachment: (id) =>
-        axios.get(`http://localhost:8090/api/tickets/attachments/${id}`, {
+        axios.get(`/api/tickets/attachments/${id}`, {
             responseType: 'blob',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -360,7 +360,7 @@ export const ticketService = {
             return Promise.reject(new Error('Authentication token not found'));
         }
 
-        return axios.get('http://localhost:8090/api/tickets/stats', {
+        return axios.get('/api/tickets/stats', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
