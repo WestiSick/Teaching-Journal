@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { attendanceService, lessonService, groupService } from '../../services/api';
@@ -14,8 +14,6 @@ function AttendancePage() {
         date_from: '',
         date_to: ''
     });
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const dropdownRef = useRef(null);
 
     // Fetch attendance data with filters
     const { data, isLoading, error } = useQuery({
@@ -51,20 +49,6 @@ function AttendancePage() {
             date_from: firstDay.toISOString().split('T')[0],
             date_to: lastDay.toISOString().split('T')[0]
         }));
-    }, []);
-
-    // Handle clicking outside dropdown
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
     }, []);
 
     const handleFilterChange = (e) => {
@@ -119,9 +103,10 @@ function AttendancePage() {
         return 'low-attendance';
     }
 
-    const handleExport = async (mode) => {
+    const handleExport = async () => {
         try {
-            const response = await attendanceService.exportAttendance(mode);
+            // Always use 'lesson' mode
+            const response = await attendanceService.exportAttendance('lesson');
 
             // Create a blob from the response
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
@@ -130,7 +115,7 @@ function AttendancePage() {
             // Create a temporary link and trigger download
             const a = document.createElement('a');
             a.href = url;
-            a.download = `attendance_export_${mode}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            a.download = `attendance_export_lesson_${new Date().toISOString().split('T')[0]}.xlsx`;
             document.body.appendChild(a);
             a.click();
 
@@ -201,35 +186,17 @@ function AttendancePage() {
                 </div>
                 <RequireSubscription>
                     <div className="flex flex-wrap gap-2">
-                        <div className="dropdown" ref={dropdownRef}>
-                            <button
-                                className="btn btn-outline flex items-center gap-2"
-                                onClick={() => setDropdownOpen(!dropdownOpen)}
-                                aria-expanded={dropdownOpen}
-                                aria-haspopup="true"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                <span className="hidden sm:inline">Export</span>
-                            </button>
-                            <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
-                                <button
-                                    className="dropdown-item"
-                                    onClick={() => { handleExport('group'); setDropdownOpen(false); }}
-                                >
-                                    Export by Group
-                                </button>
-                                <button
-                                    className="dropdown-item"
-                                    onClick={() => { handleExport('lesson'); setDropdownOpen(false); }}
-                                >
-                                    Export by Lesson
-                                </button>
-                            </div>
-                        </div>
+                        <button
+                            className="btn btn-outline flex items-center gap-2"
+                            onClick={handleExport}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span className="hidden sm:inline">Export</span>
+                        </button>
 
                         <Link to="/attendance/reports" className="btn btn-primary flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -438,48 +405,6 @@ function AttendancePage() {
                 .premium-icon {
                     color: var(--warning);
                     margin-bottom: 1.5rem;
-                }
-                
-                /* Dropdown styles */
-                .dropdown {
-                    position: relative;
-                }
-                
-                .dropdown-menu {
-                    position: absolute;
-                    top: 100%;
-                    right: 0;
-                    z-index: 10;
-                    min-width: 160px;
-                    margin-top: 0.25rem;
-                    background-color: var(--bg-card);
-                    border: 1px solid var(--border-color);
-                    border-radius: var(--radius-md);
-                    box-shadow: var(--shadow-lg);
-                    display: none;
-                }
-                
-                .dropdown-menu.show {
-                    display: block;
-                }
-                
-                .dropdown-item {
-                    display: block;
-                    width: 100%;
-                    padding: 0.5rem 1rem;
-                    clear: both;
-                    font-weight: 400;
-                    color: var(--text-primary);
-                    text-align: inherit;
-                    white-space: nowrap;
-                    background-color: transparent;
-                    border: 0;
-                    text-align: left;
-                    cursor: pointer;
-                }
-                
-                .dropdown-item:hover {
-                    background-color: var(--bg-dark-tertiary);
                 }
             `}</style>
         </div>

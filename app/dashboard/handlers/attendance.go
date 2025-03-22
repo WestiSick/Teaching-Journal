@@ -5,6 +5,7 @@ import (
 	"TeacherJournal/app/dashboard/utils"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -402,14 +403,15 @@ func (h *AttendanceHandler) exportAttendanceByGroup(teacherID int, file *xlsx.Fi
 	// Get all subjects taught by this teacher with attendance
 	var subjects []string
 	err := h.DB.Raw(`
-		SELECT DISTINCT l.subject
-		FROM lessons l
-		JOIN attendances a ON l.id = a.lesson_id
-		WHERE l.teacher_id = ?
-		ORDER BY l.subject
-	`, teacherID).Scan(&subjects).Error
+        SELECT DISTINCT l.subject
+        FROM lessons l
+        JOIN attendances a ON l.id = a.lesson_id
+        WHERE l.teacher_id = ?
+        ORDER BY l.subject
+    `, teacherID).Scan(&subjects).Error
 
 	if err != nil {
+		log.Printf("Error fetching subjects: %v", err)
 		return err
 	}
 
@@ -418,6 +420,7 @@ func (h *AttendanceHandler) exportAttendanceByGroup(teacherID int, file *xlsx.Fi
 		// Create a worksheet for this subject
 		sheet, err := file.AddSheet(subject)
 		if err != nil {
+			log.Printf("Error creating worksheet for subject %s: %v", subject, err)
 			return err
 		}
 
@@ -432,15 +435,16 @@ func (h *AttendanceHandler) exportAttendanceByGroup(teacherID int, file *xlsx.Fi
 
 		var lessons []LessonInfo
 		err = h.DB.Raw(`
-			SELECT l.id, l.date, l.group_name as "group", l.topic
-			FROM lessons l
-			WHERE l.teacher_id = ? AND l.subject = ? AND EXISTS (
-				SELECT 1 FROM attendances a WHERE a.lesson_id = l.id
-			)
-			ORDER BY l.date
-		`, teacherID, subject).Scan(&lessons).Error
+            SELECT l.id, l.date, l.group_name as Group, l.topic
+            FROM lessons l
+            WHERE l.teacher_id = ? AND l.subject = ? AND EXISTS (
+                SELECT 1 FROM attendances a WHERE a.lesson_id = l.id
+            )
+            ORDER BY l.date
+        `, teacherID, subject).Scan(&lessons).Error
 
 		if err != nil {
+			log.Printf("Error fetching lessons for subject %s: %v", subject, err)
 			return err
 		}
 
@@ -488,15 +492,16 @@ func (h *AttendanceHandler) exportAttendanceByGroup(teacherID int, file *xlsx.Fi
 		// Get all groups for this subject
 		var groups []string
 		err = h.DB.Raw(`
-			SELECT DISTINCT l.group_name
-			FROM lessons l
-			WHERE l.teacher_id = ? AND l.subject = ? AND EXISTS (
-				SELECT 1 FROM attendances a WHERE a.lesson_id = l.id
-			)
-			ORDER BY l.group_name
-		`, teacherID, subject).Scan(&groups).Error
+            SELECT DISTINCT l.group_name
+            FROM lessons l
+            WHERE l.teacher_id = ? AND l.subject = ? AND EXISTS (
+                SELECT 1 FROM attendances a WHERE a.lesson_id = l.id
+            )
+            ORDER BY l.group_name
+        `, teacherID, subject).Scan(&groups).Error
 
 		if err != nil {
+			log.Printf("Error fetching groups for subject %s: %v", subject, err)
 			return err
 		}
 
@@ -509,13 +514,14 @@ func (h *AttendanceHandler) exportAttendanceByGroup(teacherID int, file *xlsx.Fi
 			}
 
 			err = h.DB.Raw(`
-				SELECT id, student_fio
-				FROM students
-				WHERE teacher_id = ? AND group_name = ?
-				ORDER BY student_fio
-			`, teacherID, group).Scan(&students).Error
+                SELECT id, student_fio
+                FROM students
+                WHERE teacher_id = ? AND group_name = ?
+                ORDER BY student_fio
+            `, teacherID, group).Scan(&students).Error
 
 			if err != nil {
+				log.Printf("Error fetching students for group %s: %v", group, err)
 				return err
 			}
 
@@ -547,10 +553,10 @@ func (h *AttendanceHandler) exportAttendanceByGroup(teacherID int, file *xlsx.Fi
 							// Check attendance
 							var attendanceValue int
 							err := h.DB.Raw(`
-								SELECT COALESCE(attended, 0)
-								FROM attendances
-								WHERE lesson_id = ? AND student_id = ?
-							`, lesson.ID, student.ID).Scan(&attendanceValue).Error
+                                SELECT COALESCE(attended, 0)
+                                FROM attendances
+                                WHERE lesson_id = ? AND student_id = ?
+                            `, lesson.ID, student.ID).Scan(&attendanceValue).Error
 
 							if err == nil && attendanceValue == 1 {
 								attended = true
