@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { labService } from '../../services/api';
@@ -8,6 +8,8 @@ import { RequireSubscription } from '../../components/RequireSubscription';
 function LabsPage() {
     const { isFree } = useAuth();
     const navigate = useNavigate();
+    // State to store recalculated averages that exclude zeros
+    const [recalculatedAverages, setRecalculatedAverages] = useState({});
 
     // Fetch all labs
     const { data, isLoading, error } = useQuery({
@@ -17,6 +19,65 @@ function LabsPage() {
     });
 
     const subjects = data?.data?.data || [];
+
+    // Helper function to calculate average excluding zeros - same as in LabGrades.jsx
+    const calculateAverageExcludingZeros = (grades) => {
+        if (!grades || !grades.length) return 0;
+
+        // Only include grades > 0 in the calculation
+        const validGrades = grades.filter(grade => grade > 0);
+        if (validGrades.length === 0) return 0;
+
+        const sum = validGrades.reduce((acc, grade) => acc + grade, 0);
+        return sum / validGrades.length;
+    };
+
+    // Fetch detailed grade data and recalculate averages for each group
+    useEffect(() => {
+        if (isFree || !subjects || subjects.length === 0) return;
+
+        const fetchGradesAndRecalculateAverages = async () => {
+            const newAverages = {};
+
+            // Process each subject and group
+            for (const subject of subjects) {
+                for (const group of subject.groups) {
+                    try {
+                        // Create a unique key for this subject/group pair
+                        const key = `${subject.subject}-${group.name}`;
+
+                        // Fetch detailed grade data for this subject/group
+                        const response = await labService.getLabGrades(subject.subject, group.name);
+                        const gradeData = response.data.data;
+
+                        if (gradeData?.students && gradeData.students.length > 0) {
+                            // Calculate new average excluding zeros for each student
+                            const studentAverages = gradeData.students.map(student => {
+                                const nonZeroGrades = student.grades.filter(grade => grade > 0);
+                                if (nonZeroGrades.length === 0) return 0;
+
+                                const sum = nonZeroGrades.reduce((acc, grade) => acc + grade, 0);
+                                return sum / nonZeroGrades.length;
+                            });
+
+                            // Calculate group average from student averages (only for students with grades)
+                            const validStudentAverages = studentAverages.filter(avg => avg > 0);
+                            if (validStudentAverages.length > 0) {
+                                const groupAvg = validStudentAverages.reduce((acc, avg) => acc + avg, 0) / validStudentAverages.length;
+                                newAverages[key] = groupAvg;
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching grades for ${subject.subject}/${group.name}:`, error);
+                    }
+                }
+            }
+
+            setRecalculatedAverages(newAverages);
+        };
+
+        fetchGradesAndRecalculateAverages();
+    }, [subjects, isFree]);
 
     const navigateToLabGrades = (subject, group) => {
         navigate(`/labs/${encodeURIComponent(subject)}/${encodeURIComponent(group)}`);
@@ -151,24 +212,33 @@ function LabsPage() {
                                                 <td>{group.student_count || '-'}</td>
                                                 <td>{group.total_labs || '-'}</td>
                                                 <td>
-                                                    {group.group_average ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={getAverageClass(group.group_average)}>
-                                                                {group.group_average.toFixed(1)}
-                                                            </span>
-                                                            <div className="w-20 h-2 bg-bg-dark-tertiary rounded-full">
-                                                                <div
-                                                                    className="h-full rounded-full"
-                                                                    style={{
-                                                                        width: `${(group.group_average / 5) * 100}%`,
-                                                                        backgroundColor: getAverageColor(group.group_average)
-                                                                    }}
-                                                                ></div>
+                                                    {(() => {
+                                                        // Get the recalculated average if available
+                                                        const key = `${subject.subject}-${group.name}`;
+                                                        const recalculatedAvg = recalculatedAverages[key];
+
+                                                        // Use recalculated average if available, otherwise fall back to API average
+                                                        const displayAverage = recalculatedAvg !== undefined ? recalculatedAvg : group.group_average;
+
+                                                        return displayAverage ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={getAverageClass(displayAverage)}>
+                                                                    {displayAverage.toFixed(1)}
+                                                                </span>
+                                                                <div className="w-20 h-2 bg-bg-dark-tertiary rounded-full">
+                                                                    <div
+                                                                        className="h-full rounded-full"
+                                                                        style={{
+                                                                            width: `${(displayAverage / 5) * 100}%`,
+                                                                            backgroundColor: getAverageColor(displayAverage)
+                                                                        }}
+                                                                    ></div>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-tertiary">N/A</span>
-                                                    )}
+                                                        ) : (
+                                                            <span className="text-tertiary">N/A</span>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="text-right">
                                                     <button

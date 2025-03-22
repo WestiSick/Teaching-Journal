@@ -144,7 +144,7 @@ function PublicSharedGrades() {
                         </svg>
                     </div>
                     <div className="header-content">
-                        <h1>Shared Lab Grades</h1>
+                        <h1>Оценки по лабораторным работам</h1>
                         <h2>{sharedData.subject} - {sharedData.group_name}</h2>
                     </div>
                 </div>
