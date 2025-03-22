@@ -122,7 +122,7 @@ services:
       - ticket_api
 
   nginx:
-    image: nginx:1.23
+    image: nginx
     container_name: teacher_journal_nginx
     ports:
       - "80:80"
