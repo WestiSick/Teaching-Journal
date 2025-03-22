@@ -1,0 +1,58 @@
+name: Deploy on Tag
+
+on:
+  push:
+    tags:
+      - 'deploy/*'  # Например: deploy/api, deploy/dashboard
+
+jobs:
+  deploy-specific-service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Extract service name from tag
+        id: extract-service
+        run: |
+          TAG=${GITHUB_REF#refs/tags/deploy/}
+          echo "SERVICE=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy specific service
+        run: |
+          SERVICE="${{ steps.extract-service.outputs.SERVICE }}"
+          echo "Deploying service: $SERVICE"
+          
+          # Создаем скрипт для деплоя конкретного сервиса
+          cat > deploy_service.sh << 'EOL'
+          #!/bin/bash
+          set -e
+          
+          cd ${{ secrets.SERVER_PATH }}
+          
+          # Обновляем код из репозитория
+          git fetch --all
+          git checkout ${{ github.sha }}
+          
+          # Перезапускаем указанный сервис
+          echo "Rebuilding and restarting ${{ steps.extract-service.outputs.SERVICE }}"
+          docker-compose up -d --build ${{ steps.extract-service.outputs.SERVICE }}
+          
+          echo "Service ${{ steps.extract-service.outputs.SERVICE }} has been updated successfully!"
+          EOL
+          
+          # Передаем скрипт на сервер и выполняем его
+          chmod +x deploy_service.sh
+          scp deploy_service.sh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/deploy_service.sh
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chmod +x /tmp/deploy_service.sh && /tmp/deploy_service.sh"

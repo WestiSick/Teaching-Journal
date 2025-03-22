@@ -1,0 +1,176 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main  # или master, в зависимости от вашей основной ветки
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+      - 'docs/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend_changed: ${{ steps.filter.outputs.backend }}
+      dashboard_frontend_changed: ${{ steps.filter.outputs.dashboard_frontend }}
+      landing_frontend_changed: ${{ steps.filter.outputs.landing_frontend }}
+      docker_configs_changed: ${{ steps.filter.outputs.docker_configs }}
+      nginx_configs_changed: ${{ steps.filter.outputs.nginx_configs }}
+      dashboard_service: ${{ steps.detect-backend.outputs.dashboard_service }}
+      schedule_service: ${{ steps.detect-backend.outputs.schedule_service }}
+      ticket_service: ${{ steps.detect-backend.outputs.ticket_service }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Необходимо для сравнения изменений
+
+      - name: Check for file changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'app/**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+            dashboard_frontend:
+              - 'frontend/dashboard/**'
+            landing_frontend:
+              - 'frontend/landing/**'
+            docker_configs:
+              - 'docker/**'
+              - 'docker-compose.yml'
+            nginx_configs:
+              - 'docker/nginx/**'
+
+      - name: Detect specific backend service changes
+        id: detect-backend
+        if: steps.filter.outputs.backend == 'true'
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "app/dashboard/"; then
+            echo "dashboard_service=true" >> $GITHUB_OUTPUT
+          fi
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "app/schedule/"; then
+            echo "schedule_service=true" >> $GITHUB_OUTPUT
+          fi
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "app/tickets/"; then
+            echo "ticket_service=true" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy project
+        run: |
+          # Создаем временный скрипт деплоя
+          cat > deploy.sh << 'EOL'
+          #!/bin/bash
+          set -e
+          
+          cd ${{ secrets.SERVER_PATH }}
+          
+          # Сохраняем текущую версию кода
+          git fetch origin
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          
+          # Обновляем код из репозитория
+          git pull origin main
+          
+          # Флаги для сервисов, которые нужно перезапустить
+          RESTART_API=false
+          RESTART_SCHEDULE_API=false
+          RESTART_TICKET_API=false
+          RESTART_DASHBOARD=false
+          RESTART_LANDING=false
+          RESTART_NGINX=false
+          
+          # Определяем, какие сервисы нужно перезапустить на основе выходных данных предыдущего шага
+          if [[ "${{ needs.detect-changes.outputs.dashboard_service }}" == "true" ]]; then
+            RESTART_API=true
+          fi
+          
+          if [[ "${{ needs.detect-changes.outputs.schedule_service }}" == "true" ]]; then
+            RESTART_SCHEDULE_API=true
+          fi
+          
+          if [[ "${{ needs.detect-changes.outputs.ticket_service }}" == "true" ]]; then
+            RESTART_TICKET_API=true
+          fi
+          
+          if [[ "${{ needs.detect-changes.outputs.dashboard_frontend_changed }}" == "true" ]]; then
+            RESTART_DASHBOARD=true
+          fi
+          
+          if [[ "${{ needs.detect-changes.outputs.landing_frontend_changed }}" == "true" ]]; then
+            RESTART_LANDING=true
+          fi
+          
+          if [[ "${{ needs.detect-changes.outputs.nginx_configs_changed }}" == "true" ]]; then
+            RESTART_NGINX=true
+          fi
+          
+          # Если изменились конфигурации Docker, перезапускаем все сервисы
+          if [[ "${{ needs.detect-changes.outputs.docker_configs_changed }}" == "true" ]]; then
+            echo "Docker configurations changed, rebuilding all services"
+            docker-compose down
+            docker-compose up -d --build
+            exit 0
+          fi
+          
+          # Перезапускаем только те сервисы, которые были изменены
+          SERVICES_TO_RESTART=""
+          
+          if [[ "$RESTART_API" == "true" ]]; then
+            SERVICES_TO_RESTART="$SERVICES_TO_RESTART api"
+          fi
+          
+          if [[ "$RESTART_SCHEDULE_API" == "true" ]]; then
+            SERVICES_TO_RESTART="$SERVICES_TO_RESTART schedule_api"
+          fi
+          
+          if [[ "$RESTART_TICKET_API" == "true" ]]; then
+            SERVICES_TO_RESTART="$SERVICES_TO_RESTART ticket_api"
+          fi
+          
+          if [[ "$RESTART_DASHBOARD" == "true" ]]; then
+            SERVICES_TO_RESTART="$SERVICES_TO_RESTART dashboard"
+          fi
+          
+          if [[ "$RESTART_LANDING" == "true" ]]; then
+            SERVICES_TO_RESTART="$SERVICES_TO_RESTART landing"
+          fi
+          
+          if [[ "$RESTART_NGINX" == "true" ]]; then
+            SERVICES_TO_RESTART="$SERVICES_TO_RESTART nginx"
+          fi
+          
+          if [[ -n "$SERVICES_TO_RESTART" ]]; then
+            echo "Restarting services: $SERVICES_TO_RESTART"
+            docker-compose up -d --build $SERVICES_TO_RESTART
+          else
+            echo "No services need to be restarted"
+          fi
+          
+          echo "Deployment completed successfully!"
+          EOL
+          
+          # Передаем скрипт на сервер и выполняем его
+          chmod +x deploy.sh
+          scp deploy.sh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/deploy.sh
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
