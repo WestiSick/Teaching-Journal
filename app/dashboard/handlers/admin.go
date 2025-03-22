@@ -515,7 +515,7 @@ func (h *AdminHandler) AddTeacherGroup(w http.ResponseWriter, r *http.Request) {
 		teacherID, teacherID, req.GroupName).Count(&count)
 
 	if count > 0 {
-		utils.RespondWithError(w, http.StatusConflict, "GGroup with this name already exists for this teacher")
+		utils.RespondWithError(w, http.StatusConflict, "Group with this name already exists for this teacher")
 		return
 	}
 
