@@ -7,8 +7,15 @@ export default defineConfig({
   base: '/',
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
+    assetsDir: 'landing_assets', // Changed from 'assets' to 'landing_assets'
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: 'landing_assets/[name]-[hash][extname]',
+        chunkFileNames: 'landing_assets/[name]-[hash].js',
+        entryFileNames: 'landing_assets/[name]-[hash].js',
+      },
+    },
   },
   server: {
     port: 3001
