@@ -38,7 +38,7 @@ function Dashboard() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Dashboard</h1>
+                    <h1 className="page-title">Панель управления</h1>
                     <p className="text-secondary">С возвращением, {userFullName}</p>
                 </div>
                 <div className="timeframe-selector">
