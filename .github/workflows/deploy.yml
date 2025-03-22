@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main  # или master, в зависимости от вашей основной ветки
+      - master  # или master, в зависимости от вашей основной ветки
     paths-ignore:
       - 'README.md'
       - '.gitignore'
@@ -90,7 +90,7 @@ jobs:
           CURRENT_COMMIT=$(git rev-parse HEAD)
           
           # Обновляем код из репозитория
-          git pull origin main
+          git pull origin master
           
           # Флаги для сервисов, которые нужно перезапустить
           RESTART_API=false

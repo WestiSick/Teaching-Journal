@@ -21,7 +21,7 @@ CURRENT_COMMIT=$(git rev-parse HEAD)
 
 # Обновить код с репозитория
 echo "Pulling latest changes from git repository..."
-git pull origin main
+git pull origin master
 
 # Если коммит не изменился, выйти
 NEW_COMMIT=$(git rev-parse HEAD)
