@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// DB is the global database instance
+// DB is the global database instances
 var DB *gorm.DB
 
 // InitDB initializes the database and creates tables if they don't exist
