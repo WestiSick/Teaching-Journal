@@ -30,10 +30,14 @@ function TestResults() {
         queryKey: ['test-results', attemptId],
         queryFn: () => studentTestsService.getTestResults(attemptId),
         enabled: !!attemptId,
+        onSuccess: (response) => {
+            // Add debug logging to see response structure
+            console.log('Test results response:', response);
+        }
     });
 
-    // FIX: Make sure we're accessing the data at the correct path
-    const results = data?.data?.data?.data;
+    // FIXED: Make sure we're accessing the data at the correct path
+    const results = data?.data?.data || null;
 
     if (isLoading) {
         return (

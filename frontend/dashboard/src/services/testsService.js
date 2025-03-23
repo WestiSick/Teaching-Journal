@@ -62,42 +62,58 @@ export const adminTestsService = {
 // Student services
 export const studentTestsService = {
     // Register student
-    registerStudent: (data) =>
-        createRequest('/students/register', 'POST', data),
+    registerStudent: (data) => {
+        console.log('Registering student with data:', data);
+        return createRequest('/students/register', 'POST', data);
+    },
 
     // Login student
-    loginStudent: (data) =>
-        createRequest('/students/login', 'POST', data),
+    loginStudent: (data) => {
+        console.log('Logging in student with data:', data);
+        return createRequest('/students/login', 'POST', data);
+    },
 
     // Get student info
-    getStudentInfo: (studentId) =>
-        createRequest('/students/info', 'GET', null, { student_id: studentId }),
+    getStudentInfo: (studentId) => {
+        console.log('Getting student info for ID:', studentId);
+        return createRequest('/students/info', 'GET', null, { student_id: studentId });
+    },
 
     // Get available tests
-    getAvailableTests: (studentId) =>
-        createRequest('/available', 'GET', null, { student_id: studentId }),
+    getAvailableTests: (studentId) => {
+        console.log('Getting available tests for student ID:', studentId);
+        return createRequest('/available', 'GET', null, { student_id: studentId });
+    },
 
-    // Start test - Fixed this function to match the API's expectations
+    // Start test - Fixed this function to properly handle student ID
     startTest: (testId, studentId) => {
         console.log(`Starting test ${testId} for student ${studentId}`);
         return createRequest(`/start/${testId}`, 'POST', { student_id: studentId });
     },
 
     // Get next question
-    getNextQuestion: (attemptId) =>
-        createRequest(`/attempt/${attemptId}/next`, 'GET'),
+    getNextQuestion: (attemptId) => {
+        console.log(`Getting next question for attempt ${attemptId}`);
+        return createRequest(`/attempt/${attemptId}/next`, 'GET');
+    },
 
     // Submit answer
-    submitAnswer: (attemptId, data) =>
-        createRequest(`/attempt/${attemptId}/submit`, 'POST', data),
+    submitAnswer: (attemptId, data) => {
+        console.log(`Submitting answer for attempt ${attemptId}:`, data);
+        return createRequest(`/attempt/${attemptId}/submit`, 'POST', data);
+    },
 
     // Get test results
-    getTestResults: (attemptId) =>
-        createRequest(`/attempt/${attemptId}/results`, 'GET'),
+    getTestResults: (attemptId) => {
+        console.log(`Getting test results for attempt ${attemptId}`);
+        return createRequest(`/attempt/${attemptId}/results`, 'GET');
+    },
 
     // Get test history
-    getTestHistory: (studentId) =>
-        createRequest('/history', 'GET', null, { student_id: studentId })
+    getTestHistory: (studentId) => {
+        console.log(`Getting test history for student ${studentId}`);
+        return createRequest('/history', 'GET', null, { student_id: studentId });
+    }
 };
 
 export default {

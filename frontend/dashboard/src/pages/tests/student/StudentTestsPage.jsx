@@ -31,6 +31,13 @@ function StudentTestsPage() {
         enabled: !!studentId,
     });
 
+    // Add debug logging for API response
+    useEffect(() => {
+        if (data) {
+            console.log('Available tests API response:', data);
+        }
+    }, [data]);
+
     // Fetch student test history
     const { data: historyData, isLoading: historyLoading } = useQuery({
         queryKey: ['test-history', studentId],
@@ -38,9 +45,9 @@ function StudentTestsPage() {
         enabled: !!studentId,
     });
 
-    // FIX: Fix the data access paths for API responses
-    const availableTests = data?.data?.data?.data || [];
-    const testHistory = historyData?.data?.data?.data?.attempts || [];
+    // FIXED: Correctly access the API response data structure
+    const availableTests = data?.data?.data || [];
+    const testHistory = historyData?.data?.data?.attempts || [];
 
     const handleLogout = () => {
         localStorage.removeItem('testStudentId');
@@ -59,8 +66,14 @@ function StudentTestsPage() {
             const response = await studentTestsService.startTest(testId, studentIdNum);
             console.log('Start test response:', response);
 
-            // FIX: Make sure we access the correct data path
-            const attemptId = response.data.data.data.attempt_id;
+            // FIXED: Access the correct data path
+            const attemptId = response.data?.data?.attempt_id;
+
+            if (!attemptId) {
+                console.error('No attempt ID found in response:', response);
+                alert('Failed to start test: No attempt ID returned. Please try again.');
+                return;
+            }
 
             // Navigate to the test taking page
             navigate(`/tests/student/take/${attemptId}`);

@@ -49,8 +49,8 @@ function TestTaking() {
         onSuccess: (response) => {
             console.log('Question data received:', response.data);
 
-            // Check if response indicates test is completed
-            if (response.data.data && response.data.data.completed) {
+            // FIXED: Correctly check if response indicates test is completed
+            if (response.data?.data?.completed) {
                 console.log('Test completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
@@ -59,9 +59,10 @@ function TestTaking() {
             // DEBUG: Log the full response structure
             console.log('Full response structure:', JSON.stringify(response.data));
 
-            // FIX: Access data at the correct path based on the response structure
-            // The API response has nested data in response.data.data.data
-            const responseData = response.data.data.data;
+            // FIXED: Access data at the correct path based on the response structure
+            const responseData = response.data?.data?.question
+                ? response.data.data // Structure where question is directly under data
+                : response.data?.data?.data; // Structure with nested data.data.data
 
             // Check if we have question data in the expected format
             if (!responseData || !responseData.question) {
@@ -125,11 +126,11 @@ function TestTaking() {
         onSuccess: (response) => {
             console.log('Answer submitted successfully:', response.data);
 
-            // FIX: Access the correct data path here too, in case the API changes
-            const data = response.data.data;
+            // FIXED: Access the correct data path here too
+            const responseData = response.data?.data;
 
             // If all questions are completed, navigate to results
-            if (data.completed) {
+            if (responseData?.completed) {
                 console.log('All questions completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;

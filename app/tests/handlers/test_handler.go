@@ -62,26 +62,25 @@ func (h *TestHandler) GetAvailableTests(w http.ResponseWriter, r *http.Request) 
 	var availableTests []TestInfo
 
 	// Get tests based on student's group - ОБНОВЛЕНО для использования связей test_groups
-	rows, err := h.DB.Raw(`
-		SELECT 
-			t.id, 
-			t.title, 
-			t.description, 
-			t.subject, 
-			COUNT(DISTINCT q.id) as questions_count,
-			t.created_at,
-			t.max_attempts,
-			t.time_per_question,
-			COUNT(DISTINCT ta.id) as attempts_used,
-			COALESCE(MAX(ta.score), 0) as highest_score,
-			MAX(ta.start_time) as last_attempt_date
-		FROM tests t
-		JOIN questions q ON t.id = q.test_id
-		LEFT JOIN test_attempts ta ON t.id = ta.test_id AND ta.student_id = ?
-		JOIN test_groups tg ON t.id = tg.test_id AND tg.group_name = ?
-		WHERE t.is_active = true
-		GROUP BY t.id
-		ORDER BY t.created_at DESC
+	rows, err := h.DB.Raw(`SELECT 
+    t.id, 
+    t.title, 
+    t.description, 
+    t.subject, 
+    COUNT(DISTINCT q.id) as questions_count,
+    t.created_at,
+    t.max_attempts,
+    t.time_per_question,
+    COUNT(DISTINCT ta.id) as attempts_used,
+    COALESCE(MAX(ta.score), 0) as highest_score,
+    MAX(ta.start_time) as last_attempt_date
+FROM tests t
+LEFT JOIN questions q ON t.id = q.test_id
+LEFT JOIN test_attempts ta ON t.id = ta.test_id AND ta.student_id = ?
+JOIN test_groups tg ON t.id = tg.test_id AND tg.group_name = ?
+WHERE t.is_active = true
+GROUP BY t.id
+ORDER BY t.created_at DESC
 	`, studentID, student.GroupName).Rows()
 
 	if err != nil {
