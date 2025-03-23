@@ -6,14 +6,11 @@ import { studentTestsService } from '../../../services/testsService';
 function TestTaking() {
     const { attemptId } = useParams();
     const navigate = useNavigate();
-    const [answer, setAnswer] = useState({
-        questionId: null,
-        answerId: null,
-        textAnswer: '',
-        timeSpent: 0
-    });
+    const [selectedAnswerId, setSelectedAnswerId] = useState(null);
+    const [textAnswer, setTextAnswer] = useState('');
     const [timer, setTimer] = useState(0);
     const timerRef = useRef(null);
+    const questionIdRef = useRef(null); // Use a ref to store the question ID
     const studentId = localStorage.getItem('testStudentId');
 
     // Verify student is logged in
@@ -30,35 +27,39 @@ function TestTaking() {
             try {
                 const response = await studentTestsService.getNextQuestion(attemptId);
                 console.log('Question response:', response);
-                return response.data;
+                return response;
             } catch (error) {
                 console.error('Error fetching question:', error);
                 throw error;
             }
         },
-        onSuccess: (data) => {
-            console.log('Question data received:', data);
+        onSuccess: (response) => {
+            console.log('Response received:', response);
+
+            // Access the nested data structure
+            const responseData = response.data;
 
             // Check if the test is completed
-            if (data.completed) {
+            if (responseData.data && responseData.data.completed) {
                 console.log('Test completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
             }
 
             // Check if we have valid question data
-            if (!data.question) {
+            if (!responseData.data || !responseData.data.question) {
                 console.error('No question data received, but test is not marked as completed');
                 return;
             }
 
-            // Set question ID for the answer
-            setAnswer(prev => ({
-                ...prev,
-                questionId: data.question.id,
-                answerId: null,
-                textAnswer: ''
-            }));
+            // Store the question ID in the ref
+            const questionData = responseData.data.question;
+            console.log('Setting question ID ref:', questionData.id);
+            questionIdRef.current = questionData.id;
+
+            // Reset answer selections for the new question
+            setSelectedAnswerId(null);
+            setTextAnswer('');
 
             // Reset and start timer
             setTimer(0);
@@ -76,27 +77,42 @@ function TestTaking() {
 
     // Submit answer mutation
     const submitAnswerMutation = useMutation({
-        mutationFn: async (answerData) => {
-            try {
-                const response = await studentTestsService.submitAnswer(attemptId, answerData);
-                console.log('Submit response:', response);
-                return response.data;
-            } catch (error) {
-                console.error('Error submitting answer:', error);
-                throw error;
+        mutationFn: async () => {
+            // Get the current question ID from the ref
+            const questionId = questionIdRef.current;
+
+            // Check for missing question ID
+            if (!questionId) {
+                console.error('ERROR: Missing question ID when submitting answer!');
+                throw new Error('Missing question ID');
             }
+
+            // Build the answer data
+            const answerData = {
+                question_id: questionId,
+                answer_id: selectedAnswerId,
+                text_answer: textAnswer,
+                time_spent: timer
+            };
+
+            console.log('Submitting answer with data:', answerData);
+            return studentTestsService.submitAnswer(attemptId, answerData);
         },
         onSuccess: (response) => {
             console.log('Answer submitted successfully:', response);
 
             // Check if test is completed after submitting
-            if (response.data?.completed) {
+            if (response.data.data?.completed) {
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
             }
 
             // Fetch next question
             refetch();
+        },
+        onError: (error) => {
+            console.error('Error submitting answer:', error);
+            alert('Failed to submit answer: ' + (error.message || 'Unknown error'));
         }
     });
 
@@ -110,19 +126,14 @@ function TestTaking() {
     }, []);
 
     const handleAnswerSelect = (answerId) => {
-        setAnswer(prev => ({
-            ...prev,
-            answerId,
-            textAnswer: '' // Clear text answer when selecting multiple choice
-        }));
+        console.log(`Selected answer ID: ${answerId} for question ID: ${questionIdRef.current}`);
+        setSelectedAnswerId(answerId);
+        setTextAnswer('');
     };
 
     const handleTextChange = (e) => {
-        setAnswer(prev => ({
-            ...prev,
-            textAnswer: e.target.value,
-            answerId: null // Clear answerId when typing text
-        }));
+        setTextAnswer(e.target.value);
+        setSelectedAnswerId(null);
     };
 
     const handleSubmit = () => {
@@ -130,16 +141,14 @@ function TestTaking() {
             clearInterval(timerRef.current);
         }
 
-        // Prepare answer data
-        const answerData = {
-            question_id: answer.questionId,
-            answer_id: answer.answerId,
-            text_answer: answer.textAnswer,
-            time_spent: timer
-        };
+        console.log('Submitting with values:', {
+            questionId: questionIdRef.current,
+            answerId: selectedAnswerId,
+            textAnswer,
+            timer
+        });
 
-        console.log('Submitting answer:', answerData);
-        submitAnswerMutation.mutate(answerData);
+        submitAnswerMutation.mutate();
     };
 
     const formatTime = (seconds) => {
@@ -147,6 +156,11 @@ function TestTaking() {
         const remainingSeconds = seconds % 60;
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
+
+    // Extract question and progress data from the correct nesting level
+    const responseData = data?.data || {};
+    const questionData = responseData.data?.question || null;
+    const progressData = responseData.data?.progress || { answered: 0, total: 1 };
 
     // Loading state
     if (isLoading) {
@@ -181,7 +195,7 @@ function TestTaking() {
     }
 
     // If no data or no question
-    if (!data || !data.question) {
+    if (!questionData) {
         return (
             <div className="error-container">
                 <div className="alert alert-warning">
@@ -204,8 +218,11 @@ function TestTaking() {
     }
 
     // We have valid question data - show the question
-    const question = data.question;
-    const progress = data.progress || { answered: 0, total: 1 };
+    const question = questionData;
+    const progress = progressData;
+
+    // Log current question ID when rendering
+    console.log('Rendering question ID:', questionIdRef.current, 'Question data:', question);
 
     return (
         <div className="test-taking-container">
@@ -245,17 +262,17 @@ function TestTaking() {
                                     question.answers.map(option => (
                                         <div
                                             key={option.id}
-                                            className={`answer-option ${answer.answerId === option.id ? 'answer-selected' : ''}`}
+                                            className={`answer-option ${selectedAnswerId === option.id ? 'answer-selected' : ''}`}
                                             onClick={() => handleAnswerSelect(option.id)}
                                         >
                                             <div className="option-indicator">
                                                 {question.question_type === 'multiple_choice' ? (
                                                     <span className="checkbox">
-                                                        {answer.answerId === option.id && '✓'}
+                                                        {selectedAnswerId === option.id && '✓'}
                                                     </span>
                                                 ) : (
                                                     <span className="radio-button">
-                                                        {answer.answerId === option.id && (
+                                                        {selectedAnswerId === option.id && (
                                                             <span className="radio-filled"></span>
                                                         )}
                                                     </span>
@@ -275,7 +292,7 @@ function TestTaking() {
                                 <textarea
                                     className="text-answer-input"
                                     placeholder="Type your answer here..."
-                                    value={answer.textAnswer}
+                                    value={textAnswer}
                                     onChange={handleTextChange}
                                     rows="4"
                                 ></textarea>
@@ -289,12 +306,20 @@ function TestTaking() {
                         className="btn btn-primary"
                         onClick={handleSubmit}
                         disabled={submitAnswerMutation.isPending || (
-                            !answer.answerId && !answer.textAnswer
+                            !selectedAnswerId && !textAnswer
                         )}
                     >
                         {submitAnswerMutation.isPending ? 'Submitting...' : 'Submit Answer'}
                     </button>
                 </div>
+            </div>
+
+            {/* Debug info at the bottom of the page */}
+            <div className="debug-info">
+                <h4>Debug Info</h4>
+                <div>Current Question ID: {questionIdRef.current}</div>
+                <div>Selected Answer ID: {selectedAnswerId}</div>
+                <div>Question Type: {question.question_type}</div>
             </div>
 
             <style jsx="true">{`
@@ -523,6 +548,15 @@ function TestTaking() {
                     color: var(--danger);
                     border-radius: var(--radius-md);
                     text-align: center;
+                }
+                
+                .debug-info {
+                    margin-top: 2rem;
+                    padding: 1rem;
+                    background-color: #333;
+                    border-radius: 0.5rem;
+                    color: #fff;
+                    font-family: monospace;
                 }
                 
                 @media (max-width: 768px) {

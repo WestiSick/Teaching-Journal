@@ -213,14 +213,22 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log the attempt ID for debugging
+	log.Printf("GetNextQuestion called for attempt ID: %d", attemptID)
+
 	// Verify the attempt exists and is not completed
 	var attempt testsModels.TestAttempt
 	if err := h.DB.Where("id = ?", attemptID).First(&attempt).Error; err != nil {
+		log.Printf("Error finding attempt ID %d: %v", attemptID, err)
 		utils.RespondWithError(w, http.StatusNotFound, "Attempt not found")
 		return
 	}
 
+	log.Printf("Found attempt ID %d for test ID %d, student ID %d, completed: %v",
+		attempt.ID, attempt.TestID, attempt.StudentID, attempt.Completed)
+
 	if attempt.Completed {
+		log.Printf("Attempt %d is already completed", attemptID)
 		utils.RespondWithSuccess(w, http.StatusOK, "All questions answered. Test completed.", map[string]interface{}{
 			"completed":  true,
 			"attempt_id": attemptID,
@@ -230,12 +238,14 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 
 	// Get all questions for this test with answers preloaded
 	var questions []testsModels.Question
-	if err := h.DB.Preload("Answers").Where("test_id = ?", attempt.TestID).Order("position").Find(&questions).Error; err != nil {
+	if err := h.DB.Debug().Preload("Answers").Where("test_id = ?", attempt.TestID).Order("position").Find(&questions).Error; err != nil {
+		log.Printf("Error retrieving questions for test ID %d: %v", attempt.TestID, err)
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving questions")
 		return
 	}
 
 	if len(questions) == 0 {
+		log.Printf("No questions found for test ID %d", attempt.TestID)
 		utils.RespondWithError(w, http.StatusNotFound, "This test has no questions")
 		return
 	}
@@ -243,15 +253,22 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 	// Log found questions for debugging
 	log.Printf("Found %d questions for test ID %d", len(questions), attempt.TestID)
 	for i, q := range questions {
-		log.Printf("Question %d: %s (Type: %s, Answers: %d)",
-			i+1, q.QuestionText, q.QuestionType, len(q.Answers))
+		log.Printf("Question %d: ID=%d, Text=%s (Type: %s, Answers: %d)",
+			i+1, q.ID, q.QuestionText, q.QuestionType, len(q.Answers))
 	}
 
 	// Get answered questions for this attempt
 	var answeredQuestionIDs []int
-	h.DB.Model(&testsModels.StudentResponse{}).
+	result := h.DB.Model(&testsModels.StudentResponse{}).
 		Where("attempt_id = ?", attemptID).
 		Pluck("question_id", &answeredQuestionIDs)
+
+	if result.Error != nil {
+		log.Printf("Error retrieving answered questions: %v", result.Error)
+	}
+
+	log.Printf("Found %d answered questions for attempt ID %d: %v",
+		len(answeredQuestionIDs), attemptID, answeredQuestionIDs)
 
 	// Convert answeredQuestionIDs to a map for faster lookup
 	answeredMap := make(map[int]bool)
@@ -264,6 +281,7 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 	for i := range questions {
 		if !answeredMap[questions[i].ID] {
 			nextQuestion = &questions[i]
+			log.Printf("Found next unanswered question ID %d: %s", nextQuestion.ID, nextQuestion.QuestionText)
 			break
 		}
 	}
@@ -271,6 +289,7 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 	if nextQuestion == nil {
 		// All questions have been answered
 		// Complete the test
+		log.Printf("All questions answered for attempt ID %d, marking as completed", attemptID)
 		now := time.Now()
 		h.DB.Model(&attempt).Updates(map[string]interface{}{
 			"completed": true,
@@ -286,7 +305,16 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 
 	// Get the test's time per question setting
 	var test testsModels.Test
-	h.DB.Select("time_per_question").Where("id = ?", attempt.TestID).First(&test)
+	if err := h.DB.Select("time_per_question").Where("id = ?", attempt.TestID).First(&test).Error; err != nil {
+		log.Printf("Error retrieving test info: %v", err)
+	}
+
+	// Verify answers are loaded correctly
+	log.Printf("Question ID %d has %d answers", nextQuestion.ID, len(nextQuestion.Answers))
+	for i, ans := range nextQuestion.Answers {
+		log.Printf("Answer %d: ID=%d, Text=%s, IsCorrect=%v",
+			i+1, ans.ID, ans.AnswerText, ans.IsCorrect)
+	}
 
 	// Strip IsCorrect field from answers for security
 	answers := make([]map[string]interface{}, 0)
@@ -338,36 +366,65 @@ func (h *TestHandler) SubmitAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log the attempt ID for debugging
+	log.Printf("SubmitAnswer called for attempt ID: %d", attemptID)
+
 	// Parse request body
 	var req SubmitAnswerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("Error parsing request body: %v", err)
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
+	log.Printf("Received answer submission: question_id=%d, answer_id=%v, text_answer=%q, time_spent=%d",
+		req.QuestionID, req.AnswerID, req.TextAnswer, req.TimeSpent)
+
 	// Verify the attempt exists and is not completed
 	var attempt testsModels.TestAttempt
-	if err := h.DB.Where("id = ?", attemptID).First(&attempt).Error; err != nil {
+	if err := h.DB.Debug().Where("id = ?", attemptID).First(&attempt).Error; err != nil {
+		log.Printf("Error finding attempt ID %d: %v", attemptID, err)
 		utils.RespondWithError(w, http.StatusNotFound, "Attempt not found")
 		return
 	}
 
 	if attempt.Completed {
+		log.Printf("Attempt %d is already completed", attemptID)
 		utils.RespondWithError(w, http.StatusBadRequest, "This test attempt is already completed")
 		return
 	}
 
+	log.Printf("Found attempt: test_id=%d, student_id=%d, completed=%v",
+		attempt.TestID, attempt.StudentID, attempt.Completed)
+
 	// Check if the question exists and belongs to this test
 	var question testsModels.Question
-	if err := h.DB.Where("id = ? AND test_id = ?", req.QuestionID, attempt.TestID).First(&question).Error; err != nil {
-		utils.RespondWithError(w, http.StatusNotFound, "Question not found in this test")
+	questionQuery := h.DB.Debug().Where("id = ?", req.QuestionID)
+
+	// Modified: Remove the test_id condition to just find the question by ID first
+	result := questionQuery.First(&question)
+	if result.Error != nil {
+		log.Printf("Error finding question ID %d: %v", req.QuestionID, result.Error)
+		utils.RespondWithError(w, http.StatusNotFound, "Question not found")
 		return
 	}
 
+	// After finding the question, check if it belongs to the test
+	if question.TestID != attempt.TestID {
+		log.Printf("Question ID %d belongs to test ID %d, not attempt test ID %d",
+			req.QuestionID, question.TestID, attempt.TestID)
+		utils.RespondWithError(w, http.StatusBadRequest, "Question not found in this test")
+		return
+	}
+
+	log.Printf("Found question: id=%d, test_id=%d, text=%q, type=%s",
+		question.ID, question.TestID, question.QuestionText, question.QuestionType)
+
 	// Check if this question was already answered in this attempt
 	var existingResponse testsModels.StudentResponse
-	result := h.DB.Where("attempt_id = ? AND question_id = ?", attemptID, req.QuestionID).First(&existingResponse)
+	result = h.DB.Debug().Where("attempt_id = ? AND question_id = ?", attemptID, req.QuestionID).First(&existingResponse)
 	if result.Error == nil {
+		log.Printf("Question ID %d was already answered in attempt ID %d", req.QuestionID, attemptID)
 		utils.RespondWithError(w, http.StatusBadRequest, "This question was already answered")
 		return
 	}
@@ -377,25 +434,29 @@ func (h *TestHandler) SubmitAnswer(w http.ResponseWriter, r *http.Request) {
 
 	if question.QuestionType == "text" {
 		// For text questions, use exact match for now
-		// In a real application, you might want more sophisticated matching
 		var correctAnswer string
-		h.DB.Model(&testsModels.Answer{}).
+		h.DB.Debug().Model(&testsModels.Answer{}).
 			Where("question_id = ? AND is_correct = true", req.QuestionID).
 			Pluck("answer_text", &correctAnswer)
 
 		isCorrect = req.TextAnswer == correctAnswer
+		log.Printf("Text answer check: submitted=%q, correct=%q, match=%v",
+			req.TextAnswer, correctAnswer, isCorrect)
 	} else {
 		// For multiple/single choice questions
 		if req.AnswerID != nil {
 			// Verify the answer belongs to this question
 			var answer testsModels.Answer
-			result = h.DB.Where("id = ? AND question_id = ?", *req.AnswerID, req.QuestionID).First(&answer)
+			result = h.DB.Debug().Where("id = ? AND question_id = ?", *req.AnswerID, req.QuestionID).First(&answer)
 			if result.Error != nil {
+				log.Printf("Error finding answer ID %d for question ID %d: %v",
+					*req.AnswerID, req.QuestionID, result.Error)
 				utils.RespondWithError(w, http.StatusBadRequest, "Invalid answer for this question")
 				return
 			}
 
 			isCorrect = answer.IsCorrect
+			log.Printf("Choice answer check: answer_id=%d, is_correct=%v", answer.ID, isCorrect)
 		}
 	}
 
@@ -410,26 +471,36 @@ func (h *TestHandler) SubmitAnswer(w http.ResponseWriter, r *http.Request) {
 		SubmittedAt: time.Now(),
 	}
 
-	if err := h.DB.Create(&response).Error; err != nil {
+	if err := h.DB.Debug().Create(&response).Error; err != nil {
+		log.Printf("Error saving response: %v", err)
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error saving response")
 		return
 	}
 
+	log.Printf("Created student response: id=%d, is_correct=%v", response.ID, isCorrect)
+
 	// Update the test attempt score if the answer is correct
 	if isCorrect {
-		h.DB.Model(&attempt).Update("score", gorm.Expr("score + 1"))
+		result := h.DB.Debug().Model(&attempt).Update("score", gorm.Expr("score + 1"))
+		if result.Error != nil {
+			log.Printf("Error updating score: %v", result.Error)
+		} else {
+			log.Printf("Updated score for attempt ID %d", attemptID)
+		}
 	}
 
 	// Check if all questions have been answered
 	var answeredCount int64
-	h.DB.Model(&testsModels.StudentResponse{}).Where("attempt_id = ?", attemptID).Count(&answeredCount)
+	h.DB.Debug().Model(&testsModels.StudentResponse{}).Where("attempt_id = ?", attemptID).Count(&answeredCount)
 
+	log.Printf("Checked answered questions: %d of %d", answeredCount, attempt.TotalQuestions)
 	allQuestionsAnswered := int(answeredCount) >= attempt.TotalQuestions
 
 	// If all questions are answered, complete the test
 	if allQuestionsAnswered {
+		log.Printf("All questions answered, completing attempt ID %d", attemptID)
 		now := time.Now()
-		h.DB.Model(&attempt).Updates(map[string]interface{}{
+		h.DB.Debug().Model(&attempt).Updates(map[string]interface{}{
 			"completed": true,
 			"end_time":  now,
 		})

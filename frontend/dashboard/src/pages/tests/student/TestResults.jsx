@@ -36,7 +36,7 @@ function TestResults() {
         }
     });
 
-    // FIXED: Make sure we're accessing the data at the correct path
+    // FIXED: Access the correct path in the nested data structure
     const results = data?.data?.data || null;
 
     if (isLoading) {

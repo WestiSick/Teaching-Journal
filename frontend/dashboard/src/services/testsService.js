@@ -86,20 +86,72 @@ export const studentTestsService = {
         return createRequest(`/start/${testId}`, 'POST', { student_id: parseInt(studentId, 10) });
     },
 
-    // Get next question - handle nested data structure
+    // Get next question - use axios directly for better debugging
     getNextQuestion: (attemptId) => {
+        console.log(`Fetching next question for attempt ID: ${attemptId}`);
+
         return axios({
             method: 'GET',
             url: `/api/tests/attempt/${attemptId}/next`,
             headers: {
                 'Content-Type': 'application/json'
+            },
+            validateStatus: function (status) {
+                // Allow any status code to be handled by the promise chain
+                return true;
             }
+        }).then(response => {
+            // Log the raw response for debugging
+            console.log('Raw API Response:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                data: response.data
+            });
+
+            // Check if the response has the expected structure
+            if (response.data && response.data.data) {
+                console.log('Question data from API:', response.data.data.question || 'No question data');
+                console.log('Progress data from API:', response.data.data.progress || 'No progress data');
+            } else {
+                console.error('Unexpected response format:', response.data);
+            }
+
+            return response;
+        }).catch(error => {
+            console.error('API Error:', error);
+            throw error;
         });
     },
 
-    // Submit answer
+    // Submit answer - FIXED to use axios directly to match getNextQuestion implementation
     submitAnswer: (attemptId, data) => {
-        return createRequest(`/attempt/${attemptId}/submit`, 'POST', data);
+        console.log(`Submitting answer for attempt ID: ${attemptId}`, data);
+
+        return axios({
+            method: 'POST',
+            url: `/api/tests/attempt/${attemptId}/submit`,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: data,
+            validateStatus: function (status) {
+                // Allow any status code to be handled by the promise chain
+                return true;
+            }
+        }).then(response => {
+            // Log the raw response for debugging
+            console.log('Submit Answer Response:', {
+                status: response.status,
+                statusText: response.statusText,
+                data: response.data
+            });
+
+            return response;
+        }).catch(error => {
+            console.error('Error submitting answer:', error);
+            throw error;
+        });
     },
 
     // Get test results

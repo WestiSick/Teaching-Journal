@@ -66,7 +66,7 @@ function StudentTestsPage() {
             const response = await studentTestsService.startTest(testId, studentIdNum);
             console.log('Start test response:', response);
 
-            // FIXED: Access the correct data path
+            // Access the correct data path
             const attemptId = response.data?.data?.attempt_id;
 
             if (!attemptId) {

@@ -36,15 +36,15 @@ function TestHistory() {
             // Add debug logging for API response
             console.log('Test history response:', response);
 
-            // FIXED: Use the correct data path from response
-            const attempts = response.data?.data?.attempts || [];
+            // Use the correct data path from response
+            const attempts = response?.data?.data?.attempts || [];
             // Extract unique subjects for filtering
             const uniqueSubjects = [...new Set(attempts.map(attempt => attempt.subject))];
             setSubjects(uniqueSubjects);
         }
     });
 
-    // FIXED: Correctly access the nested data structure
+    // Correctly access the nested data structure
     const testHistory = data?.data?.data?.attempts || [];
 
     // Apply filters
