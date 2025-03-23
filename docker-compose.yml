@@ -97,6 +97,29 @@ services:
     networks:
       - teacher-network
 
+  tests_api:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+      args:
+        SERVICE: tests
+    container_name: teacher_journal_tests_api
+    depends_on:
+      - postgres
+      - api
+    ports:
+      - "8092:8092"
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: vadimvadimvadim
+      DB_NAME: teacher
+      DB_PORT: 5432
+      DB_CONNECTION_STRING: "postgres://postgres:vadimvadimvadim@postgres:5432/teacher?sslmode=disable"
+    restart: unless-stopped
+    networks:
+      - teacher-network
+
   landing:
     build:
       context: ./frontend/landing
