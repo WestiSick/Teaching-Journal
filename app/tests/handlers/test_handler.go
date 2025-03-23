@@ -61,7 +61,7 @@ func (h *TestHandler) GetAvailableTests(w http.ResponseWriter, r *http.Request) 
 
 	var availableTests []TestInfo
 
-	// Get tests based on student's group
+	// Get tests based on student's group - ОБНОВЛЕНО для использования связей test_groups
 	rows, err := h.DB.Raw(`
 		SELECT 
 			t.id, 
@@ -78,17 +78,11 @@ func (h *TestHandler) GetAvailableTests(w http.ResponseWriter, r *http.Request) 
 		FROM tests t
 		JOIN questions q ON t.id = q.test_id
 		LEFT JOIN test_attempts ta ON t.id = ta.test_id AND ta.student_id = ?
+		JOIN test_groups tg ON t.id = tg.test_id AND tg.group_name = ?
 		WHERE t.is_active = true
-		AND t.subject IN (
-			SELECT DISTINCT subject 
-			FROM lessons 
-			WHERE group_name = (
-				SELECT group_name FROM students WHERE id = ?
-			)
-		)
 		GROUP BY t.id
 		ORDER BY t.created_at DESC
-	`, studentID, studentID).Rows()
+	`, studentID, student.GroupName).Rows()
 
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving available tests")

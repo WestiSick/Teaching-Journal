@@ -59,24 +59,27 @@ function TestTaking() {
             // DEBUG: Log the full response structure
             console.log('Full response structure:', JSON.stringify(response.data));
 
+            // FIX: Access data at the correct path based on the response structure
+            // The API response has nested data in response.data.data.data
+            const responseData = response.data.data.data;
+
             // Check if we have question data in the expected format
-            const questionData = response.data.data?.question;
-            if (!questionData) {
+            if (!responseData || !responseData.question) {
                 console.error('No question data in response:', response.data);
                 setError('Question data not found in server response');
                 setDebugInfo(response.data);
                 return;
             }
 
-            // Set the question data for rendering
+            // Set the question data for rendering with the correct path
             setCurrentQuestionData({
-                question: questionData,
-                progress: response.data.data.progress || { answered: 0, total: 1 }
+                question: responseData.question,
+                progress: responseData.progress || { answered: 0, total: 1 }
             });
 
             // Reset answer state
             setAnswer({
-                questionId: questionData.id,
+                questionId: responseData.question.id,
                 answerId: null,
                 textAnswer: '',
                 timeSpent: 0
@@ -92,7 +95,7 @@ function TestTaking() {
 
             timerRef.current = setInterval(() => {
                 setTimer(prev => {
-                    if (prev >= (questionData.time_limit || 60) - 10 && !showAlert) {
+                    if (prev >= (responseData.question.time_limit || 60) - 10 && !showAlert) {
                         setShowAlert(true);
                     }
                     return prev + 1;
@@ -121,6 +124,8 @@ function TestTaking() {
         },
         onSuccess: (response) => {
             console.log('Answer submitted successfully:', response.data);
+
+            // FIX: Access the correct data path here too, in case the API changes
             const data = response.data.data;
 
             // If all questions are completed, navigate to results

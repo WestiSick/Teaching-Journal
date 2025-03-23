@@ -54,10 +54,50 @@ func InitDB() *gorm.DB {
 		&models.Answer{},
 		&models.TestAttempt{},
 		&models.StudentResponse{},
+		&models.TestGroup{}, // Добавляем новую модель для миграции
 	)
 
 	if err != nil {
 		log.Fatal("Failed to auto-migrate database:", err)
+	}
+
+	// Проверка существования таблицы test_groups
+	var count int64
+	DB.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'test_groups'").Count(&count)
+
+	if count == 0 {
+		log.Println("Создание таблицы test_groups...")
+
+		// Создаем таблицу вручную, если автомиграция не сработала
+		err = DB.Exec(`
+			CREATE TABLE IF NOT EXISTS test_groups (
+				id SERIAL PRIMARY KEY,
+				test_id INT NOT NULL,
+				group_name VARCHAR(255) NOT NULL,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+				UNIQUE(test_id, group_name)
+			);
+		`).Error
+
+		if err != nil {
+			log.Fatal("Failed to create test_groups table:", err)
+		}
+
+		// Создаем индексы
+		DB.Exec("CREATE INDEX IF NOT EXISTS idx_test_groups_test_id ON test_groups(test_id)")
+		DB.Exec("CREATE INDEX IF NOT EXISTS idx_test_groups_group_name ON test_groups(group_name)")
+
+		// Заполняем таблицу начальными данными
+		DB.Exec(`
+			INSERT INTO test_groups (test_id, group_name, created_at)
+			SELECT t.id, s.group_name, NOW()
+			FROM tests t
+			CROSS JOIN (SELECT DISTINCT group_name FROM students) s
+			ON CONFLICT (test_id, group_name) DO NOTHING;
+		`)
+
+		log.Println("Таблица test_groups создана и заполнена начальными данными")
 	}
 
 	log.Println("Test database models initialized successfully")

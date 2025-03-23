@@ -19,6 +19,16 @@ type Test struct {
 	MaxAttempts     int                  `gorm:"default:1" json:"max_attempts"`
 	TimePerQuestion int                  `gorm:"default:60" json:"time_per_question"` // Time in seconds
 	Questions       []Question           `json:"questions,omitempty"`
+	TestGroups      []TestGroup          `gorm:"foreignKey:TestID" json:"test_groups,omitempty"` // Добавленное поле
+}
+
+// TestGroup представляет связь между тестом и группой студентов
+type TestGroup struct {
+	ID        int       `gorm:"primaryKey" json:"id"`
+	TestID    int       `gorm:"index" json:"test_id"`
+	Test      Test      `gorm:"foreignKey:TestID" json:"-"`
+	GroupName string    `gorm:"not null" json:"group_name"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 }
 
 // Question represents a question in a test

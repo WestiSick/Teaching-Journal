@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminTestsService } from '../../services/testsService';
+import axios from 'axios';
 
 function TestForm() {
     const { id } = useParams();
@@ -31,6 +32,10 @@ function TestForm() {
 
     const [errors, setErrors] = useState({});
     const [activeTab, setActiveTab] = useState('basic');
+
+    // Добавляем состояние для групп
+    const [availableGroups, setAvailableGroups] = useState([]);
+    const [selectedGroups, setSelectedGroups] = useState([]);
 
     // Fetch test data if in edit mode
     const { data: testData, isLoading } = useQuery({
@@ -98,6 +103,29 @@ function TestForm() {
         }
     });
 
+    // Получаем список всех доступных групп при загрузке страницы
+    useEffect(() => {
+        const fetchGroups = async () => {
+            try {
+                const response = await axios.get('/api/groups');
+                if (response.data && response.data.data) {
+                    const groups = response.data.data.map(group => group.name || group);
+                    setAvailableGroups(groups);
+
+                    // Если редактируем тест, загружаем выбранные группы
+                    if (isEditMode && testData && testData.data && testData.data.data) {
+                        const testGroups = testData.data.data.groups || [];
+                        setSelectedGroups(testGroups);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching groups:', error);
+            }
+        };
+
+        fetchGroups();
+    }, [isEditMode, testData]);
+
     // Set test data when fetched
     useEffect(() => {
         if (testData && isEditMode) {
@@ -118,6 +146,11 @@ function TestForm() {
                     ...prev,
                     position: (Array.isArray(fetchedTest.questions) ? fetchedTest.questions.length : 0) + 1
                 }));
+
+                // Set selected groups if available
+                if (Array.isArray(fetchedTest.groups)) {
+                    setSelectedGroups(fetchedTest.groups);
+                }
             }
         }
     }, [testData, isEditMode]);
@@ -170,6 +203,19 @@ function TestForm() {
         }));
     };
 
+    // Функция для обработки выбора группы
+    const handleGroupChange = (e) => {
+        const value = e.target.value;
+        setSelectedGroups(prev => {
+            const isSelected = prev.includes(value);
+            if (isSelected) {
+                return prev.filter(group => group !== value);
+            } else {
+                return [...prev, value];
+            }
+        });
+    };
+
     const validateTest = () => {
         const newErrors = {};
 
@@ -217,7 +263,8 @@ function TestForm() {
                 subject: test.subject,
                 time_per_question: parseInt(test.time_per_question),
                 max_attempts: parseInt(test.max_attempts),
-                is_active: test.is_active
+                is_active: test.is_active,
+                groups: selectedGroups // Добавляем список выбранных групп
             };
             updateTestMutation.mutate({ id, data: updateData });
         } else {
@@ -228,7 +275,8 @@ function TestForm() {
                 subject: test.subject,
                 time_per_question: parseInt(test.time_per_question),
                 max_attempts: parseInt(test.max_attempts),
-                is_active: test.is_active
+                is_active: test.is_active,
+                groups: selectedGroups, // Добавляем список выбранных групп
             };
 
             // Only include questions if there are any
@@ -407,6 +455,30 @@ function TestForm() {
                                     onChange={handleTestChange}
                                 />
                                 <label className="form-check-label" htmlFor="is_active">Active (visible to students)</label>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="groups">Доступно для групп</label>
+                                <div className="groups-selection">
+                                    {availableGroups.length === 0 ? (
+                                        <p className="text-tertiary">Загрузка списка групп...</p>
+                                    ) : (
+                                        <div className="groups-checkboxes">
+                                            {availableGroups.map(group => (
+                                                <div key={group} className="group-checkbox">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`group-${group}`}
+                                                        value={group}
+                                                        checked={selectedGroups.includes(group)}
+                                                        onChange={handleGroupChange}
+                                                    />
+                                                    <label htmlFor={`group-${group}`}>{group}</label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="form-actions mt-4">
@@ -789,6 +861,27 @@ function TestForm() {
                 
                 .mb-4 {
                     margin-bottom: 1rem;
+                }
+                
+                .groups-selection {
+                    margin-top: 0.5rem;
+                }
+                
+                .groups-checkboxes {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    gap: 0.5rem;
+                }
+                
+                .group-checkbox {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.25rem 0;
+                }
+                
+                .group-checkbox input[type="checkbox"] {
+                    accent-color: var(--primary);
                 }
             `}</style>
         </div>

@@ -38,8 +38,9 @@ function StudentTestsPage() {
         enabled: !!studentId,
     });
 
-    const availableTests = data?.data?.data || [];
-    const testHistory = historyData?.data?.data?.attempts || [];
+    // FIX: Fix the data access paths for API responses
+    const availableTests = data?.data?.data?.data || [];
+    const testHistory = historyData?.data?.data?.data?.attempts || [];
 
     const handleLogout = () => {
         localStorage.removeItem('testStudentId');
@@ -58,7 +59,10 @@ function StudentTestsPage() {
             const response = await studentTestsService.startTest(testId, studentIdNum);
             console.log('Start test response:', response);
 
-            const attemptId = response.data.data.attempt_id;
+            // FIX: Make sure we access the correct data path
+            const attemptId = response.data.data.data.attempt_id;
+
+            // Navigate to the test taking page
             navigate(`/tests/student/take/${attemptId}`);
         } catch (error) {
             console.error('Error starting test:', error);

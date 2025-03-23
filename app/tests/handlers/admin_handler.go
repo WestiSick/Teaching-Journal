@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	dashboardModels "TeacherJournal/app/dashboard/models"
 	dashboardUtils "TeacherJournal/app/dashboard/utils"
 	"TeacherJournal/app/tests/models"
 	"TeacherJournal/app/tests/utils"
@@ -26,6 +27,11 @@ func NewAdminHandler(database *gorm.DB) *AdminHandler {
 	}
 }
 
+// Path: app/tests/handlers/admin_handler.go
+
+// Обновленные структуры запросов. Добавьте эти структуры в начало файла admin_handler.go,
+// заменив старые версии структур, если они существуют
+
 // CreateTestRequest defines the request body for creating a test
 type CreateTestRequest struct {
 	Title           string                  `json:"title"`
@@ -34,6 +40,7 @@ type CreateTestRequest struct {
 	TimePerQuestion int                     `json:"time_per_question"`
 	MaxAttempts     int                     `json:"max_attempts"`
 	Questions       []CreateQuestionRequest `json:"questions"`
+	Groups          []string                `json:"groups"` // Добавлено: список групп
 }
 
 // CreateQuestionRequest defines the request body for creating a question
@@ -108,6 +115,39 @@ func (h *AdminHandler) CreateTest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		testID = test.ID
+
+		// Создаем связи с группами
+		if len(req.Groups) > 0 {
+			for _, groupName := range req.Groups {
+				testGroup := models.TestGroup{
+					TestID:    test.ID,
+					GroupName: groupName,
+					CreatedAt: time.Now(),
+				}
+
+				if err := tx.Create(&testGroup).Error; err != nil {
+					return err
+				}
+			}
+		} else {
+			// Если группы не указаны, добавляем все доступные группы
+			var groupNames []string
+			if err := tx.Model(&dashboardModels.Student{}).Distinct("group_name").Pluck("group_name", &groupNames).Error; err != nil {
+				return err
+			}
+
+			for _, groupName := range groupNames {
+				testGroup := models.TestGroup{
+					TestID:    test.ID,
+					GroupName: groupName,
+					CreatedAt: time.Now(),
+				}
+
+				if err := tx.Create(&testGroup).Error; err != nil {
+					return err
+				}
+			}
+		}
 
 		// Create questions and answers
 		for _, q := range req.Questions {
@@ -305,6 +345,19 @@ func (h *AdminHandler) GetTestDetails(w http.ResponseWriter, r *http.Request) {
 		WHERE test_id = ?
 	`, testID).Scan(&stats)
 
+	// Получаем группы, связанные с тестом
+	var testGroups []models.TestGroup
+	if err := h.DB.Where("test_id = ?", testID).Find(&testGroups).Error; err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving test groups")
+		return
+	}
+
+	// Извлекаем только имена групп
+	groups := make([]string, len(testGroups))
+	for i, group := range testGroups {
+		groups[i] = group.GroupName
+	}
+
 	response := map[string]interface{}{
 		"id":                test.ID,
 		"title":             test.Title,
@@ -318,6 +371,7 @@ func (h *AdminHandler) GetTestDetails(w http.ResponseWriter, r *http.Request) {
 		"time_per_question": test.TimePerQuestion,
 		"questions":         questions,
 		"stats":             stats,
+		"groups":            groups, // Добавляем группы в ответ
 	}
 
 	utils.RespondWithSuccess(w, http.StatusOK, "Test details retrieved successfully", response)
@@ -325,12 +379,13 @@ func (h *AdminHandler) GetTestDetails(w http.ResponseWriter, r *http.Request) {
 
 // UpdateTestRequest defines the request body for updating a test
 type UpdateTestRequest struct {
-	Title           string `json:"title,omitempty"`
-	Description     string `json:"description,omitempty"`
-	Subject         string `json:"subject,omitempty"`
-	IsActive        *bool  `json:"is_active,omitempty"`
-	MaxAttempts     int    `json:"max_attempts,omitempty"`
-	TimePerQuestion int    `json:"time_per_question,omitempty"`
+	Title           string   `json:"title,omitempty"`
+	Description     string   `json:"description,omitempty"`
+	Subject         string   `json:"subject,omitempty"`
+	IsActive        *bool    `json:"is_active,omitempty"`
+	MaxAttempts     int      `json:"max_attempts,omitempty"`
+	TimePerQuestion int      `json:"time_per_question,omitempty"`
+	Groups          []string `json:"groups,omitempty"` // Добавлено: список групп
 }
 
 // UpdateTest updates a test's basic information
@@ -393,17 +448,47 @@ func (h *AdminHandler) UpdateTest(w http.ResponseWriter, r *http.Request) {
 		updates["time_per_question"] = req.TimePerQuestion
 	}
 
-	// Only update if there are changes
-	if len(updates) > 0 {
-		updates["updated_at"] = time.Now()
-		if err := h.DB.Model(&test).Updates(updates).Error; err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Error updating test")
-			return
+	// Update test in transaction
+	err = h.DB.Transaction(func(tx *gorm.DB) error {
+		// Only update if there are changes
+		if len(updates) > 0 {
+			updates["updated_at"] = time.Now()
+			if err := tx.Model(&test).Updates(updates).Error; err != nil {
+				return err
+			}
 		}
 
-		// Log the action
-		dashboardUtils.LogAction(h.DB, userID, "Update Test", fmt.Sprintf("Updated test '%s' with ID %d", test.Title, test.ID))
+		// Обновляем группы если они указаны
+		if req.Groups != nil {
+			// Удаляем существующие связи с группами
+			if err := tx.Where("test_id = ?", testID).Delete(&models.TestGroup{}).Error; err != nil {
+				return err
+			}
+
+			// Создаем новые связи с группами
+			for _, groupName := range req.Groups {
+				testGroup := models.TestGroup{
+					TestID:    testID,
+					GroupName: groupName,
+					CreatedAt: time.Now(),
+				}
+
+				if err := tx.Create(&testGroup).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error updating test: "+err.Error())
+		return
 	}
+
+	// Log the action
+	dashboardUtils.LogAction(h.DB, userID, "Update Test", fmt.Sprintf("Updated test '%s' with ID %d", test.Title, test.ID))
 
 	utils.RespondWithSuccess(w, http.StatusOK, "Test updated successfully", nil)
 }

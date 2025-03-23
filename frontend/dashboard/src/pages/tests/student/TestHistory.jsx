@@ -33,14 +33,17 @@ function TestHistory() {
         queryFn: () => studentTestsService.getTestHistory(studentId),
         enabled: !!studentId,
         onSuccess: (response) => {
-            const attempts = response.data.data.attempts || [];
+            // FIX: Use the correct data path from response
+            console.log('Test history response:', response);
+            const attempts = response.data.data.data?.attempts || [];
             // Extract unique subjects for filtering
             const uniqueSubjects = [...new Set(attempts.map(attempt => attempt.subject))];
             setSubjects(uniqueSubjects);
         }
     });
 
-    const testHistory = data?.data?.data?.attempts || [];
+    // FIX: Correctly access the nested data structure
+    const testHistory = data?.data?.data?.data?.attempts || [];
 
     // Apply filters
     const filteredHistory = testHistory.filter(attempt => {

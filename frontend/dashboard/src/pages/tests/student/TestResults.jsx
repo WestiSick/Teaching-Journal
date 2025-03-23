@@ -32,7 +32,8 @@ function TestResults() {
         enabled: !!attemptId,
     });
 
-    const results = data?.data?.data;
+    // FIX: Make sure we're accessing the data at the correct path
+    const results = data?.data?.data?.data;
 
     if (isLoading) {
         return (
@@ -47,7 +48,21 @@ function TestResults() {
     }
 
     if (!results || !studentInfo) {
-        return null;
+        return (
+            <div className="alert alert-warning">
+                <h3>Unable to load results</h3>
+                <p>The results data couldn't be found. This might be because the test hasn't been completed yet.</p>
+                <div className="mt-3">
+                    <Link to="/tests/student" className="btn btn-primary">Back to Tests</Link>
+                </div>
+                {data && (
+                    <div className="debug-info mt-4">
+                        <h4>Response Data:</h4>
+                        <pre>{JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                )}
+            </div>
+        );
     }
 
     return (
@@ -396,6 +411,30 @@ function TestResults() {
                     display: flex;
                     justify-content: center;
                     gap: 1rem;
+                }
+                
+                .debug-info {
+                    margin-top: 1rem;
+                    padding: 1rem;
+                    background-color: var(--bg-dark-tertiary);
+                    border-radius: var(--radius-md);
+                    text-align: left;
+                    overflow: auto;
+                    max-height: 300px;
+                }
+                
+                .debug-info pre {
+                    margin: 0;
+                    white-space: pre-wrap;
+                    font-size: 0.875rem;
+                }
+                
+                .mt-3 {
+                    margin-top: 0.75rem;
+                }
+                
+                .mt-4 {
+                    margin-top: 1rem;
                 }
                 
                 @media (max-width: 768px) {
