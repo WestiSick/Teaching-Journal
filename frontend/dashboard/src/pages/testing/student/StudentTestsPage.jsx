@@ -109,7 +109,23 @@ function StudentTestsPageContent() {
     // Fetch available tests
     const { data, isLoading, error } = useQuery({
         queryKey: ['available-tests'],
-        queryFn: testingService.getAvailableTests,
+        queryFn: () => {
+            console.log('Fetching available tests, token:',
+                localStorage.getItem('studentToken') ?
+                    localStorage.getItem('studentToken').substring(0, 15) + '...' :
+                    'No token');
+            console.log('Current student info:', currentStudent);
+
+            return testingService.getAvailableTests()
+                .then(response => {
+                    console.log('Tests response:', response.data);
+                    return response;
+                })
+                .catch(err => {
+                    console.error('Error fetching tests:', err.response?.data || err.message);
+                    throw err;
+                });
+        },
     });
 
     // Start test mutation
@@ -120,7 +136,7 @@ function StudentTestsPageContent() {
             navigate(`/student-testing/attempt/${attemptId}`);
         },
         onError: (error) => {
-            console.error('Error starting test:', error);
+            console.error('Error starting test:', error.response?.data || error.message);
             // You could add a toast notification here
         }
     });
@@ -147,6 +163,9 @@ function StudentTestsPageContent() {
                 <div className="alert alert-danger">
                     <h3>Error Loading Tests</h3>
                     <p>{error.message || 'Failed to load available tests. Please try again later.'}</p>
+                    <div className="error-details">
+                        <pre>{JSON.stringify(error.response?.data || {}, null, 2)}</pre>
+                    </div>
                 </div>
             </div>
         );
@@ -168,7 +187,16 @@ function StudentTestsPageContent() {
                         <line x1="6" y1="18" x2="6.01" y2="18"></line>
                     </svg>
                     <h2>No Tests Available</h2>
-                    <p>There are no tests available for you at this time. Please check back later.</p>
+                    <p>There are no tests available for you at this time. This could be because:</p>
+                    <ul className="text-left my-3">
+                        <li>No tests have been assigned to your group yet</li>
+                        <li>No active tests are currently available</li>
+                        <li>All available tests have already been completed</li>
+                    </ul>
+                    <p>Please check with your instructor if you believe this is an error.</p>
+                    <div className="mt-4">
+                        <p>Your current group: <strong>{currentStudent?.group || 'Not assigned'}</strong></p>
+                    </div>
                 </div>
             ) : (
                 <div className="tests-list">
@@ -325,6 +353,25 @@ function StudentTestsPageContent() {
                     max-width: 500px;
                 }
                 
+                .empty-state ul {
+                    text-align: left;
+                    margin: 1rem 0;
+                    color: var(--text-secondary);
+                }
+                
+                .text-left {
+                    text-align: left;
+                }
+                
+                .my-3 {
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                }
+                
+                .mt-4 {
+                    margin-top: 1.5rem;
+                }
+                
                 .loading-container, .error-container {
                     display: flex;
                     flex-direction: column;
@@ -332,6 +379,21 @@ function StudentTestsPageContent() {
                     justify-content: center;
                     padding: 3rem 2rem;
                     text-align: center;
+                }
+                
+                .error-details {
+                    margin-top: 1rem;
+                    padding: 1rem;
+                    background-color: var(--bg-dark-tertiary);
+                    border-radius: var(--radius-md);
+                    width: 100%;
+                    overflow-x: auto;
+                    text-align: left;
+                }
+                
+                .error-details pre {
+                    font-size: 0.75rem;
+                    color: var(--danger);
                 }
                 
                 .spinner {

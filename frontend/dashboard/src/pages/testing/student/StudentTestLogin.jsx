@@ -19,12 +19,20 @@ function StudentTestLoginContent() {
     const loginMutation = useMutation({
         mutationFn: (data) => testingService.loginStudent(data),
         onSuccess: (response) => {
+            console.log('Login successful, setting up student session:', response.data.data);
             const { token, student_id, fio, group_name } = response.data.data;
+
+            // Store the token in localStorage
+            localStorage.setItem('studentToken', token);
+
+            // Update auth context
             login(token, { id: student_id, fio, group: group_name });
+
+            // Navigate to tests page
             navigate('/student-testing/tests');
         },
         onError: (error) => {
-            console.error('Login error:', error);
+            console.error('Login error:', error.response?.data || error.message);
             setFormError(error.response?.data?.error || 'Invalid email or password');
         }
     });
@@ -42,11 +50,13 @@ function StudentTestLoginContent() {
     const handleSubmit = (e) => {
         e.preventDefault();
         setFormError('');
+        console.log('Submitting login form:', formData);
         loginMutation.mutate(formData);
     };
 
     // Redirect if already authenticated
     if (isAuthenticated) {
+        console.log('Already authenticated, redirecting to tests page');
         return <Navigate to="/student-testing/tests" replace />;
     }
 

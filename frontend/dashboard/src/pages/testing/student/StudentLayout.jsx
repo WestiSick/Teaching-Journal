@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Navigate, Link, useNavigate } from 'react-router-dom';
 import { StudentAuthProvider, useStudentAuth } from '../../../context/StudentAuthContext';
 
@@ -7,8 +7,20 @@ function StudentLayoutContent() {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    // Add debugging for auth state
+    useEffect(() => {
+        console.log('StudentLayout auth state:', {
+            isAuthenticated,
+            currentStudent,
+            token: localStorage.getItem('studentToken') ?
+                localStorage.getItem('studentToken').substring(0, 15) + '...' :
+                'No token'
+        });
+    }, [isAuthenticated, currentStudent]);
+
     // Redirect if not authenticated
     if (!isAuthenticated) {
+        console.log('Not authenticated, redirecting to login page');
         return <Navigate to="/student-testing/login" replace />;
     }
 

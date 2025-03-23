@@ -148,7 +148,7 @@ func (h *StudentHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate token for the student
-	token, err := utils.GenerateStudentJWT(studentID)
+	token, err := utils.GenerateStudentJWT(studentID, req.FIO, req.GroupName)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error generating token")
 		return
@@ -204,8 +204,8 @@ func (h *StudentHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate token for the student
-	token, err := utils.GenerateStudentJWT(studentInfo.StudentID)
+	// Generate token for the student with FIO and GroupName included
+	token, err := utils.GenerateStudentJWT(studentInfo.StudentID, student.StudentFIO, student.GroupName)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error generating token")
 		return
@@ -242,6 +242,9 @@ func (h *StudentHandler) GetAvailableTests(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Debug log
+	fmt.Printf("GetAvailableTests: Student ID %d, Group %s\n", studentID, student.GroupName)
+
 	// Find available tests for this student's group
 	var tests []struct {
 		ID              int       `json:"id"`
@@ -277,6 +280,9 @@ func (h *StudentHandler) GetAvailableTests(w http.ResponseWriter, r *http.Reques
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving tests")
 		return
 	}
+
+	// Debug log
+	fmt.Printf("Available tests found: %d for group %s\n", len(tests), student.GroupName)
 
 	// Format response
 	type TestResponse struct {

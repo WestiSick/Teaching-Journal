@@ -42,12 +42,20 @@ export function StudentAuthProvider({ children }) {
             } else {
                 // Token is valid
                 setToken(storedToken);
-                setCurrentStudent({
+
+                // Extract group information from token
+                const studentInfo = {
                     id: decoded.student_id,
                     fio: decoded.fio || '',
                     group: decoded.group_name || ''
-                });
+                };
+
+                console.log("Student auth initialized with info:", studentInfo);
+                setCurrentStudent(studentInfo);
                 axios.defaults.headers.common['X-Student-Token'] = storedToken;
+
+                // Log successful auth initialization
+                console.log("Student auth initialized with token:", storedToken.substring(0, 15) + '...');
             }
         } catch (error) {
             console.error('Invalid student token', error);
@@ -74,6 +82,20 @@ export function StudentAuthProvider({ children }) {
         // Set Authorization header
         axios.defaults.headers.common['X-Student-Token'] = newToken;
 
+        console.log("Student logged in, setting token:", newToken.substring(0, 15) + '...');
+        console.log("Student info:", student);
+
+        try {
+            // Try to decode the token to get the group if not provided
+            const decoded = jwtDecode(newToken);
+            if (!student.group && decoded.group_name) {
+                student.group = decoded.group_name;
+                console.log("Updated student group from token:", student.group);
+            }
+        } catch (err) {
+            console.error("Error extracting data from token:", err);
+        }
+
         // Update state
         setToken(newToken);
         setCurrentStudent(student);
@@ -86,6 +108,7 @@ export function StudentAuthProvider({ children }) {
         delete axios.defaults.headers.common['X-Student-Token'];
         setToken(null);
         setCurrentStudent(null);
+        console.log("Student logged out");
     }, []);
 
     // Context value with authentication state and functions

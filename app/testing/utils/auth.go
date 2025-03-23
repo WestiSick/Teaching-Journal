@@ -20,14 +20,18 @@ const (
 
 // StudentJWTClaims contains the claims for student tokens
 type StudentJWTClaims struct {
-	StudentID int `json:"student_id"`
+	StudentID int    `json:"student_id"`
+	FIO       string `json:"fio,omitempty"`
+	GroupName string `json:"group_name,omitempty"`
 	jwt.RegisteredClaims
 }
 
 // GenerateStudentJWT generates a JWT token for a student
-func GenerateStudentJWT(studentID int) (string, error) {
+func GenerateStudentJWT(studentID int, fio string, groupName string) (string, error) {
 	claims := StudentJWTClaims{
 		StudentID: studentID,
+		FIO:       fio,
+		GroupName: groupName,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(8 * time.Hour)), // Longer expiry for student sessions
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

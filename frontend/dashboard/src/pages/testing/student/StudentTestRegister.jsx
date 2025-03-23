@@ -21,12 +21,20 @@ function StudentTestRegisterContent() {
     const registerMutation = useMutation({
         mutationFn: (data) => testingService.registerStudent(data),
         onSuccess: (response) => {
+            console.log('Registration successful, setting up student session:', response.data.data);
             const { token, student_id, fio, group_name } = response.data.data;
+
+            // Store the token in localStorage
+            localStorage.setItem('studentToken', token);
+
+            // Update auth context
             login(token, { id: student_id, fio, group: group_name });
+
+            // Navigate to tests page
             navigate('/student-testing/tests');
         },
         onError: (error) => {
-            console.error('Registration error:', error);
+            console.error('Registration error:', error.response?.data || error.message);
             setFormError(error.response?.data?.error || 'Registration failed. Please try again.');
         }
     });
@@ -44,11 +52,13 @@ function StudentTestRegisterContent() {
     const handleSubmit = (e) => {
         e.preventDefault();
         setFormError('');
+        console.log('Submitting registration form:', formData);
         registerMutation.mutate(formData);
     };
 
     // Redirect if already authenticated
     if (isAuthenticated) {
+        console.log('Already authenticated, redirecting to tests page');
         return <Navigate to="/student-testing/tests" replace />;
     }
 

@@ -417,60 +417,154 @@ export const testingService = {
 
     // Student API
     registerStudent: (data) =>
-        axios.post('/api/testing/students/register', data),
+        axios.post('/api/testing/students/register', data)
+            .then(response => {
+                console.log('Student registration successful:', response.data.success);
+                return response;
+            })
+            .catch(error => {
+                console.error('Error in student registration:', error.response?.data || error.message);
+                throw error;
+            }),
 
     loginStudent: (data) =>
-        axios.post('/api/testing/students/login', data),
+        axios.post('/api/testing/students/login', data)
+            .then(response => {
+                console.log('Student login successful:', response.data.success);
+                return response;
+            })
+            .catch(error => {
+                console.error('Error in student login:', error.response?.data || error.message);
+                throw error;
+            }),
 
-    getAvailableTests: () =>
-        axios.get('/api/testing/student/tests', {
+    getAvailableTests: () => {
+        const token = localStorage.getItem('studentToken');
+        console.log('Getting available tests with token:', token ? token.substring(0, 15) + '...' : 'No token');
+
+        return axios.get('/api/testing/student/tests', {
             headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
+                'X-Student-Token': token
             }
-        }),
+        })
+            .then(response => {
+                console.log('Available tests response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error('Error fetching available tests:', error.response?.data || error.message);
+                throw error;
+            });
+    },
 
-    getAttemptHistory: (params) =>
-        axios.get('/api/testing/student/attempts', {
+    getAttemptHistory: (params) => {
+        const token = localStorage.getItem('studentToken');
+
+        return axios.get('/api/testing/student/attempts', {
             params,
             headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
+                'X-Student-Token': token
             }
-        }),
+        })
+            .then(response => {
+                console.log('Attempt history response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error('Error fetching attempt history:', error.response?.data || error.message);
+                throw error;
+            });
+    },
 
-    startTest: (id) =>
-        axios.post(`/api/testing/student/tests/${id}/start`, {}, {
-            headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
-            }
-        }),
+    startTest: (id) => {
+        const token = localStorage.getItem('studentToken');
 
-    getCurrentQuestion: (attemptId) =>
-        axios.get(`/api/testing/student/attempts/${attemptId}/questions/current`, {
+        return axios.post(`/api/testing/student/tests/${id}/start`, {}, {
             headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
+                'X-Student-Token': token
             }
-        }),
+        })
+            .then(response => {
+                console.log('Start test response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error(`Error starting test ${id}:`, error.response?.data || error.message);
+                throw error;
+            });
+    },
 
-    submitAnswer: (attemptId, questionId, data) =>
-        axios.post(`/api/testing/student/attempts/${attemptId}/questions/${questionId}/answer`, data, {
-            headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
-            }
-        }),
+    getCurrentQuestion: (attemptId) => {
+        const token = localStorage.getItem('studentToken');
 
-    finishTest: (attemptId) =>
-        axios.post(`/api/testing/student/attempts/${attemptId}/finish`, {}, {
+        return axios.get(`/api/testing/student/attempts/${attemptId}/questions/current`, {
             headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
+                'X-Student-Token': token
             }
-        }),
+        })
+            .then(response => {
+                console.log('Current question response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error(`Error fetching current question for attempt ${attemptId}:`, error.response?.data || error.message);
+                throw error;
+            });
+    },
 
-    getTestResult: (attemptId) =>
-        axios.get(`/api/testing/student/attempts/${attemptId}/result`, {
+    submitAnswer: (attemptId, questionId, data) => {
+        const token = localStorage.getItem('studentToken');
+
+        return axios.post(`/api/testing/student/attempts/${attemptId}/questions/${questionId}/answer`, data, {
             headers: {
-                'X-Student-Token': localStorage.getItem('studentToken')
+                'X-Student-Token': token
             }
-        }),
+        })
+            .then(response => {
+                console.log('Submit answer response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error(`Error submitting answer for question ${questionId}:`, error.response?.data || error.message);
+                throw error;
+            });
+    },
+
+    finishTest: (attemptId) => {
+        const token = localStorage.getItem('studentToken');
+
+        return axios.post(`/api/testing/student/attempts/${attemptId}/finish`, {}, {
+            headers: {
+                'X-Student-Token': token
+            }
+        })
+            .then(response => {
+                console.log('Finish test response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error(`Error finishing test attempt ${attemptId}:`, error.response?.data || error.message);
+                throw error;
+            });
+    },
+
+    getTestResult: (attemptId) => {
+        const token = localStorage.getItem('studentToken');
+
+        return axios.get(`/api/testing/student/attempts/${attemptId}/result`, {
+            headers: {
+                'X-Student-Token': token
+            }
+        })
+            .then(response => {
+                console.log('Test result response:', response.data);
+                return response;
+            })
+            .catch(error => {
+                console.error(`Error fetching test result for attempt ${attemptId}:`, error.response?.data || error.message);
+                throw error;
+            });
+    },
 };
 
 // Modify the interceptor at the bottom of the file
