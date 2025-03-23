@@ -63,75 +63,52 @@ export const adminTestsService = {
 export const studentTestsService = {
     // Register student
     registerStudent: (data) => {
-        console.log('Registering student with data:', data);
         return createRequest('/students/register', 'POST', data);
     },
 
     // Login student
     loginStudent: (data) => {
-        console.log('Logging in student with data:', data);
         return createRequest('/students/login', 'POST', data);
     },
 
     // Get student info
     getStudentInfo: (studentId) => {
-        console.log('Getting student info for ID:', studentId);
         return createRequest('/students/info', 'GET', null, { student_id: studentId });
     },
 
     // Get available tests
     getAvailableTests: (studentId) => {
-        console.log('Getting available tests for student ID:', studentId);
         return createRequest('/available', 'GET', null, { student_id: studentId });
     },
 
     // Start test
     startTest: (testId, studentId) => {
-        console.log(`Starting test ${testId} for student ${studentId}`);
-        // Ensure studentId is included correctly in the request body
         return createRequest(`/start/${testId}`, 'POST', { student_id: parseInt(studentId, 10) });
     },
 
-    // Get next question - directly access without additional params
+    // Get next question - handle nested data structure
     getNextQuestion: (attemptId) => {
-        console.log(`Getting next question for attempt ${attemptId}`);
-        // Debugging logs
-        console.log(`Request URL: /api/tests/attempt/${attemptId}/next`);
-
-        // Make a more direct request with full debugging
         return axios({
             method: 'GET',
             url: `/api/tests/attempt/${attemptId}/next`,
             headers: {
                 'Content-Type': 'application/json'
-            },
-            allowAbsoluteUrls: true,
-            validateStatus: status => true // Accept all status codes for debugging
-        }).then(response => {
-            // Log the entire response for debugging
-            console.log('Complete response from getNextQuestion:', response);
-            return response;
-        }).catch(error => {
-            console.error('Axios error in getNextQuestion:', error);
-            throw error;
+            }
         });
     },
 
     // Submit answer
     submitAnswer: (attemptId, data) => {
-        console.log(`Submitting answer for attempt ${attemptId}:`, data);
         return createRequest(`/attempt/${attemptId}/submit`, 'POST', data);
     },
 
     // Get test results
     getTestResults: (attemptId) => {
-        console.log(`Getting test results for attempt ${attemptId}`);
         return createRequest(`/attempt/${attemptId}/results`, 'GET');
     },
 
     // Get test history
     getTestHistory: (studentId) => {
-        console.log(`Getting test history for student ${studentId}`);
         return createRequest('/history', 'GET', null, { student_id: studentId });
     }
 };
