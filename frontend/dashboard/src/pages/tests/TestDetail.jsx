@@ -13,7 +13,8 @@ function TestDetail() {
     // Fetch test details
     const { data: testData, isLoading, error } = useQuery({
         queryKey: ['test', id],
-        queryFn: () => adminTestsService.getTestDetails(id)
+        queryFn: () => adminTestsService.getTestDetails(id),
+        retry: 1
     });
 
     // Delete test mutation
@@ -85,7 +86,8 @@ function TestDetail() {
     }
 
     // Ensure questions is an array even if it's null
-    const questions = test.questions || [];
+    const questions = Array.isArray(test.questions) ? test.questions : [];
+
     // Ensure stats exists
     const stats = test.stats || {
         total_attempts: 0,
@@ -196,7 +198,7 @@ function TestDetail() {
                                             </div>
                                         </div>
                                         <div className="answer-list">
-                                            {(question.answers || []).map((answer, ansIndex) => (
+                                            {(Array.isArray(question.answers) ? question.answers : []).map((answer, ansIndex) => (
                                                 <div
                                                     key={answer.id || ansIndex}
                                                     className={`answer-item ${answer.is_correct ? 'answer-correct' : ''}`}

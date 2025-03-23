@@ -36,7 +36,8 @@ function TestForm() {
     const { data: testData, isLoading } = useQuery({
         queryKey: ['test', id],
         queryFn: () => adminTestsService.getTestDetails(id),
-        enabled: isEditMode
+        enabled: isEditMode,
+        retry: 1
     });
 
     // Create test mutation
@@ -100,22 +101,24 @@ function TestForm() {
     // Set test data when fetched
     useEffect(() => {
         if (testData && isEditMode) {
-            const fetchedTest = testData.data.data;
-            setTest({
-                title: fetchedTest.title,
-                description: fetchedTest.description,
-                subject: fetchedTest.subject,
-                time_per_question: fetchedTest.time_per_question,
-                max_attempts: fetchedTest.max_attempts,
-                is_active: fetchedTest.is_active,
-                questions: fetchedTest.questions || []
-            });
+            const fetchedTest = testData.data?.data;
+            if (fetchedTest) {
+                setTest({
+                    title: fetchedTest.title || '',
+                    description: fetchedTest.description || '',
+                    subject: fetchedTest.subject || '',
+                    time_per_question: fetchedTest.time_per_question || 60,
+                    max_attempts: fetchedTest.max_attempts || 1,
+                    is_active: fetchedTest.is_active !== undefined ? fetchedTest.is_active : true,
+                    questions: Array.isArray(fetchedTest.questions) ? fetchedTest.questions : []
+                });
 
-            // Set position for new question
-            setCurrentQuestion(prev => ({
-                ...prev,
-                position: (fetchedTest.questions?.length || 0) + 1
-            }));
+                // Set position for new question
+                setCurrentQuestion(prev => ({
+                    ...prev,
+                    position: (Array.isArray(fetchedTest.questions) ? fetchedTest.questions.length : 0) + 1
+                }));
+            }
         }
     }, [testData, isEditMode]);
 
@@ -234,7 +237,7 @@ function TestForm() {
                     question_text: q.question_text,
                     question_type: q.question_type,
                     position: q.position,
-                    answers: q.answers && q.answers.length > 0 ? q.answers.map(a => ({
+                    answers: Array.isArray(q.answers) && q.answers.length > 0 ? q.answers.map(a => ({
                         answer_text: a.answer_text,
                         is_correct: a.is_correct
                     })) : []
@@ -432,20 +435,20 @@ function TestForm() {
                             <div className="existing-questions mb-4">
                                 <h3 className="text-lg font-semibold mb-3">Existing Questions</h3>
 
-                                {test.questions.length === 0 ? (
+                                {!test.questions || test.questions.length === 0 ? (
                                     <p className="text-tertiary">No questions added yet. Use the form below to add questions.</p>
                                 ) : (
                                     <div className="questions-list">
                                         {test.questions.map((question, index) => (
-                                            <div key={question.id} className="question-item">
+                                            <div key={question.id || index} className="question-item">
                                                 <div className="question-header">
                                                     <div className="question-number">Q{index + 1}</div>
                                                     <div className="question-text">{question.question_text}</div>
-                                                    <div className="question-type">{question.question_type.replace('_', ' ')}</div>
+                                                    <div className="question-type">{(question.question_type || '').replace('_', ' ')}</div>
                                                 </div>
                                                 <div className="question-answers">
-                                                    {question.answers.map((answer, ansIndex) => (
-                                                        <div key={answer.id} className={`answer-item ${answer.is_correct ? 'answer-correct' : ''}`}>
+                                                    {(Array.isArray(question.answers) ? question.answers : []).map((answer, ansIndex) => (
+                                                        <div key={answer.id || ansIndex} className={`answer-item ${answer.is_correct ? 'answer-correct' : ''}`}>
                                                             <span className="answer-indicator">{String.fromCharCode(65 + ansIndex)}.</span>
                                                             <span className="answer-text">{answer.answer_text}</span>
                                                             {answer.is_correct && (
@@ -597,10 +600,10 @@ function TestForm() {
                                             <div className="question-header">
                                                 <div className="question-number">Q{index + 1}</div>
                                                 <div className="question-text">{question.question_text}</div>
-                                                <div className="question-type">{question.question_type.replace('_', ' ')}</div>
+                                                <div className="question-type">{(question.question_type || '').replace('_', ' ')}</div>
                                             </div>
                                             <div className="question-answers">
-                                                {question.answers.map((answer, ansIndex) => (
+                                                {(Array.isArray(question.answers) ? question.answers : []).map((answer, ansIndex) => (
                                                     <div key={ansIndex} className={`answer-item ${answer.is_correct ? 'answer-correct' : ''}`}>
                                                         <span className="answer-indicator">{String.fromCharCode(65 + ansIndex)}.</span>
                                                         <span className="answer-text">{answer.answer_text}</span>

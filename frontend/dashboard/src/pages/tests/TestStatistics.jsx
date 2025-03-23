@@ -8,7 +8,8 @@ function TestStatistics() {
     // Fetch test statistics
     const { data, isLoading, error } = useQuery({
         queryKey: ['test-statistics', id],
-        queryFn: () => adminTestsService.getTestStatistics(id)
+        queryFn: () => adminTestsService.getTestStatistics(id),
+        retry: 1
     });
 
     const stats = data?.data?.data;
@@ -38,11 +39,11 @@ function TestStatistics() {
 
             <div className="test-info card mb-6">
                 <div className="test-header">
-                    <h2 className="test-title">{stats.test_info.title}</h2>
+                    <h2 className="test-title">{stats.test_info?.title || 'Unnamed Test'}</h2>
                     <div className="test-meta">
-                        <span className="test-subject">{stats.test_info.subject}</span>
-                        <span className={`test-status ${stats.test_info.is_active ? 'status-active' : 'status-inactive'}`}>
-                            {stats.test_info.is_active ? 'Active' : 'Inactive'}
+                        <span className="test-subject">{stats.test_info?.subject || 'No Subject'}</span>
+                        <span className={`test-status ${stats.test_info?.is_active ? 'status-active' : 'status-inactive'}`}>
+                            {stats.test_info?.is_active ? 'Active' : 'Inactive'}
                         </span>
                     </div>
                 </div>
@@ -51,22 +52,22 @@ function TestStatistics() {
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="stats-card">
                     <div className="stats-card-title">Total Attempts</div>
-                    <div className="stats-card-value">{stats.overall_stats.total_attempts}</div>
+                    <div className="stats-card-value">{stats.overall_stats?.total_attempts || 0}</div>
                 </div>
 
                 <div className="stats-card">
                     <div className="stats-card-title">Completed Attempts</div>
-                    <div className="stats-card-value">{stats.overall_stats.completed_count}</div>
+                    <div className="stats-card-value">{stats.overall_stats?.completed_count || 0}</div>
                 </div>
 
                 <div className="stats-card">
                     <div className="stats-card-title">Average Score</div>
-                    <div className="stats-card-value">{stats.overall_stats.average_score.toFixed(1)}%</div>
+                    <div className="stats-card-value">{(stats.overall_stats?.average_score || 0).toFixed(1)}%</div>
                 </div>
 
                 <div className="stats-card">
                     <div className="stats-card-title">Average Duration</div>
-                    <div className="stats-card-value">{formatDuration(stats.overall_stats.average_duration)}</div>
+                    <div className="stats-card-value">{formatDuration(stats.overall_stats?.average_duration || 0)}</div>
                 </div>
             </div>
 
@@ -75,43 +76,49 @@ function TestStatistics() {
                     <div className="card mb-6">
                         <h3 className="text-xl font-semibold mb-4">Question Performance</h3>
 
-                        <div className="table-container">
-                            <table className="table">
-                                <thead>
-                                <tr>
-                                    <th>Question</th>
-                                    <th>Type</th>
-                                    <th>Correct %</th>
-                                    <th>Attempted</th>
-                                    <th>Avg. Time</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {stats.question_stats.map((question) => (
-                                    <tr key={question.question_id}>
-                                        <td className="question-cell">
-                                            <div className="question-position">Q{question.position}</div>
-                                            <div className="question-text">{truncateText(question.question_text, 60)}</div>
-                                        </td>
-                                        <td>{formatQuestionType(question.question_type)}</td>
-                                        <td>
-                                            <div className="progress-indicator">
-                                                <div className="progress">
-                                                    <div
-                                                        className={`progress-bar ${getProgressBarClass(question.correct_percent)}`}
-                                                        style={{ width: `${question.correct_percent}%` }}
-                                                    ></div>
-                                                </div>
-                                                <div className="progress-value">{question.correct_percent.toFixed(1)}%</div>
-                                            </div>
-                                        </td>
-                                        <td>{question.attempted_count}</td>
-                                        <td>{formatDuration(question.average_time_spent)}</td>
+                        {!stats.question_stats || stats.question_stats.length === 0 ? (
+                            <div className="empty-state">
+                                <p>No question performance data available yet.</p>
+                            </div>
+                        ) : (
+                            <div className="table-container">
+                                <table className="table">
+                                    <thead>
+                                    <tr>
+                                        <th>Question</th>
+                                        <th>Type</th>
+                                        <th>Correct %</th>
+                                        <th>Attempted</th>
+                                        <th>Avg. Time</th>
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                    {(stats.question_stats || []).map((question) => (
+                                        <tr key={question.question_id}>
+                                            <td className="question-cell">
+                                                <div className="question-position">Q{question.position}</div>
+                                                <div className="question-text">{truncateText(question.question_text, 60)}</div>
+                                            </td>
+                                            <td>{formatQuestionType(question.question_type)}</td>
+                                            <td>
+                                                <div className="progress-indicator">
+                                                    <div className="progress">
+                                                        <div
+                                                            className={`progress-bar ${getProgressBarClass(question.correct_percent)}`}
+                                                            style={{ width: `${question.correct_percent}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="progress-value">{question.correct_percent.toFixed(1)}%</div>
+                                                </div>
+                                            </td>
+                                            <td>{question.attempted_count}</td>
+                                            <td>{formatDuration(question.average_time_spent)}</td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -119,13 +126,13 @@ function TestStatistics() {
                     <div className="card mb-6">
                         <h3 className="text-xl font-semibold mb-4">Student Performance</h3>
 
-                        {stats.student_performance.length === 0 ? (
+                        {!stats.student_performance || stats.student_performance.length === 0 ? (
                             <div className="empty-state">
                                 <p>No student has attempted this test yet.</p>
                             </div>
                         ) : (
                             <div className="student-performance-list">
-                                {stats.student_performance.map((student) => (
+                                {(stats.student_performance || []).map((student) => (
                                     <div key={student.student_id} className="student-performance-item">
                                         <div className="student-info">
                                             <div className="student-name">{student.student_name}</div>
@@ -157,8 +164,8 @@ function TestStatistics() {
                                         className="donut-ring"
                                         style={{
                                             background: `conic-gradient(
-                                                var(--success) 0% ${(stats.overall_stats.completed_count / Math.max(stats.overall_stats.total_attempts, 1)) * 100}%, 
-                                                var(--warning) ${(stats.overall_stats.completed_count / Math.max(stats.overall_stats.total_attempts, 1)) * 100}% 100%
+                                                var(--success) 0% ${((stats.overall_stats?.completed_count || 0) / Math.max(stats.overall_stats?.total_attempts || 1, 1)) * 100}%, 
+                                                var(--warning) ${((stats.overall_stats?.completed_count || 0) / Math.max(stats.overall_stats?.total_attempts || 1, 1)) * 100}% 100%
                                             )`
                                         }}
                                     ></div>
@@ -167,21 +174,21 @@ function TestStatistics() {
                                     <div className="chart-label">
                                         <div className="label-color" style={{ backgroundColor: 'var(--success)' }}></div>
                                         <div className="label-text">Completed</div>
-                                        <div className="label-value">{stats.overall_stats.completed_count}</div>
+                                        <div className="label-value">{stats.overall_stats?.completed_count || 0}</div>
                                     </div>
                                     <div className="chart-label">
                                         <div className="label-color" style={{ backgroundColor: 'var(--warning)' }}></div>
                                         <div className="label-text">Incomplete</div>
-                                        <div className="label-value">{stats.overall_stats.total_attempts - stats.overall_stats.completed_count}</div>
+                                        <div className="label-value">{(stats.overall_stats?.total_attempts || 0) - (stats.overall_stats?.completed_count || 0)}</div>
                                     </div>
                                 </div>
                             </div>
                             <div className="chart-summary">
                                 <div className="summary-label">Completion Rate</div>
                                 <div className="summary-value">
-                                    {stats.overall_stats.total_attempts === 0
+                                    {(stats.overall_stats?.total_attempts || 0) === 0
                                         ? '0%'
-                                        : `${((stats.overall_stats.completed_count / stats.overall_stats.total_attempts) * 100).toFixed(1)}%`
+                                        : `${(((stats.overall_stats?.completed_count || 0) / (stats.overall_stats?.total_attempts || 1)) * 100).toFixed(1)}%`
                                     }
                                 </div>
                             </div>
@@ -466,6 +473,7 @@ function formatDuration(seconds) {
 }
 
 function truncateText(text, maxLength) {
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
