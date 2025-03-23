@@ -45,6 +45,20 @@ type Answer struct {
 	UpdatedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
+// StudentResponse represents a student's response to a question
+type StudentResponse struct {
+	ID          int      `gorm:"primaryKey"`
+	AttemptID   int      `gorm:"index"`
+	QuestionID  int      `gorm:"index"`
+	Question    Question `gorm:"foreignKey:QuestionID"`
+	AnswerID    *int     `gorm:"index"`
+	Answer      *Answer  `gorm:"foreignKey:AnswerID"`
+	TextAnswer  string   `gorm:"type:text"` // For text-based questions
+	IsCorrect   bool
+	TimeSpent   int       // Time in seconds
+	SubmittedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+}
+
 // TestAttempt represents a student's attempt at a test
 type TestAttempt struct {
 	ID             int                     `gorm:"primaryKey"`
@@ -56,21 +70,6 @@ type TestAttempt struct {
 	EndTime        *time.Time
 	Score          int
 	TotalQuestions int
-	Completed      bool `gorm:"default:false"`
-	Responses      []StudentResponse
-}
-
-// StudentResponse represents a student's response to a question
-type StudentResponse struct {
-	ID          int         `gorm:"primaryKey"`
-	AttemptID   int         `gorm:"index"`
-	Attempt     TestAttempt `gorm:"foreignKey:AttemptID"`
-	QuestionID  int         `gorm:"index"`
-	Question    Question    `gorm:"foreignKey:QuestionID"`
-	AnswerID    *int        `gorm:"index"`
-	Answer      *Answer     `gorm:"foreignKey:AnswerID"`
-	TextAnswer  string      `gorm:"type:text"` // For text-based questions
-	IsCorrect   bool
-	TimeSpent   int       // Time in seconds
-	SubmittedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	Completed      bool              `gorm:"default:false"`
+	Responses      []StudentResponse `gorm:"foreignKey:AttemptID"`
 }

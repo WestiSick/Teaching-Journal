@@ -143,6 +143,7 @@ services:
       - api
       - schedule_api
       - ticket_api
+      - tests_api
 
   nginx:
     image: nginx
@@ -158,6 +159,7 @@ services:
       - ticket_api
       - landing
       - dashboard
+      - tests_api
     restart: unless-stopped
     networks:
       - teacher-network
