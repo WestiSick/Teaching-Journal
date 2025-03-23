@@ -7,7 +7,8 @@ const createRequest = (url, method, data = null, params = null) => {
         url: `/api/tests${url}`,
         method,
         headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': token ? `Bearer ${token}` : undefined,
+            'Content-Type': 'application/json'
         }
     };
 
@@ -76,9 +77,11 @@ export const studentTestsService = {
     getAvailableTests: (studentId) =>
         createRequest('/available', 'GET', null, { student_id: studentId }),
 
-    // Start test
-    startTest: (testId, studentId) =>
-        createRequest(`/start/${testId}`, 'POST', { student_id: studentId }),
+    // Start test - Fixed this function to match the API's expectations
+    startTest: (testId, studentId) => {
+        console.log(`Starting test ${testId} for student ${studentId}`);
+        return createRequest(`/start/${testId}`, 'POST', { student_id: studentId });
+    },
 
     // Get next question
     getNextQuestion: (attemptId) =>

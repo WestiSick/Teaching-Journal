@@ -5,6 +5,7 @@ import (
 	testsModels "TeacherJournal/app/tests/models"
 	"TeacherJournal/app/tests/utils"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -227,24 +228,30 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if attempt.Completed {
-		utils.RespondWithError(w, http.StatusBadRequest, "This test attempt is already completed")
+		utils.RespondWithSuccess(w, http.StatusOK, "All questions answered. Test completed.", map[string]interface{}{
+			"completed":  true,
+			"attempt_id": attemptID,
+		})
 		return
 	}
 
-	// Get all questions for this test
-	var questions []struct {
-		ID           int    `json:"id"`
-		QuestionText string `json:"question_text"`
-		QuestionType string `json:"question_type"`
-		Position     int    `json:"position"`
-	}
-
-	if err := h.DB.Model(&testsModels.Question{}).
-		Where("test_id = ?", attempt.TestID).
-		Order("position").
-		Find(&questions).Error; err != nil {
+	// Get all questions for this test with answers preloaded
+	var questions []testsModels.Question
+	if err := h.DB.Preload("Answers").Where("test_id = ?", attempt.TestID).Order("position").Find(&questions).Error; err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving questions")
 		return
+	}
+
+	if len(questions) == 0 {
+		utils.RespondWithError(w, http.StatusNotFound, "This test has no questions")
+		return
+	}
+
+	// Log found questions for debugging
+	log.Printf("Found %d questions for test ID %d", len(questions), attempt.TestID)
+	for i, q := range questions {
+		log.Printf("Question %d: %s (Type: %s, Answers: %d)",
+			i+1, q.QuestionText, q.QuestionType, len(q.Answers))
 	}
 
 	// Get answered questions for this attempt
@@ -253,19 +260,6 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 		Where("attempt_id = ?", attemptID).
 		Pluck("question_id", &answeredQuestionIDs)
 
-	// Find the first unanswered question
-	var nextQuestion struct {
-		ID           int    `json:"id"`
-		QuestionText string `json:"question_text"`
-		QuestionType string `json:"question_type"`
-		Position     int    `json:"position"`
-		Answers      []struct {
-			ID         int    `json:"id"`
-			AnswerText string `json:"answer_text"`
-		} `json:"answers"`
-		TimeLimit int `json:"time_limit"` // Time in seconds
-	}
-
 	// Convert answeredQuestionIDs to a map for faster lookup
 	answeredMap := make(map[int]bool)
 	for _, id := range answeredQuestionIDs {
@@ -273,25 +267,15 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find the first unanswered question
-	questionFound := false
-	for _, q := range questions {
-		if !answeredMap[q.ID] {
-			nextQuestion.ID = q.ID
-			nextQuestion.QuestionText = q.QuestionText
-			nextQuestion.QuestionType = q.QuestionType
-			nextQuestion.Position = q.Position
-
-			// Get the test's time per question setting
-			var test testsModels.Test
-			h.DB.Select("time_per_question").Where("id = ?", attempt.TestID).First(&test)
-			nextQuestion.TimeLimit = test.TimePerQuestion
-
-			questionFound = true
+	var nextQuestion *testsModels.Question
+	for i := range questions {
+		if !answeredMap[questions[i].ID] {
+			nextQuestion = &questions[i]
 			break
 		}
 	}
 
-	if !questionFound {
+	if nextQuestion == nil {
 		// All questions have been answered
 		// Complete the test
 		now := time.Now()
@@ -307,22 +291,35 @@ func (h *TestHandler) GetNextQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get answers for this question
-	var answers []struct {
-		ID         int    `json:"id"`
-		AnswerText string `json:"answer_text"`
+	// Get the test's time per question setting
+	var test testsModels.Test
+	h.DB.Select("time_per_question").Where("id = ?", attempt.TestID).First(&test)
+
+	// Strip IsCorrect field from answers for security
+	answers := make([]map[string]interface{}, 0)
+	for _, ans := range nextQuestion.Answers {
+		answers = append(answers, map[string]interface{}{
+			"id":          ans.ID,
+			"answer_text": ans.AnswerText,
+		})
 	}
 
-	h.DB.Model(&testsModels.Answer{}).
-		Select("id, answer_text").
-		Where("question_id = ?", nextQuestion.ID).
-		Find(&answers)
+	// Format the question for the response
+	question := map[string]interface{}{
+		"id":            nextQuestion.ID,
+		"question_text": nextQuestion.QuestionText,
+		"question_type": nextQuestion.QuestionType,
+		"position":      nextQuestion.Position,
+		"time_limit":    test.TimePerQuestion,
+		"answers":       answers,
+	}
 
-	nextQuestion.Answers = answers
+	// Log response data for debugging
+	log.Printf("Sending question data: %+v", question)
 
-	// Return the next question
+	// Return the next question with formatted data
 	utils.RespondWithSuccess(w, http.StatusOK, "Next question retrieved", map[string]interface{}{
-		"question": nextQuestion,
+		"question": question,
 		"progress": map[string]interface{}{
 			"answered": len(answeredQuestionIDs),
 			"total":    len(questions),

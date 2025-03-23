@@ -15,6 +15,8 @@ function TestTaking() {
     });
     const [timer, setTimer] = useState(0);
     const [showAlert, setShowAlert] = useState(false);
+    const [error, setError] = useState(null);
+    const [debugInfo, setDebugInfo] = useState(null);
     const timerRef = useRef(null);
     const studentId = localStorage.getItem('testStudentId');
 
@@ -26,23 +28,55 @@ function TestTaking() {
     }, [navigate, studentId]);
 
     // Fetch next question
-    const { data, isLoading, error, refetch } = useQuery({
+    const { data, isLoading, error: queryError, refetch } = useQuery({
         queryKey: ['current-question', attemptId],
-        queryFn: () => studentTestsService.getNextQuestion(attemptId),
+        queryFn: async () => {
+            console.log(`Fetching next question for attempt ${attemptId}`);
+            try {
+                const response = await studentTestsService.getNextQuestion(attemptId);
+                console.log('Question response:', response);
+                return response;
+            } catch (error) {
+                console.error('Error fetching question:', error);
+                setError(`Failed to fetch question: ${error.message}`);
+                if (error.response) {
+                    console.error('Error response:', error.response.data);
+                    setDebugInfo(error.response.data);
+                }
+                throw error;
+            }
+        },
         onSuccess: (response) => {
-            const data = response.data.data;
+            console.log('Question data received:', response.data);
 
-            // If all questions are answered, navigate to results
-            if (data.completed) {
+            // Check if response indicates test is completed
+            if (response.data.data && response.data.data.completed) {
+                console.log('Test completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
             }
 
-            setCurrentQuestionData(data);
+            // DEBUG: Log the full response structure
+            console.log('Full response structure:', JSON.stringify(response.data));
+
+            // Check if we have question data in the expected format
+            const questionData = response.data.data?.question;
+            if (!questionData) {
+                console.error('No question data in response:', response.data);
+                setError('Question data not found in server response');
+                setDebugInfo(response.data);
+                return;
+            }
+
+            // Set the question data for rendering
+            setCurrentQuestionData({
+                question: questionData,
+                progress: response.data.data.progress || { answered: 0, total: 1 }
+            });
 
             // Reset answer state
             setAnswer({
-                questionId: data.question.id,
+                questionId: questionData.id,
                 answerId: null,
                 textAnswer: '',
                 timeSpent: 0
@@ -58,29 +92,51 @@ function TestTaking() {
 
             timerRef.current = setInterval(() => {
                 setTimer(prev => {
-                    if (prev >= data.question.time_limit - 10 && !showAlert) {
+                    if (prev >= (questionData.time_limit || 60) - 10 && !showAlert) {
                         setShowAlert(true);
                     }
                     return prev + 1;
                 });
             }, 1000);
-        }
+        },
+        retry: 1,
+        refetchOnWindowFocus: false
     });
 
     // Submit answer mutation
     const submitAnswerMutation = useMutation({
-        mutationFn: (answerData) => studentTestsService.submitAnswer(attemptId, answerData),
+        mutationFn: async (answerData) => {
+            console.log('Submitting answer:', answerData);
+            try {
+                const response = await studentTestsService.submitAnswer(attemptId, answerData);
+                console.log('Submit answer response:', response);
+                return response;
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+                if (error.response) {
+                    console.error('Error response:', error.response.data);
+                }
+                throw error;
+            }
+        },
         onSuccess: (response) => {
+            console.log('Answer submitted successfully:', response.data);
             const data = response.data.data;
 
             // If all questions are completed, navigate to results
             if (data.completed) {
+                console.log('All questions completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
             }
 
             // Fetch next question
+            console.log('Fetching next question...');
             refetch();
+        },
+        onError: (error) => {
+            console.error('Error in submit mutation:', error);
+            setError(`Failed to submit answer: ${error.message}`);
         }
     });
 
@@ -131,20 +187,66 @@ function TestTaking() {
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
 
+    // Loading state
     if (isLoading) {
         return (
-            <div className="loader">
-                <div className="spinner"></div>
+            <div className="loader-container">
+                <div className="loader">
+                    <div className="spinner"></div>
+                </div>
+                <div className="loading-text">Loading question...</div>
             </div>
         );
     }
 
-    if (error) {
-        return <div className="alert alert-danger">Error loading question: {error.message}</div>;
+    // Error state
+    if (queryError || error) {
+        return (
+            <div className="error-container">
+                <div className="alert alert-danger">
+                    <h3>Error Loading Question</h3>
+                    <p>{error || queryError.message}</p>
+                    {debugInfo && (
+                        <div className="debug-info">
+                            <h4>Debug Information:</h4>
+                            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+                        </div>
+                    )}
+                </div>
+                <div className="error-actions">
+                    <button className="btn btn-primary" onClick={() => refetch()}>
+                        Try Again
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => navigate('/tests/student')}>
+                        Back to Tests
+                    </button>
+                </div>
+            </div>
+        );
     }
 
-    if (!currentQuestionData) {
-        return null;
+    // If no question data is available
+    if (!currentQuestionData || !currentQuestionData.question) {
+        return (
+            <div className="error-container">
+                <div className="alert alert-warning">
+                    <h3>No Question Available</h3>
+                    <p>Unable to load the next question. This might be because the test is already completed or no questions are available.</p>
+                    <div className="debug-info">
+                        <h4>Response Data:</h4>
+                        <pre>{data ? JSON.stringify(data, null, 2) : 'No data'}</pre>
+                    </div>
+                </div>
+                <div className="error-actions">
+                    <button className="btn btn-primary" onClick={() => refetch()}>
+                        Try Again
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => navigate('/tests/student')}>
+                        Back to Tests
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     const { question, progress } = currentQuestionData;
@@ -164,7 +266,7 @@ function TestTaking() {
                     </div>
                 </div>
                 <div className="test-timer">
-                    <div className={`timer-display ${timer > question.time_limit * 0.8 ? 'timer-warning' : ''}`}>
+                    <div className={`timer-display ${timer > (question.time_limit || 60) * 0.8 ? 'timer-warning' : ''}`}>
                         {formatTime(timer)}
                     </div>
                     <div className="timer-label">Time Elapsed</div>
@@ -200,28 +302,32 @@ function TestTaking() {
                     <div className="answer-options">
                         {(question.question_type === 'multiple_choice' || question.question_type === 'single_choice') && (
                             <div className="multiple-choice-options">
-                                {question.answers.map(option => (
-                                    <div
-                                        key={option.id}
-                                        className={`answer-option ${answer.answerId === option.id ? 'answer-selected' : ''}`}
-                                        onClick={() => handleAnswerSelect(option.id)}
-                                    >
-                                        <div className="option-indicator">
-                                            {question.question_type === 'multiple_choice' ? (
-                                                <span className="checkbox">
-                                                    {answer.answerId === option.id && '✓'}
-                                                </span>
-                                            ) : (
-                                                <span className="radio-button">
-                                                    {answer.answerId === option.id && (
-                                                        <span className="radio-filled"></span>
-                                                    )}
-                                                </span>
-                                            )}
+                                {Array.isArray(question.answers) && question.answers.length > 0 ? (
+                                    question.answers.map(option => (
+                                        <div
+                                            key={option.id}
+                                            className={`answer-option ${answer.answerId === option.id ? 'answer-selected' : ''}`}
+                                            onClick={() => handleAnswerSelect(option.id)}
+                                        >
+                                            <div className="option-indicator">
+                                                {question.question_type === 'multiple_choice' ? (
+                                                    <span className="checkbox">
+                                                        {answer.answerId === option.id && '✓'}
+                                                    </span>
+                                                ) : (
+                                                    <span className="radio-button">
+                                                        {answer.answerId === option.id && (
+                                                            <span className="radio-filled"></span>
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="option-text">{option.answer_text}</div>
                                         </div>
-                                        <div className="option-text">{option.answer_text}</div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <div className="answer-error">No answer options available for this question</div>
+                                )}
                             </div>
                         )}
 
@@ -257,6 +363,44 @@ function TestTaking() {
                     max-width: 900px;
                     margin: 0 auto;
                     padding: 2rem;
+                }
+                
+                .loader-container, .error-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 3rem;
+                    text-align: center;
+                }
+                
+                .loading-text {
+                    margin-top: 1rem;
+                    font-size: 1.125rem;
+                    color: var(--text-secondary);
+                }
+                
+                .error-actions {
+                    margin-top: 1.5rem;
+                    display: flex;
+                    gap: 1rem;
+                }
+                
+                .debug-info {
+                    margin-top: 1rem;
+                    text-align: left;
+                    background-color: var(--bg-dark-tertiary);
+                    padding: 1rem;
+                    border-radius: var(--radius-md);
+                    overflow: auto;
+                    max-height: 300px;
+                }
+                
+                .debug-info pre {
+                    margin: 0;
+                    white-space: pre-wrap;
+                    font-family: var(--font-mono);
+                    font-size: 0.875rem;
                 }
                 
                 .test-taking-header {
@@ -480,6 +624,14 @@ function TestTaking() {
                     border-top: 1px solid var(--border-color);
                     display: flex;
                     justify-content: flex-end;
+                }
+                
+                .answer-error {
+                    padding: 1rem;
+                    background-color: var(--danger-lighter);
+                    color: var(--danger);
+                    border-radius: var(--radius-md);
+                    text-align: center;
                 }
                 
                 @media (max-width: 768px) {

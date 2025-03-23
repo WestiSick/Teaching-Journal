@@ -2,10 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
+import StudentProtectedRoute from './components/StudentProtectedRoute';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
+import StudentLayout from './layouts/StudentLayout';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -51,11 +53,13 @@ import TicketsPage from './pages/tickets/TicketsPage';
 import TicketDetail from './pages/tickets/TicketDetail';
 import TicketForm from './pages/tickets/TicketForm';
 
-// Tests Pages
+// Tests Pages for Teachers
 import TeacherTestsPage from './pages/tests/TeacherTestsPage';
 import TestForm from './pages/tests/TestForm';
 import TestDetail from './pages/tests/TestDetail';
 import TestStatistics from './pages/tests/TestStatistics';
+
+// Tests Pages for Students
 import StudentTestsPage from './pages/tests/student/StudentTestsPage';
 import StudentLogin from './pages/tests/student/StudentLogin';
 import TestTaking from './pages/tests/student/TestTaking';
@@ -81,13 +85,23 @@ function App() {
                     <Route path="/register" element={<Register />} />
                 </Route>
 
-                {/* Public Shared Lab Grades Route - Important! This needs to be outside protected routes */}
+                {/* Public Shared Lab Grades Route */}
                 <Route path="/labs/shared/:token" element={<PublicSharedGrades />} />
 
-                {/* Student Tests Public Routes */}
+                {/* Student Tests Routes */}
                 <Route path="/tests/student/login" element={<StudentLogin />} />
 
-                {/* Protected Routes */}
+                {/* Student Protected Routes with Student Layout */}
+                <Route element={<StudentProtectedRoute />}>
+                    <Route element={<StudentLayout />}>
+                        <Route path="/tests/student" element={<StudentTestsPage />} />
+                        <Route path="/tests/student/take/:attemptId" element={<TestTaking />} />
+                        <Route path="/tests/student/results/:attemptId" element={<TestResults />} />
+                        <Route path="/tests/student/history" element={<TestHistory />} />
+                    </Route>
+                </Route>
+
+                {/* Protected Routes for Teachers */}
                 <Route element={
                     <ProtectedRoute>
                         <MainLayout />
@@ -141,12 +155,6 @@ function App() {
                     <Route path="tests/:id" element={<TestDetail />} />
                     <Route path="tests/:id/edit" element={<TestForm />} />
                     <Route path="tests/:id/statistics" element={<TestStatistics />} />
-
-                    {/* Tests Routes for Students */}
-                    <Route path="tests/student" element={<StudentTestsPage />} />
-                    <Route path="tests/student/take/:attemptId" element={<TestTaking />} />
-                    <Route path="tests/student/results/:attemptId" element={<TestResults />} />
-                    <Route path="tests/student/history" element={<TestHistory />} />
 
                     {/* Admin Routes */}
                     <Route element={<AdminRoute />}>

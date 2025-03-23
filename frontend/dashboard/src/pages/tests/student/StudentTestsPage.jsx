@@ -49,12 +49,22 @@ function StudentTestsPage() {
 
     const handleStartTest = async (testId) => {
         try {
-            const response = await studentTestsService.startTest(testId, studentId);
+            // Convert studentId to number if it's stored as a string
+            const studentIdNum = parseInt(studentId, 10);
+
+            // Log what we're sending to help debug
+            console.log('Starting test with:', { testId, studentId: studentIdNum });
+
+            const response = await studentTestsService.startTest(testId, studentIdNum);
+            console.log('Start test response:', response);
+
             const attemptId = response.data.data.attempt_id;
             navigate(`/tests/student/take/${attemptId}`);
         } catch (error) {
             console.error('Error starting test:', error);
-            alert('Failed to start test. Please try again.');
+            // Show more detailed error information
+            const errorMessage = error.response?.data?.error || 'Unknown error occurred';
+            alert(`Failed to start test: ${errorMessage}. Please try again.`);
         }
     };
 
