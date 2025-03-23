@@ -31,56 +31,130 @@ function TestTaking() {
     const { data, isLoading, error: queryError, refetch } = useQuery({
         queryKey: ['current-question', attemptId],
         queryFn: async () => {
-            console.log(`Fetching next question for attempt ${attemptId}`);
+            console.log(`🔍 Fetching next question for attempt ${attemptId}`);
             try {
                 const response = await studentTestsService.getNextQuestion(attemptId);
-                console.log('Question response:', response);
+                console.log('📦 Raw question response:', response);
+
+                // Add more detailed logging of the response structure
+                if (response.data) {
+                    console.log('📊 Response status:', response.status);
+                    console.log('📄 Response data structure:', Object.keys(response.data));
+                    console.log('📝 Response data:', response.data);
+
+                    // Check nested data
+                    if (response.data.data) {
+                        console.log('🔍 Inner data structure:', Object.keys(response.data.data));
+                    }
+                }
+
                 return response;
             } catch (error) {
-                console.error('Error fetching question:', error);
+                console.error('❌ Error fetching question:', error);
                 setError(`Failed to fetch question: ${error.message}`);
                 if (error.response) {
-                    console.error('Error response:', error.response.data);
+                    console.error('❌ Error response:', error.response.data);
                     setDebugInfo(error.response.data);
                 }
                 throw error;
             }
         },
         onSuccess: (response) => {
-            console.log('Question data received:', response.data);
+            console.log('✅ Question data received successfully');
 
-            // FIXED: Correctly check if response indicates test is completed
-            if (response.data?.data?.completed) {
-                console.log('Test completed, navigating to results');
+            // Deeply log the response structure to help debug
+            console.log('📊 Full response structure:', JSON.stringify(response.data, null, 2));
+
+            // Try multiple paths to find the data
+            let questionData = null;
+            let progressData = null;
+
+            // Check for test completion
+            const isCompleted =
+                response.data?.completed ||
+                response.data?.data?.completed ||
+                response.data?.data?.data?.completed;
+
+            if (isCompleted) {
+                console.log('🏁 Test completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
             }
 
-            // DEBUG: Log the full response structure
-            console.log('Full response structure:', JSON.stringify(response.data));
+            // Attempt to find question data at various paths
+            if (response.data?.data?.question) {
+                // Path: response.data.data.question
+                console.log('📋 Found question at path: response.data.data.question');
+                questionData = response.data.data.question;
+                progressData = response.data.data.progress;
+            } else if (response.data?.data?.data?.question) {
+                // Path: response.data.data.data.question
+                console.log('📋 Found question at path: response.data.data.data.question');
+                questionData = response.data.data.data.question;
+                progressData = response.data.data.data.progress;
+            } else if (response.data?.question) {
+                // Path: response.data.question
+                console.log('📋 Found question at path: response.data.question');
+                questionData = response.data.question;
+                progressData = response.data.progress;
+            } else {
+                // Try to find question in any property
+                console.log('🔍 Searching for question data anywhere in the response...');
 
-            // FIXED: Access data at the correct path based on the response structure
-            const responseData = response.data?.data?.question
-                ? response.data.data // Structure where question is directly under data
-                : response.data?.data?.data; // Structure with nested data.data.data
+                // Function to recursively search for question object
+                const findQuestionData = (obj) => {
+                    if (!obj || typeof obj !== 'object') return null;
 
-            // Check if we have question data in the expected format
-            if (!responseData || !responseData.question) {
-                console.error('No question data in response:', response.data);
-                setError('Question data not found in server response');
-                setDebugInfo(response.data);
-                return;
+                    // Check if this object has question properties
+                    if (obj.question_text && obj.answers) {
+                        return obj;
+                    }
+
+                    // Check if this is a question wrapper
+                    if (obj.question && typeof obj.question === 'object' && obj.question.question_text) {
+                        // Also look for progress
+                        if (obj.progress) {
+                            progressData = obj.progress;
+                        }
+                        return obj.question;
+                    }
+
+                    // Recursively search in all properties
+                    for (const key in obj) {
+                        const result = findQuestionData(obj[key]);
+                        if (result) return result;
+                    }
+
+                    return null;
+                };
+
+                questionData = findQuestionData(response.data);
+
+                if (questionData) {
+                    console.log('🔍 Found question data through deep search');
+                } else {
+                    console.error('❌ Could not find question data in response');
+                    setError('Question data not found in server response');
+                    setDebugInfo(response.data);
+                    return;
+                }
             }
 
-            // Set the question data for rendering with the correct path
+            console.log('📋 Extracted question data:', questionData);
+            console.log('📊 Progress data:', progressData);
+
+            // Default progress if not found
+            const defaultProgress = { answered: 0, total: 1 };
+
+            // Set the question data for rendering
             setCurrentQuestionData({
-                question: responseData.question,
-                progress: responseData.progress || { answered: 0, total: 1 }
+                question: questionData,
+                progress: progressData || defaultProgress
             });
 
             // Reset answer state
             setAnswer({
-                questionId: responseData.question.id,
+                questionId: questionData.id,
                 answerId: null,
                 textAnswer: '',
                 timeSpent: 0
@@ -96,7 +170,7 @@ function TestTaking() {
 
             timerRef.current = setInterval(() => {
                 setTimer(prev => {
-                    if (prev >= (responseData.question.time_limit || 60) - 10 && !showAlert) {
+                    if (prev >= (questionData.time_limit || 60) - 10 && !showAlert) {
                         setShowAlert(true);
                     }
                     return prev + 1;
@@ -110,38 +184,41 @@ function TestTaking() {
     // Submit answer mutation
     const submitAnswerMutation = useMutation({
         mutationFn: async (answerData) => {
-            console.log('Submitting answer:', answerData);
+            console.log('📝 Submitting answer:', answerData);
             try {
                 const response = await studentTestsService.submitAnswer(attemptId, answerData);
-                console.log('Submit answer response:', response);
+                console.log('✅ Submit answer response:', response);
                 return response;
             } catch (error) {
-                console.error('Error submitting answer:', error);
+                console.error('❌ Error submitting answer:', error);
                 if (error.response) {
-                    console.error('Error response:', error.response.data);
+                    console.error('❌ Error response:', error.response.data);
                 }
                 throw error;
             }
         },
         onSuccess: (response) => {
-            console.log('Answer submitted successfully:', response.data);
+            console.log('✅ Answer submitted successfully');
+            console.log('📄 Response data:', response.data);
 
-            // FIXED: Access the correct data path here too
-            const responseData = response.data?.data;
+            // Check multiple paths for completion status
+            const isCompleted =
+                response.data?.completed ||
+                response.data?.data?.completed ||
+                response.data?.data?.data?.completed;
 
-            // If all questions are completed, navigate to results
-            if (responseData?.completed) {
-                console.log('All questions completed, navigating to results');
+            if (isCompleted) {
+                console.log('🏁 All questions completed, navigating to results');
                 navigate(`/tests/student/results/${attemptId}`);
                 return;
             }
 
             // Fetch next question
-            console.log('Fetching next question...');
+            console.log('🔄 Fetching next question...');
             refetch();
         },
         onError: (error) => {
-            console.error('Error in submit mutation:', error);
+            console.error('❌ Error in submit mutation:', error);
             setError(`Failed to submit answer: ${error.message}`);
         }
     });
@@ -156,6 +233,7 @@ function TestTaking() {
     }, []);
 
     const handleAnswerSelect = (answerId) => {
+        console.log('📝 Answer selected:', answerId);
         setAnswer(prev => ({
             ...prev,
             answerId,
@@ -164,6 +242,7 @@ function TestTaking() {
     };
 
     const handleTextChange = (e) => {
+        console.log('📝 Text answer changed');
         setAnswer(prev => ({
             ...prev,
             textAnswer: e.target.value,
@@ -172,6 +251,7 @@ function TestTaking() {
     };
 
     const handleSubmit = () => {
+        console.log('📤 Submitting answer...');
         if (timerRef.current) {
             clearInterval(timerRef.current);
         }
@@ -184,6 +264,7 @@ function TestTaking() {
             time_spent: timer
         };
 
+        console.log('📤 Answer data being submitted:', answerData);
         submitAnswerMutation.mutate(answerData);
     };
 
@@ -192,6 +273,48 @@ function TestTaking() {
         const remainingSeconds = seconds % 60;
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     };
+
+    // Enhanced debug view to help diagnose issues
+    if (data && !currentQuestionData) {
+        return (
+            <div className="error-container">
+                <div className="alert alert-warning">
+                    <h3>Data Received But No Question Available</h3>
+                    <p>Our application received data from the server but couldn't extract a question to display.</p>
+                    <p>This could be due to an unexpected data format or structure. Technical support has been notified.</p>
+
+                    <div className="debug-actions">
+                        <button className="btn btn-primary" onClick={() => refetch()}>
+                            Try Again
+                        </button>
+                        <button className="btn btn-secondary" onClick={() => navigate('/tests/student')}>
+                            Back to Tests
+                        </button>
+                    </div>
+
+                    <div className="debug-info">
+                        <h4>Response Data Analysis:</h4>
+                        <div className="debug-section">
+                            <h5>Response Status: {data?.status || 'Unknown'}</h5>
+                            <h5>Data Structure:</h5>
+                            <ul>
+                                {data?.data && Object.keys(data.data).map(key => (
+                                    <li key={key}>
+                                        {key}: {typeof data.data[key] === 'object' ?
+                                        `(Object with keys: ${Object.keys(data.data[key]).join(', ')})` :
+                                        String(data.data[key])}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <h5>Complete Raw Response:</h5>
+                        <pre>{JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Loading state
     if (isLoading) {
@@ -231,8 +354,8 @@ function TestTaking() {
         );
     }
 
-    // If no question data is available
-    if (!currentQuestionData || !currentQuestionData.question) {
+    // If no question data is available but we have a response
+    if (!currentQuestionData) {
         return (
             <div className="error-container">
                 <div className="alert alert-warning">
@@ -240,7 +363,7 @@ function TestTaking() {
                     <p>Unable to load the next question. This might be because the test is already completed or no questions are available.</p>
                     <div className="debug-info">
                         <h4>Response Data:</h4>
-                        <pre>{data ? JSON.stringify(data, null, 2) : 'No data'}</pre>
+                        <pre>{data ? JSON.stringify(data, null, 2) : 'No data received from server'}</pre>
                     </div>
                 </div>
                 <div className="error-actions">
@@ -255,7 +378,31 @@ function TestTaking() {
         );
     }
 
+    // Defensive check for question data structure
     const { question, progress } = currentQuestionData;
+
+    if (!question || !question.question_text) {
+        return (
+            <div className="error-container">
+                <div className="alert alert-danger">
+                    <h3>Invalid Question Data</h3>
+                    <p>The question data received from the server is not in the expected format.</p>
+                    <div className="debug-info">
+                        <h4>Current Question Data:</h4>
+                        <pre>{JSON.stringify(currentQuestionData, null, 2)}</pre>
+                    </div>
+                </div>
+                <div className="error-actions">
+                    <button className="btn btn-primary" onClick={() => refetch()}>
+                        Try Again
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => navigate('/tests/student')}>
+                        Back to Tests
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="test-taking-container">
@@ -386,20 +533,28 @@ function TestTaking() {
                     color: var(--text-secondary);
                 }
                 
-                .error-actions {
+                .error-actions, .debug-actions {
                     margin-top: 1.5rem;
                     display: flex;
                     gap: 1rem;
+                    justify-content: center;
                 }
                 
                 .debug-info {
-                    margin-top: 1rem;
+                    margin-top: 1.5rem;
                     text-align: left;
                     background-color: var(--bg-dark-tertiary);
                     padding: 1rem;
                     border-radius: var(--radius-md);
                     overflow: auto;
-                    max-height: 300px;
+                    max-height: 400px;
+                }
+                
+                .debug-section {
+                    margin-bottom: 1rem;
+                    padding: 0.5rem;
+                    background-color: rgba(255, 255, 255, 0.1);
+                    border-radius: var(--radius-sm);
                 }
                 
                 .debug-info pre {
@@ -407,6 +562,15 @@ function TestTaking() {
                     white-space: pre-wrap;
                     font-family: var(--font-mono);
                     font-size: 0.875rem;
+                }
+                
+                .debug-info h5 {
+                    margin-top: 1rem;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .debug-info ul {
+                    padding-left: 1.5rem;
                 }
                 
                 .test-taking-header {

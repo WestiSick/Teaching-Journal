@@ -85,16 +85,36 @@ export const studentTestsService = {
         return createRequest('/available', 'GET', null, { student_id: studentId });
     },
 
-    // Start test - Fixed this function to properly handle student ID
+    // Start test
     startTest: (testId, studentId) => {
         console.log(`Starting test ${testId} for student ${studentId}`);
-        return createRequest(`/start/${testId}`, 'POST', { student_id: studentId });
+        // Ensure studentId is included correctly in the request body
+        return createRequest(`/start/${testId}`, 'POST', { student_id: parseInt(studentId, 10) });
     },
 
-    // Get next question
+    // Get next question - directly access without additional params
     getNextQuestion: (attemptId) => {
         console.log(`Getting next question for attempt ${attemptId}`);
-        return createRequest(`/attempt/${attemptId}/next`, 'GET');
+        // Debugging logs
+        console.log(`Request URL: /api/tests/attempt/${attemptId}/next`);
+
+        // Make a more direct request with full debugging
+        return axios({
+            method: 'GET',
+            url: `/api/tests/attempt/${attemptId}/next`,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            allowAbsoluteUrls: true,
+            validateStatus: status => true // Accept all status codes for debugging
+        }).then(response => {
+            // Log the entire response for debugging
+            console.log('Complete response from getNextQuestion:', response);
+            return response;
+        }).catch(error => {
+            console.error('Axios error in getNextQuestion:', error);
+            throw error;
+        });
     },
 
     // Submit answer
