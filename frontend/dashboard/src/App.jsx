@@ -1,13 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { StudentAuthProvider } from './context/StudentAuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
-import StudentLayout from './pages/testing/student/StudentLayout';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -62,43 +60,15 @@ import TeacherGroups from './pages/admin/TeacherGroups';
 import TeacherAttendance from './pages/admin/TeacherAttendance';
 import TeacherLabs from './pages/admin/TeacherLabs';
 
-// Testing Pages - Teacher/Admin
-import TestsPage from './pages/testing/TestsPage';
-import TestDetail from './pages/testing/TestDetail';
-import TestForm from './pages/testing/TestForm';
-import TestStatistics from './pages/testing/TestStatistics';
-import TestAttempts from './pages/testing/TestAttempts';
-
-// Testing Pages - Student
-import StudentTestPortal from './pages/testing/student/StudentTestPortal';
-import StudentTestLogin from './pages/testing/student/StudentTestLogin';
-import StudentTestRegister from './pages/testing/student/StudentTestRegister';
-import StudentTestsPage from './pages/testing/student/StudentTestsPage';
-import TestAttemptPage from './pages/testing/student/TestAttemptPage';
-import TestResultPage from './pages/testing/student/TestResultPage';
-import TestHistoryPage from './pages/testing/student/TestHistoryPage';
-
 function App() {
     return (
         <AuthProvider>
-            <StudentAuthProvider>
                 <Routes>
                     {/* Auth Routes */}
                     <Route element={<AuthLayout />}>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                     </Route>
-
-                    {/* Student Testing Portal (Public Routes) */}
-                    <Route path="/student-testing" element={<StudentTestPortal />} />
-                    <Route path="/student-testing/login" element={<StudentTestLogin />} />
-                    <Route path="/student-testing/register" element={<StudentTestRegister />} />
-
-                    {/* Protected Student Testing Routes */}
-                    <Route path="/student-testing/tests" element={<StudentTestsPage />} />
-                    <Route path="/student-testing/attempt/:id" element={<TestAttemptPage />} />
-                    <Route path="/student-testing/result/:id" element={<TestResultPage />} />
-                    <Route path="/student-testing/history" element={<TestHistoryPage />} />
 
                     {/* Public Shared Lab Grades Route - Important! This needs to be outside protected routes */}
                     <Route path="/labs/shared/:token" element={<PublicSharedGrades />} />
@@ -151,14 +121,6 @@ function App() {
                         <Route path="tickets/:id" element={<TicketDetail />} />
                         <Route path="tickets/:id/edit" element={<TicketForm />} />
 
-                        {/* Testing Routes */}
-                        <Route path="tests" element={<TestsPage />} />
-                        <Route path="tests/new" element={<TestForm />} />
-                        <Route path="tests/:id" element={<TestDetail />} />
-                        <Route path="tests/:id/edit" element={<TestForm />} />
-                        <Route path="tests/:id/statistics" element={<TestStatistics />} />
-                        <Route path="tests/:id/attempts" element={<TestAttempts />} />
-
                         {/* Admin Routes */}
                         <Route element={<AdminRoute />}>
                             <Route path="admin" element={<AdminDashboard />} />
@@ -174,7 +136,6 @@ function App() {
                     {/* 404 route */}
                     <Route path="*" element={<NotFound />} />
                 </Routes>
-            </StudentAuthProvider>
         </AuthProvider>
     );
 }
