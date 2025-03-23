@@ -10,6 +10,8 @@ RUN if [ "$SERVICE" = "dashboard" ]; then \
         cd ./app/dashboard/cmd/server && CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /app/server; \
     elif [ "$SERVICE" = "schedule" ]; then \
         cd ./app/schedule/cmd/server && CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /app/server; \
+    elif [ "$SERVICE" = "testing" ]; then \
+            cd ./app/testing/cmd/server && CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /app/server; \
     elif [ "$SERVICE" = "tickets" ]; then \
         cd ./app/tickets/cmd/server && CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /app/server; \
     else \

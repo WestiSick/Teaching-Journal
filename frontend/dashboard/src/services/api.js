@@ -376,6 +376,103 @@ export const ticketService = {
     }
 };
 
+// Testing services
+export const testingService = {
+    // Admin/Teacher API
+    getTests: (params) =>
+        api.get('/testing/tests', { params }),
+
+    getTest: (id) =>
+        api.get(`/testing/tests/${id}`),
+
+    createTest: (data) =>
+        api.post('/testing/tests', data),
+
+    updateTest: (id, data) =>
+        api.put(`/testing/tests/${id}`, data),
+
+    deleteTest: (id) =>
+        api.delete(`/testing/tests/${id}`),
+
+    toggleTestActive: (id, active) =>
+        api.put(`/testing/tests/${id}/activate`, { active }),
+
+    addQuestion: (testId, data) =>
+        api.post(`/testing/tests/${testId}/questions`, data),
+
+    updateQuestion: (testId, questionId, data) =>
+        api.put(`/testing/tests/${testId}/questions/${questionId}`, data),
+
+    deleteQuestion: (testId, questionId) =>
+        api.delete(`/testing/tests/${testId}/questions/${questionId}`),
+
+    getTestStatistics: (id) =>
+        api.get(`/testing/tests/${id}/statistics`),
+
+    getTestAttempts: (id) =>
+        api.get(`/testing/tests/${id}/attempts`),
+
+    manageTestGroups: (id, groups) =>
+        api.post(`/testing/tests/${id}/groups`, { groups }),
+
+    // Student API
+    registerStudent: (data) =>
+        axios.post('/api/testing/students/register', data),
+
+    loginStudent: (data) =>
+        axios.post('/api/testing/students/login', data),
+
+    getAvailableTests: () =>
+        axios.get('/api/testing/student/tests', {
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+
+    getAttemptHistory: (params) =>
+        axios.get('/api/testing/student/attempts', {
+            params,
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+
+    startTest: (id) =>
+        axios.post(`/api/testing/student/tests/${id}/start`, {}, {
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+
+    getCurrentQuestion: (attemptId) =>
+        axios.get(`/api/testing/student/attempts/${attemptId}/questions/current`, {
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+
+    submitAnswer: (attemptId, questionId, data) =>
+        axios.post(`/api/testing/student/attempts/${attemptId}/questions/${questionId}/answer`, data, {
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+
+    finishTest: (attemptId) =>
+        axios.post(`/api/testing/student/attempts/${attemptId}/finish`, {}, {
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+
+    getTestResult: (attemptId) =>
+        axios.get(`/api/testing/student/attempts/${attemptId}/result`, {
+            headers: {
+                'X-Student-Token': localStorage.getItem('studentToken')
+            }
+        }),
+};
+
 // Modify the interceptor at the bottom of the file
 api.interceptors.response.use(
     response => response,
