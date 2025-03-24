@@ -666,14 +666,20 @@ func (h *TestHandler) GetStudentTestHistory(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Log debugging information
+	log.Printf("Getting test history for student ID: %d", studentID)
+
 	// Verify student exists
 	var student dashboardModels.Student
 	if err := h.DB.Where("id = ?", studentID).First(&student).Error; err != nil {
+		log.Printf("Error finding student with ID %d: %v", studentID, err)
 		utils.RespondWithError(w, http.StatusNotFound, "Student not found")
 		return
 	}
 
-	// Get all test attempts for this student
+	log.Printf("Found student: %s, Group: %s", student.StudentFIO, student.GroupName)
+
+	// Get all test attempts for this student with a simpler query first
 	type TestAttemptHistory struct {
 		AttemptID       int        `json:"attempt_id"`
 		TestID          int        `json:"test_id"`
@@ -690,36 +696,45 @@ func (h *TestHandler) GetStudentTestHistory(w http.ResponseWriter, r *http.Reque
 
 	var attempts []TestAttemptHistory
 
-	rows, err := h.DB.Raw(`
-		SELECT 
-			ta.id as attempt_id,
-			t.id as test_id,
-			t.title as test_title,
-			t.subject,
-			ta.start_time,
-			ta.end_time,
-			ta.completed,
-			ta.score,
-			ta.total_questions,
-			CASE WHEN ta.total_questions > 0 THEN (ta.score * 100.0 / ta.total_questions) ELSE 0 END as score_percent,
-			CASE WHEN ta.end_time IS NOT NULL THEN EXTRACT(EPOCH FROM (ta.end_time - ta.start_time)) ELSE NULL END as duration_seconds
-		FROM test_attempts ta
-		JOIN tests t ON ta.test_id = t.id
-		WHERE ta.student_id = ?
-		ORDER BY ta.start_time DESC
-	`, studentID).Rows()
+	// Use a simpler query to debug where the issue might be
+	query := `
+        SELECT 
+            ta.id as attempt_id,
+            t.id as test_id,
+            t.title as test_title,
+            t.subject,
+            ta.start_time,
+            ta.end_time,
+            ta.completed,
+            ta.score,
+            ta.total_questions,
+            CASE WHEN ta.total_questions > 0 THEN (ta.score * 100.0 / ta.total_questions) ELSE 0 END as score_percent,
+            CASE WHEN ta.end_time IS NOT NULL THEN 
+                EXTRACT(EPOCH FROM (ta.end_time - ta.start_time))::integer 
+            ELSE 0 END as duration_seconds
+        FROM test_attempts ta
+        JOIN tests t ON ta.test_id = t.id
+        WHERE ta.student_id = ?
+        ORDER BY ta.start_time DESC
+    `
 
+	log.Printf("Executing test history query for student ID: %d", studentID)
+
+	// Try running the query with error handling
+	rows, err := h.DB.Raw(query, studentID).Rows()
 	if err != nil {
-		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving test attempts")
+		log.Printf("Error in SQL query for test history: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving test attempts: "+err.Error())
 		return
 	}
 	defer rows.Close()
 
+	// Process the rows carefully with error checking
 	for rows.Next() {
 		var attempt TestAttemptHistory
-		var durationSeconds *int
+		var durationSeconds int
 
-		if err := rows.Scan(
+		scanErr := rows.Scan(
 			&attempt.AttemptID,
 			&attempt.TestID,
 			&attempt.TestTitle,
@@ -731,17 +746,26 @@ func (h *TestHandler) GetStudentTestHistory(w http.ResponseWriter, r *http.Reque
 			&attempt.TotalQuestions,
 			&attempt.ScorePercent,
 			&durationSeconds,
-		); err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Error scanning attempt data")
+		)
+
+		if scanErr != nil {
+			log.Printf("Error scanning row data: %v", scanErr)
+			utils.RespondWithError(w, http.StatusInternalServerError, "Error scanning attempt data: "+scanErr.Error())
 			return
 		}
 
-		if durationSeconds != nil {
-			attempt.DurationSeconds = *durationSeconds
-		}
-
+		attempt.DurationSeconds = durationSeconds
 		attempts = append(attempts, attempt)
 	}
+
+	// Check for any errors that occurred during iteration
+	if err = rows.Err(); err != nil {
+		log.Printf("Error after row iteration: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error processing test attempts")
+		return
+	}
+
+	log.Printf("Successfully retrieved %d test attempts for student ID: %d", len(attempts), studentID)
 
 	utils.RespondWithSuccess(w, http.StatusOK, "Test history retrieved successfully", map[string]interface{}{
 		"student_info": map[string]interface{}{

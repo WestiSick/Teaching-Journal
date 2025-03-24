@@ -55,7 +55,13 @@ function TestTaking() {
             // Store the question ID in the ref
             const questionData = responseData.data.question;
             console.log('Setting question ID ref:', questionData.id);
-            questionIdRef.current = questionData.id;
+
+            // Fixed: Ensure the question ID is properly set
+            if (questionData && questionData.id) {
+                questionIdRef.current = questionData.id;
+            } else {
+                console.error('Question ID not found in response data:', questionData);
+            }
 
             // Reset answer selections for the new question
             setSelectedAnswerId(null);
@@ -141,6 +147,19 @@ function TestTaking() {
             clearInterval(timerRef.current);
         }
 
+        // Add this debug log
+        console.log('Current question ref before submit:', questionIdRef.current);
+
+        // Extract question data from response
+        const responseData = data?.data?.data || {};
+        const questionData = responseData.question || null;
+
+        // If question ID is missing, try to get it from the current question data
+        if (!questionIdRef.current && questionData && questionData.id) {
+            console.log('Recovering question ID from current data:', questionData.id);
+            questionIdRef.current = questionData.id;
+        }
+
         console.log('Submitting with values:', {
             questionId: questionIdRef.current,
             answerId: selectedAnswerId,
@@ -158,9 +177,9 @@ function TestTaking() {
     };
 
     // Extract question and progress data from the correct nesting level
-    const responseData = data?.data || {};
-    const questionData = responseData.data?.question || null;
-    const progressData = responseData.data?.progress || { answered: 0, total: 1 };
+    const responseData = data?.data?.data || {};
+    const questionData = responseData.question || null;
+    const progressData = responseData.progress || { answered: 0, total: 1 };
 
     // Loading state
     if (isLoading) {
@@ -223,6 +242,12 @@ function TestTaking() {
 
     // Log current question ID when rendering
     console.log('Rendering question ID:', questionIdRef.current, 'Question data:', question);
+
+    // Make sure question ID is always set correctly
+    if (question && question.id && questionIdRef.current !== question.id) {
+        console.log('Updating question ID ref on render:', question.id);
+        questionIdRef.current = question.id;
+    }
 
     return (
         <div className="test-taking-container">
@@ -320,6 +345,7 @@ function TestTaking() {
                 <div>Current Question ID: {questionIdRef.current}</div>
                 <div>Selected Answer ID: {selectedAnswerId}</div>
                 <div>Question Type: {question.question_type}</div>
+                <div>Question ID from data: {question.id}</div>
             </div>
 
             <style jsx="true">{`
