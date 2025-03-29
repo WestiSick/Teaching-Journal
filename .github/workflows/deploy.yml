@@ -23,6 +23,34 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
+      - name: Setup SSL certificates
+        run: |
+          # Create a script to set up the certificates
+          cat > setup-ssl-certs.sh << 'EOF'
+          #!/bin/bash
+          
+          # Create directory if it doesn't exist
+          mkdir -p ~/ssl-certs
+          
+          # Write certificate file
+          cat > ~/ssl-certs/vg.vadimbuzdin.ru_2025-03-11-23-17_19.crt << 'CERT_EOF'
+          ${{ secrets.SSL_CERTIFICATE }}
+          CERT_EOF
+          
+          # Write key file
+          cat > ~/ssl-certs/vg.vadimbuzdin.ru_2025-03-11-23-17_19.key << 'KEY_EOF'
+          ${{ secrets.SSL_PRIVATE_KEY }}
+          KEY_EOF
+          
+          # Set proper permissions
+          chmod 600 ~/ssl-certs/vg.vadimbuzdin.ru_2025-03-11-23-17_19.key
+          
+          echo "SSL certificates have been set up in ~/ssl-certs/"
+          EOF
+          
+          # Copy the script to the server and execute it
+          cat setup-ssl-certs.sh | ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cat > ~/setup-ssl-certs.sh && chmod +x ~/setup-ssl-certs.sh && ~/setup-ssl-certs.sh"
+
       - name: Deploy to server
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "~/deploy-scripts/deploy.sh"
