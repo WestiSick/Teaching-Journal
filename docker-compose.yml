@@ -146,14 +146,14 @@ services:
       - tests_api
 
   nginx:
-    image: nginx
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
     container_name: teacher_journal_nginx
     ports:
       - "80:80"
-      - "443:443"  # Добавлен порт для HTTPS
+      - "443:443"
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./sert:/etc/nginx/ssl:ro  # Монтируем папку с сертификатами из корня проекта
     depends_on:
       - api
