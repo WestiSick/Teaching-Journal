@@ -17,6 +17,10 @@ FROM nginx:alpine
 # Copy the build output
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Make sure favicon.ico is at the root
+COPY --from=builder /app/public/favicon.ico /usr/share/nginx/html/favicon.ico
+COPY --from=builder /app/public/apple-touch-icon.png /usr/share/nginx/html/apple-touch-icon.png
+
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

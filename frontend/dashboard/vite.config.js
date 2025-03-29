@@ -9,7 +9,6 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-    // Enhanced configuration
     minify: 'esbuild',
     target: 'es2015',
     rollupOptions: {
@@ -17,12 +16,17 @@ export default defineConfig({
         format: 'es',
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        // Ensure proper MIME types
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'favicon.ico' || assetInfo.name === 'apple-touch-icon.png') {
+            return '[name].[ext]';
+          }
+          return 'assets/[name].[hash].[ext]';
+        },
         manualChunks: undefined
       }
     }
   },
+  publicDir: 'public',
   server: {
     port: 3000,
     proxy: {
