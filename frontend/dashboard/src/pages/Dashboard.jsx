@@ -13,7 +13,7 @@ function Dashboard() {
         queryFn: () => dashboardService.getStats({ timeframe })
     });
 
-    // Fetch user details to get full name
+    // Получение данных пользователя для отображения полного имени
     const { data: userData } = useQuery({
         queryKey: ['user-profile'],
         queryFn: userService.getCurrentUser
@@ -31,7 +31,7 @@ function Dashboard() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Error loading dashboard: {error.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки панели управления: {error.message}</div>;
     }
 
     return (
@@ -46,19 +46,19 @@ function Dashboard() {
                         className={`btn ${timeframe === 'week' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setTimeframe('week')}
                     >
-                        Week
+                        Неделя
                     </button>
                     <button
                         className={`btn ${timeframe === 'month' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setTimeframe('month')}
                     >
-                        Month
+                        Месяц
                     </button>
                     <button
                         className={`btn ${timeframe === 'semester' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setTimeframe('semester')}
                     >
-                        Semester
+                        Семестр
                     </button>
                 </div>
             </div>
@@ -72,64 +72,67 @@ function Dashboard() {
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
                         <div>
-                            <h4 className="mb-1">Limited Features Available</h4>
-                            <p className="mb-0">You are currently on a free plan with limited features. Contact the administrator to upgrade your account.</p>
+                            <h4 className="mb-1">Доступны ограниченные функции</h4>
+                            <p className="mb-0">У вас бесплатный тариф с ограниченными возможностями. Свяжитесь с администратором для обновления вашей учетной записи.</p>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Stats Overview */}
+            {/* Обзор статистики */}
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="stats-card" style={{ borderLeftColor: 'var(--primary)' }}>
-                    <div className="stats-card-title">Total Lessons</div>
+                    <div className="stats-card-title">Всего занятий</div>
                     <div className="stats-card-value">{stats?.total_lessons || 0}</div>
                     <div className="stats-card-description">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                             <polyline points="17 6 23 6 23 12"></polyline>
                         </svg>
-                        <span className="text-success ml-1">+{stats?.lessons_added || 3} this {timeframe}</span>
+                        <span className="text-success ml-1">+{stats?.lessons_added || 3} за {
+                            timeframe === 'week' ? 'неделю' :
+                                timeframe === 'month' ? 'месяц' : 'семестр'
+                        }</span>
                     </div>
                 </div>
 
                 <div className="stats-card" style={{ borderLeftColor: 'var(--accent)' }}>
-                    <div className="stats-card-title">Total Hours</div>
+                    <div className="stats-card-title">Всего часов</div>
                     <div className="stats-card-value">{stats?.total_hours || 0}</div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Across all subjects</span>
+                        <span className="text-tertiary">По всем предметам</span>
                     </div>
                 </div>
 
                 <div className="stats-card" style={{ borderLeftColor: 'var(--success)' }}>
-                    <div className="stats-card-title">Groups</div>
+                    <div className="stats-card-title">Группы</div>
                     <div className="stats-card-value">{stats?.groups?.length || 0}</div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Active groups</span>
+                        <span className="text-tertiary">Активные группы</span>
                     </div>
                 </div>
 
                 <div className="stats-card" style={{ borderLeftColor: 'var(--warning)' }}>
-                    <div className="stats-card-title">Subjects</div>
+                    <div className="stats-card-title">Предметы</div>
                     <div className="stats-card-value">
                         {stats?.subjects ? Object.keys(stats.subjects).length : 0}
                     </div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Across all groups</span>
+                        <span className="text-tertiary">По всем группам</span>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-12 gap-6">
-                {/* Left Column */}
+                {/* Левая колонка */}
                 <div className="col-span-8">
                     <div className="card">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">Recent Activity</h2>
-                            <Link to="/lessons" className="btn btn-sm btn-outline">View All</Link>
+                            <h2 className="text-xl font-semibold">Недавняя активность</h2>
+                            <Link to="/lessons" className="btn btn-sm btn-outline">Смотреть все</Link>
                         </div>
 
-                        {/* Recent Lessons */}
+                        {/* Недавние занятия */}
                         {!stats?.recent_lessons || stats.recent_lessons.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-state-icon">
@@ -140,30 +143,30 @@ function Dashboard() {
                                         <line x1="3" y1="10" x2="21" y2="10"></line>
                                     </svg>
                                 </div>
-                                <h3>No Recent Activity</h3>
-                                <p>Start by creating your first lesson</p>
-                                <Link to="/lessons/new" className="btn btn-primary mt-3">Create Lesson</Link>
+                                <h3>Нет недавней активности</h3>
+                                <p>Начните с создания вашего первого занятия</p>
+                                <Link to="/lessons/new" className="btn btn-primary mt-3">Создать занятие</Link>
                             </div>
                         ) : (
                             <div className="table-container">
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Subject</th>
-                                        <th>Group</th>
-                                        <th>Topic</th>
-                                        <th>Attendance</th>
+                                        <th>Дата</th>
+                                        <th>Предмет</th>
+                                        <th>Группа</th>
+                                        <th>Тема</th>
+                                        <th>Посещаемость</th>
                                         <th></th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {/* This is placeholder data - in a real app, use data from the API */}
+                                    {/* Это примерные данные - в реальном приложении будут данные из API */}
                                     <tr>
-                                        <td>Mar 18, 2025</td>
-                                        <td>Mathematics</td>
-                                        <td>Group A</td>
-                                        <td>Linear Algebra</td>
+                                        <td>18 мар, 2025</td>
+                                        <td>Математика</td>
+                                        <td>Группа А</td>
+                                        <td>Линейная алгебра</td>
                                         <td>
                                             <div className="attendance-indicator">
                                                 <div className="progress" style={{ width: '120px' }}>
@@ -173,14 +176,14 @@ function Dashboard() {
                                             </div>
                                         </td>
                                         <td>
-                                            <Link to="/lessons/1" className="btn btn-sm btn-outline">View</Link>
+                                            <Link to="/lessons/1" className="btn btn-sm btn-outline">Просмотр</Link>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Mar 17, 2025</td>
-                                        <td>Physics</td>
-                                        <td>Group B</td>
-                                        <td>Quantum Mechanics</td>
+                                        <td>17 мар, 2025</td>
+                                        <td>Физика</td>
+                                        <td>Группа Б</td>
+                                        <td>Квантовая механика</td>
                                         <td>
                                             <div className="attendance-indicator">
                                                 <div className="progress" style={{ width: '120px' }}>
@@ -190,14 +193,14 @@ function Dashboard() {
                                             </div>
                                         </td>
                                         <td>
-                                            <Link to="/lessons/2" className="btn btn-sm btn-outline">View</Link>
+                                            <Link to="/lessons/2" className="btn btn-sm btn-outline">Просмотр</Link>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Mar 16, 2025</td>
-                                        <td>Computer Science</td>
-                                        <td>Group A</td>
-                                        <td>Neural Networks</td>
+                                        <td>16 мар, 2025</td>
+                                        <td>Информатика</td>
+                                        <td>Группа А</td>
+                                        <td>Нейронные сети</td>
                                         <td>
                                             <div className="attendance-indicator">
                                                 <div className="progress" style={{ width: '120px' }}>
@@ -207,14 +210,14 @@ function Dashboard() {
                                             </div>
                                         </td>
                                         <td>
-                                            <Link to="/lessons/3" className="btn btn-sm btn-outline">View</Link>
+                                            <Link to="/lessons/3" className="btn btn-sm btn-outline">Просмотр</Link>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Mar 15, 2025</td>
-                                        <td>Chemistry</td>
-                                        <td>Group C</td>
-                                        <td>Organic Compounds</td>
+                                        <td>15 мар, 2025</td>
+                                        <td>Химия</td>
+                                        <td>Группа В</td>
+                                        <td>Органические соединения</td>
                                         <td>
                                             <div className="attendance-indicator">
                                                 <div className="progress" style={{ width: '120px' }}>
@@ -224,7 +227,7 @@ function Dashboard() {
                                             </div>
                                         </td>
                                         <td>
-                                            <Link to="/lessons/4" className="btn btn-sm btn-outline">View</Link>
+                                            <Link to="/lessons/4" className="btn btn-sm btn-outline">Просмотр</Link>
                                         </td>
                                     </tr>
                                     </tbody>
@@ -233,88 +236,88 @@ function Dashboard() {
                         )}
                     </div>
 
-                    {/* Upcoming Lessons */}
+                    {/* Предстоящие занятия */}
                     <div className="card mt-6">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">Upcoming Lessons</h2>
-                            <Link to="/lessons/new" className="btn btn-primary btn-sm">Add Lesson</Link>
+                            <h2 className="text-xl font-semibold">Предстоящие занятия</h2>
+                            <Link to="/lessons/new" className="btn btn-primary btn-sm">Добавить занятие</Link>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="upcoming-lesson-card">
                                 <div className="upcoming-lesson-date">
                                     <div className="date-indicator">
-                                        <span className="month">Mar</span>
+                                        <span className="month">Мар</span>
                                         <span className="day">21</span>
                                     </div>
-                                    <div className="time">09:00 AM</div>
+                                    <div className="time">09:00</div>
                                 </div>
                                 <div className="upcoming-lesson-details">
-                                    <h4>Introduction to Calculus</h4>
-                                    <p className="subject">Mathematics • Group A</p>
+                                    <h4>Введение в математический анализ</h4>
+                                    <p className="subject">Математика • Группа А</p>
                                 </div>
                             </div>
 
                             <div className="upcoming-lesson-card">
                                 <div className="upcoming-lesson-date">
                                     <div className="date-indicator">
-                                        <span className="month">Mar</span>
+                                        <span className="month">Мар</span>
                                         <span className="day">22</span>
                                     </div>
-                                    <div className="time">11:00 AM</div>
+                                    <div className="time">11:00</div>
                                 </div>
                                 <div className="upcoming-lesson-details">
-                                    <h4>Electromagnetic Fields</h4>
-                                    <p className="subject">Physics • Group B</p>
+                                    <h4>Электромагнитные поля</h4>
+                                    <p className="subject">Физика • Группа Б</p>
                                 </div>
                             </div>
 
                             <div className="upcoming-lesson-card">
                                 <div className="upcoming-lesson-date">
                                     <div className="date-indicator">
-                                        <span className="month">Mar</span>
+                                        <span className="month">Мар</span>
                                         <span className="day">23</span>
                                     </div>
-                                    <div className="time">02:00 PM</div>
+                                    <div className="time">14:00</div>
                                 </div>
                                 <div className="upcoming-lesson-details">
-                                    <h4>Algorithm Design</h4>
-                                    <p className="subject">Computer Science • Group A</p>
+                                    <h4>Проектирование алгоритмов</h4>
+                                    <p className="subject">Информатика • Группа А</p>
                                 </div>
                             </div>
 
                             <div className="upcoming-lesson-card">
                                 <div className="upcoming-lesson-date">
                                     <div className="date-indicator">
-                                        <span className="month">Mar</span>
+                                        <span className="month">Мар</span>
                                         <span className="day">24</span>
                                     </div>
-                                    <div className="time">10:00 AM</div>
+                                    <div className="time">10:00</div>
                                 </div>
                                 <div className="upcoming-lesson-details">
-                                    <h4>Laboratory Work: Reactions</h4>
-                                    <p className="subject">Chemistry • Group C</p>
+                                    <h4>Лабораторная работа: Реакции</h4>
+                                    <p className="subject">Химия • Группа В</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column */}
+                {/* Правая колонка */}
                 <div className="col-span-4">
                     {stats?.subjects && Object.keys(stats.subjects).length > 0 && (
                         <div className="card">
-                            <h2 className="text-xl font-semibold mb-4">Subjects</h2>
+                            <h2 className="text-xl font-semibold mb-4">Предметы</h2>
                             <div className="subject-list">
                                 {Object.entries(stats.subjects).map(([subject, count], idx) => (
                                     <div key={idx} className="subject-item">
                                         <div className="subject-color" style={{ backgroundColor: getSubjectColor(idx) }}></div>
                                         <div className="subject-details">
                                             <div className="subject-name">{subject}</div>
-                                            <div className="subject-count">{count} lessons</div>
+                                            <div className="subject-count">{count} занятий</div>
                                         </div>
                                         <Link to={`/subjects/${subject}/lessons`} className="btn btn-sm btn-outline">
-                                            View
+                                            Просмотр
                                         </Link>
                                     </div>
                                 ))}
@@ -324,7 +327,7 @@ function Dashboard() {
 
                     {stats?.groups && stats.groups.length > 0 && (
                         <div className="card mt-6">
-                            <h2 className="text-xl font-semibold mb-4">Your Groups</h2>
+                            <h2 className="text-xl font-semibold mb-4">Ваши группы</h2>
                             <div className="groups-list">
                                 {stats.groups.map((group, idx) => (
                                     <Link key={idx} to={`/groups/${group}`} className="group-item">
@@ -349,7 +352,7 @@ function Dashboard() {
                     )}
 
                     <div className="card mt-6">
-                        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+                        <h2 className="text-xl font-semibold mb-4">Быстрые действия</h2>
                         <div className="quick-actions">
                             <Link to="/lessons/new" className="quick-action-card">
                                 <div className="action-icon" style={{ backgroundColor: 'var(--primary-lighter)', color: 'var(--primary)' }}>
@@ -358,7 +361,7 @@ function Dashboard() {
                                         <line x1="5" y1="12" x2="19" y2="12"></line>
                                     </svg>
                                 </div>
-                                <div className="action-text">Add Lesson</div>
+                                <div className="action-text">Добавить занятие</div>
                             </Link>
 
                             <Link to="/attendance" className="quick-action-card">
@@ -370,7 +373,7 @@ function Dashboard() {
                                         <line x1="3" y1="10" x2="21" y2="10"></line>
                                     </svg>
                                 </div>
-                                <div className="action-text">Take Attendance</div>
+                                <div className="action-text">Отметить посещаемость</div>
                             </Link>
 
                             <Link to="/labs" className="quick-action-card">
@@ -382,7 +385,7 @@ function Dashboard() {
                                         <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
                                     </svg>
                                 </div>
-                                <div className="action-text">Update Lab Grades</div>
+                                <div className="action-text">Обновить оценки лабораторных</div>
                             </Link>
 
                             <Link to="/students/new" className="quick-action-card">
@@ -392,7 +395,7 @@ function Dashboard() {
                                         <circle cx="12" cy="7" r="4"></circle>
                                     </svg>
                                 </div>
-                                <div className="action-text">Add Student</div>
+                                <div className="action-text">Добавить студента</div>
                             </Link>
                         </div>
                     </div>
@@ -664,16 +667,16 @@ function Dashboard() {
     );
 }
 
-// Helper function to get a consistent color for a subject
+// Вспомогательная функция для получения постоянного цвета для предмета
 function getSubjectColor(index) {
     const colors = [
         'var(--primary)',
         'var(--accent)',
         'var(--success)',
         'var(--warning)',
-        '#9333ea', // purple
-        '#ec4899', // pink
-        '#14b8a6', // teal
+        '#9333ea', // фиолетовый
+        '#ec4899', // розовый
+        '#14b8a6', // бирюзовый
     ];
 
     return colors[index % colors.length];

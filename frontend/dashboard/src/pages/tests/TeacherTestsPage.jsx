@@ -4,9 +4,8 @@ import { Link } from 'react-router-dom';
 import { adminTestsService } from '../../services/testsService';
 
 function TeacherTestsPage() {
-    const [filter, setFilter] = useState('all'); // 'all', 'active', 'inactive'
+    const [filter, setFilter] = useState('all');
 
-    // Fetch all tests
     const { data, isLoading, error } = useQuery({
         queryKey: ['tests'],
         queryFn: adminTestsService.getAllTests
@@ -14,7 +13,6 @@ function TeacherTestsPage() {
 
     const tests = data?.data?.data || [];
 
-    // Filter tests based on active status
     const filteredTests = filter === 'all'
         ? tests
         : tests.filter(test =>
@@ -30,14 +28,14 @@ function TeacherTestsPage() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Failed to load tests: {error.message}</div>;
+        return <div className="alert alert-danger">Не удалось загрузить тесты: {error.message}</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Tests</h1>
-                <Link to="/tests/new" className="btn btn-primary">Create New Test</Link>
+                <h1 className="page-title">Тесты</h1>
+                <Link to="/tests/new" className="btn btn-primary">Создать новый тест</Link>
             </div>
 
             <div className="card">
@@ -47,23 +45,23 @@ function TeacherTestsPage() {
                             className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline'} mr-2`}
                             onClick={() => setFilter('all')}
                         >
-                            All Tests
+                            Все тесты
                         </button>
                         <button
                             className={`btn ${filter === 'active' ? 'btn-primary' : 'btn-outline'} mr-2`}
                             onClick={() => setFilter('active')}
                         >
-                            Active Tests
+                            Активные тесты
                         </button>
                         <button
                             className={`btn ${filter === 'inactive' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setFilter('inactive')}
                         >
-                            Inactive Tests
+                            Неактивные тесты
                         </button>
                     </div>
                     <div className="test-count">
-                        <span className="badge badge-info">{filteredTests.length} tests</span>
+                        <span className="badge badge-info">{filteredTests.length} тестов</span>
                     </div>
                 </div>
 
@@ -75,22 +73,22 @@ function TeacherTestsPage() {
                             <line x1="6" y1="6" x2="6.01" y2="6"></line>
                             <line x1="6" y1="18" x2="6.01" y2="18"></line>
                         </svg>
-                        <h3>No Tests Found</h3>
-                        <p>You haven't created any tests yet. Click the button below to create your first test.</p>
-                        <Link to="/tests/new" className="btn btn-primary mt-3">Create Test</Link>
+                        <h3>Тесты не найдены</h3>
+                        <p>Вы еще не создали ни одного теста. Нажмите кнопку ниже, чтобы создать свой первый тест.</p>
+                        <Link to="/tests/new" className="btn btn-primary mt-3">Создать тест</Link>
                     </div>
                 ) : (
                     <div className="table-container">
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Title</th>
-                                <th>Subject</th>
-                                <th>Questions</th>
-                                <th>Status</th>
-                                <th>Attempts</th>
-                                <th>Created</th>
-                                <th>Actions</th>
+                                <th>Название</th>
+                                <th>Предмет</th>
+                                <th>Вопросы</th>
+                                <th>Статус</th>
+                                <th>Попытки</th>
+                                <th>Создан</th>
+                                <th>Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -101,7 +99,7 @@ function TeacherTestsPage() {
                                     <td>{test.questions_count}</td>
                                     <td>
                                             <span className={`badge ${test.is_active ? 'badge-success' : 'badge-warning'}`}>
-                                                {test.is_active ? 'Active' : 'Inactive'}
+                                                {test.is_active ? 'Активен' : 'Неактивен'}
                                             </span>
                                     </td>
                                     <td>{test.attempts_count} / {test.max_attempts}</td>
@@ -109,13 +107,13 @@ function TeacherTestsPage() {
                                     <td>
                                         <div className="d-flex gap-2">
                                             <Link to={`/tests/${test.id}`} className="btn btn-sm btn-outline">
-                                                View
+                                                Просмотр
                                             </Link>
                                             <Link to={`/tests/${test.id}/edit`} className="btn btn-sm btn-primary">
-                                                Edit
+                                                Изменить
                                             </Link>
                                             <Link to={`/tests/${test.id}/statistics`} className="btn btn-sm btn-secondary">
-                                                Stats
+                                                Статистика
                                             </Link>
                                         </div>
                                     </td>

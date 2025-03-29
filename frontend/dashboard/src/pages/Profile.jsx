@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -7,10 +7,10 @@ function Profile() {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
-    // Tab state
+    // Состояние вкладок
     const [activeTab, setActiveTab] = useState('general');
 
-    // Form states
+    // Состояния форм
     const [passwordForm, setPasswordForm] = useState({
         currentPassword: '',
         newPassword: '',
@@ -24,21 +24,21 @@ function Profile() {
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [passwordMatch, setPasswordMatch] = useState(false);
 
-    // Status states
+    // Состояния статусов
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // Fetch user details
+    // Получаем данные пользователя
     const { data, isLoading } = useQuery({
         queryKey: ['user-profile'],
         queryFn: userService.getCurrentUser
     });
 
-    // Update user mutation
+    // Мутация для обновления пользователя
     const updateMutation = useMutation({
         mutationFn: (data) => userService.updateUser(data),
         onSuccess: () => {
-            setSuccess('Profile updated successfully');
+            setSuccess('Профиль успешно обновлен');
             setPasswordForm({
                 currentPassword: '',
                 newPassword: '',
@@ -47,32 +47,32 @@ function Profile() {
             setPasswordStrength(0);
             queryClient.invalidateQueries({ queryKey: ['user-profile'] });
 
-            // Clear success message after 3 seconds
+            // Очищаем сообщение об успехе через 3 секунды
             setTimeout(() => {
                 setSuccess('');
             }, 3000);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to update profile');
+            setError(err.response?.data?.error || 'Не удалось обновить профиль');
 
-            // Clear error message after 5 seconds
+            // Очищаем сообщение об ошибке через 5 секунд
             setTimeout(() => {
                 setError('');
             }, 5000);
         }
     });
 
-    // Password form change handler
+    // Обработчик изменения пароля
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
         setPasswordForm(prev => ({ ...prev, [name]: value }));
 
-        // Check password strength if new password field is being updated
+        // Проверяем сложность пароля, если обновляется поле нового пароля
         if (name === 'newPassword') {
             checkPasswordStrength(value);
         }
 
-        // Check if passwords match
+        // Проверяем совпадение паролей
         if (name === 'newPassword' || name === 'confirmPassword') {
             setPasswordMatch(
                 passwordForm.confirmPassword &&
@@ -81,36 +81,36 @@ function Profile() {
         }
     };
 
-    // Check password strength
+    // Проверка сложности пароля
     const checkPasswordStrength = (password) => {
-        // Reset strength
+        // Сбрасываем сложность
         let strength = 0;
 
-        // Return 0 for empty passwords
+        // Возвращаем 0 для пустых паролей
         if (!password) {
             setPasswordStrength(0);
             return;
         }
 
-        // Length check
+        // Проверка длины
         if (password.length >= 8) strength += 1;
 
-        // Contains number
-        if (/\d/.test(password)) strength += 1;
+        // Содержит цифры
+        if (/\\d/.test(password)) strength += 1;
 
-        // Contains lowercase
+        // Содержит строчные буквы
         if (/[a-z]/.test(password)) strength += 1;
 
-        // Contains uppercase
+        // Содержит заглавные буквы
         if (/[A-Z]/.test(password)) strength += 1;
 
-        // Contains special char
+        // Содержит спецсимволы
         if (/[^A-Za-z0-9]/.test(password)) strength += 1;
 
         setPasswordStrength(strength);
     };
 
-    // Toggle password visibility
+    // Переключение видимости пароля
     const togglePasswordVisibility = (field) => {
         setShowPasswords(prev => ({
             ...prev,
@@ -118,49 +118,49 @@ function Profile() {
         }));
     };
 
-    // Password strength color
+    // Цвет индикатора сложности пароля
     const getPasswordStrengthColor = () => {
         if (passwordStrength <= 2) return 'var(--danger)';
         if (passwordStrength <= 4) return 'var(--warning)';
         return 'var(--success)';
     };
 
-    // Validate password form
+    // Валидация формы смены пароля
     const validatePasswordForm = () => {
         setError('');
         setSuccess('');
 
-        // Validate password change
+        // Валидация смены пароля
         if (!passwordForm.currentPassword) {
-            setError('Current password is required');
+            setError('Требуется текущий пароль');
             return false;
         }
 
         if (!passwordForm.newPassword) {
-            setError('New password is required');
+            setError('Требуется новый пароль');
             return false;
         }
 
         if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-            setError('New passwords do not match');
+            setError('Новые пароли не совпадают');
             return false;
         }
 
         if (passwordStrength < 3) {
-            setError('Password is too weak. Include uppercase, lowercase, numbers, and special characters.');
+            setError('Пароль слишком слабый. Включите заглавные, строчные буквы, цифры и специальные символы.');
             return false;
         }
 
         return true;
     };
 
-    // Handle password update
+    // Обработчик обновления пароля
     const handlePasswordUpdate = (e) => {
         e.preventDefault();
 
         if (!validatePasswordForm()) return;
 
-        // Prepare data for submission
+        // Подготовка данных для отправки
         const updateData = {
             currentPassword: passwordForm.currentPassword,
             newPassword: passwordForm.newPassword
@@ -169,22 +169,22 @@ function Profile() {
         updateMutation.mutate(updateData);
     };
 
-    // For demonstration purposes, generate a random avatar color based on user email
+    // Для демонстрации, генерируем случайный цвет аватара на основе email пользователя
     const getAvatarColor = (email) => {
-        if (!email) return '#4f46e5'; // Default to primary color
+        if (!email) return '#4f46e5'; // По умолчанию основной цвет
 
-        // Simple hash function to generate consistent color for the same email
+        // Простая хеш-функция для генерации последовательного цвета для одного и того же email
         let hash = 0;
         for (let i = 0; i < email.length; i++) {
             hash = email.charCodeAt(i) + ((hash << 5) - hash);
         }
 
-        // Convert hash to an HSL color with high saturation and appropriate lightness for dark theme
+        // Преобразование хеша в цвет HSL с высокой насыщенностью и подходящей яркостью для темной темы
         const h = hash % 360;
         return `hsl(${h}, 70%, 50%)`;
     };
 
-    // Get user's name initials from their email
+    // Получение инициалов пользователя из email
     const getInitials = (email) => {
         if (!email) return '?';
         return email.charAt(0).toUpperCase();
@@ -198,22 +198,22 @@ function Profile() {
         );
     }
 
-    // Get user's full name from API response
+    // Получаем полное имя пользователя из ответа API
     const userData = data?.data?.data || {};
-    const displayFio = userData.fio || 'User';
-    const userEmail = currentUser?.email || userData?.email || 'No email';
+    const displayFio = userData.fio || 'Пользователь';
+    const userEmail = currentUser?.email || userData?.email || 'Нет email';
 
     return (
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Profile Settings</h1>
-                    <p className="text-secondary">Manage your account settings</p>
+                    <h1 className="page-title">Настройки профиля</h1>
+                    <p className="text-secondary">Управление настройками вашей учетной записи</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Profile sidebar */}
+                {/* Боковая панель профиля */}
                 <div className="lg:col-span-1">
                     <div className="card p-6 mb-6">
                         <div className="flex flex-col items-center text-center">
@@ -226,12 +226,12 @@ function Profile() {
                             <h2 className="text-xl font-semibold">{displayFio}</h2>
                             <p className="text-secondary mb-4">{userEmail}</p>
                             <div className="badge bg-primary-lighter text-primary px-3 py-1 rounded-full">
-                                {currentUser?.role === 'admin' ? 'Administrator' : currentUser?.role === 'free' ? 'Free User' : 'Premium User'}
+                                {currentUser?.role === 'admin' ? 'Администратор' : currentUser?.role === 'free' ? 'Бесплатный пользователь' : 'Премиум пользователь'}
                             </div>
                         </div>
                     </div>
 
-                    {/* Navigation tabs */}
+                    {/* Навигационные вкладки */}
                     <div className="card overflow-hidden p-0">
                         <ul className="profile-menu">
                             <li className={`profile-menu-item ${activeTab === 'general' ? 'active' : ''}`}>
@@ -240,7 +240,7 @@ function Profile() {
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="12" cy="7" r="4"></circle>
                                     </svg>
-                                    <span>General Information</span>
+                                    <span>Общая информация</span>
                                 </button>
                             </li>
                             <li className={`profile-menu-item ${activeTab === 'security' ? 'active' : ''}`}>
@@ -249,7 +249,7 @@ function Profile() {
                                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                     </svg>
-                                    <span>Password & Security</span>
+                                    <span>Пароль и безопасность</span>
                                 </button>
                             </li>
                             <li className={`profile-menu-item ${activeTab === 'preferences' ? 'active' : ''}`}>
@@ -258,16 +258,16 @@ function Profile() {
                                         <circle cx="12" cy="12" r="3"></circle>
                                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                     </svg>
-                                    <span>Preferences</span>
+                                    <span>Предпочтения</span>
                                 </button>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Content area */}
+                {/* Основной контент */}
                 <div className="lg:col-span-2">
-                    {/* Status messages */}
+                    {/* Сообщения о статусе */}
                     {error && (
                         <div className="alert alert-danger mb-6">
                             <div className="flex items-center gap-3">
@@ -293,13 +293,13 @@ function Profile() {
                         </div>
                     )}
 
-                    {/* General Information Tab */}
+                    {/* Вкладка общей информации */}
                     {activeTab === 'general' && (
                         <div className="card">
-                            <h2 className="text-xl font-semibold mb-4">General Information</h2>
+                            <h2 className="text-xl font-semibold mb-4">Общая информация</h2>
                             <div className="space-y-4">
                                 <div className="form-group">
-                                    <label htmlFor="email" className="form-label">Email Address</label>
+                                    <label htmlFor="email" className="form-label">Адрес электронной почты</label>
                                     <input
                                         type="email"
                                         id="email"
@@ -307,11 +307,11 @@ function Profile() {
                                         disabled
                                         className="form-control bg-bg-dark-tertiary"
                                     />
-                                    <small className="text-tertiary mt-1 block">Email cannot be changed</small>
+                                    <small className="text-tertiary mt-1 block">Email не может быть изменен</small>
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="fio" className="form-label">Full Name</label>
+                                    <label htmlFor="fio" className="form-label">Полное имя</label>
                                     <input
                                         type="text"
                                         id="fio"
@@ -319,36 +319,36 @@ function Profile() {
                                         disabled
                                         className="form-control bg-bg-dark-tertiary"
                                     />
-                                    <small className="text-tertiary mt-1 block">Full Name can only be changed by an administrator</small>
+                                    <small className="text-tertiary mt-1 block">Полное имя может быть изменено только администратором</small>
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="role" className="form-label">Account Type</label>
+                                    <label htmlFor="role" className="form-label">Тип аккаунта</label>
                                     <input
                                         type="text"
                                         id="role"
-                                        value={currentUser?.role === 'admin' ? 'Administrator' : currentUser?.role === 'free' ? 'Free Account' : 'Premium Account'}
+                                        value={currentUser?.role === 'admin' ? 'Администратор' : currentUser?.role === 'free' ? 'Бесплатный аккаунт' : 'Премиум аккаунт'}
                                         disabled
                                         className="form-control bg-bg-dark-tertiary"
                                     />
                                     <small className="text-tertiary mt-1 block">
                                         {currentUser?.role === 'free'
-                                            ? 'Upgrade to Premium for access to all features'
+                                            ? 'Перейдите на Премиум для доступа ко всем функциям'
                                             : currentUser?.role === 'admin'
-                                                ? 'Administrator accounts have full system access'
-                                                : 'Premium accounts have access to all features'}
+                                                ? 'Учетные записи администратора имеют полный доступ к системе'
+                                                : 'Премиум-аккаунты имеют доступ ко всем функциям'}
                                     </small>
                                 </div>
 
                                 {currentUser?.role === 'free' && (
                                     <div className="upgrade-box mt-6 p-4 rounded-lg border border-primary-light bg-primary-lighter bg-opacity-20">
-                                        <h3 className="text-lg font-medium text-primary mb-2">Upgrade to Premium</h3>
+                                        <h3 className="text-lg font-medium text-primary mb-2">Перейти на Премиум</h3>
                                         <p className="text-secondary mb-3">
-                                            Get access to additional features like attendance reports,
-                                            lab grading, and advanced analytics.
+                                            Получите доступ к дополнительным функциям, таким как отчеты о посещаемости,
+                                            оценки лабораторных работ и расширенная аналитика.
                                         </p>
                                         <button className="btn btn-primary">
-                                            Upgrade Account
+                                            Улучшить аккаунт
                                         </button>
                                     </div>
                                 )}
@@ -356,13 +356,13 @@ function Profile() {
                         </div>
                     )}
 
-                    {/* Password & Security Tab */}
+                    {/* Вкладка пароля и безопасности */}
                     {activeTab === 'security' && (
                         <div className="card">
-                            <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+                            <h2 className="text-xl font-semibold mb-4">Изменить пароль</h2>
                             <form onSubmit={handlePasswordUpdate} className="space-y-5">
                                 <div className="form-group">
-                                    <label htmlFor="currentPassword" className="form-label">Current Password</label>
+                                    <label htmlFor="currentPassword" className="form-label">Текущий пароль</label>
                                     <div className="input-with-icon">
                                         <input
                                             type={showPasswords.currentPassword ? "text" : "password"}
@@ -371,7 +371,7 @@ function Profile() {
                                             value={passwordForm.currentPassword}
                                             onChange={handlePasswordChange}
                                             className="form-control pr-10"
-                                            placeholder="Enter your current password"
+                                            placeholder="Введите ваш текущий пароль"
                                         />
                                         <button
                                             type="button"
@@ -395,7 +395,7 @@ function Profile() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="newPassword" className="form-label">New Password</label>
+                                    <label htmlFor="newPassword" className="form-label">Новый пароль</label>
                                     <div className="input-with-icon">
                                         <input
                                             type={showPasswords.newPassword ? "text" : "password"}
@@ -404,7 +404,7 @@ function Profile() {
                                             value={passwordForm.newPassword}
                                             onChange={handlePasswordChange}
                                             className="form-control pr-10"
-                                            placeholder="Enter new password"
+                                            placeholder="Введите новый пароль"
                                         />
                                         <button
                                             type="button"
@@ -439,19 +439,19 @@ function Profile() {
                                                 ))}
                                             </div>
                                             <div className="password-feedback text-xs mt-1">
-                                                {passwordStrength === 0 && <span className="text-danger">Enter a password</span>}
-                                                {passwordStrength === 1 && <span className="text-danger">Very weak</span>}
-                                                {passwordStrength === 2 && <span className="text-danger">Weak</span>}
-                                                {passwordStrength === 3 && <span className="text-warning">Moderate</span>}
-                                                {passwordStrength === 4 && <span className="text-success">Strong</span>}
-                                                {passwordStrength === 5 && <span className="text-success">Very strong</span>}
+                                                {passwordStrength === 0 && <span className="text-danger">Введите пароль</span>}
+                                                {passwordStrength === 1 && <span className="text-danger">Очень слабый</span>}
+                                                {passwordStrength === 2 && <span className="text-danger">Слабый</span>}
+                                                {passwordStrength === 3 && <span className="text-warning">Средний</span>}
+                                                {passwordStrength === 4 && <span className="text-success">Сильный</span>}
+                                                {passwordStrength === 5 && <span className="text-success">Очень сильный</span>}
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="confirmPassword" className="form-label">Confirm New Password</label>
+                                    <label htmlFor="confirmPassword" className="form-label">Подтвердите новый пароль</label>
                                     <div className="input-with-icon">
                                         <input
                                             type={showPasswords.confirmPassword ? "text" : "password"}
@@ -460,7 +460,7 @@ function Profile() {
                                             value={passwordForm.confirmPassword}
                                             onChange={handlePasswordChange}
                                             className="form-control pr-10"
-                                            placeholder="Confirm new password"
+                                            placeholder="Подтвердите новый пароль"
                                         />
                                         <button
                                             type="button"
@@ -484,16 +484,16 @@ function Profile() {
                                     {passwordForm.confirmPassword && (
                                         <div className="text-xs mt-1">
                                             {passwordForm.confirmPassword === passwordForm.newPassword ? (
-                                                <span className="text-success">Passwords match</span>
+                                                <span className="text-success">Пароли совпадают</span>
                                             ) : (
-                                                <span className="text-danger">Passwords don't match</span>
+                                                <span className="text-danger">Пароли не совпадают</span>
                                             )}
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="password-requirements mt-4 p-4 bg-bg-dark-tertiary rounded-lg">
-                                    <h4 className="text-sm font-medium mb-2">Password Requirements</h4>
+                                    <h4 className="text-sm font-medium mb-2">Требования к паролю</h4>
                                     <ul className="text-xs space-y-1 text-secondary">
                                         <li className={`flex items-center gap-1 ${passwordForm.newPassword && passwordForm.newPassword.length >= 8 ? 'text-success' : ''}`}>
                                             {passwordForm.newPassword && passwordForm.newPassword.length >= 8 ? (
@@ -505,7 +505,7 @@ function Profile() {
                                                     <circle cx="12" cy="12" r="10"></circle>
                                                 </svg>
                                             )}
-                                            At least 8 characters
+                                            Не менее 8 символов
                                         </li>
                                         <li className={`flex items-center gap-1 ${passwordForm.newPassword && /[A-Z]/.test(passwordForm.newPassword) ? 'text-success' : ''}`}>
                                             {passwordForm.newPassword && /[A-Z]/.test(passwordForm.newPassword) ? (
@@ -517,7 +517,7 @@ function Profile() {
                                                     <circle cx="12" cy="12" r="10"></circle>
                                                 </svg>
                                             )}
-                                            At least one uppercase letter
+                                            Хотя бы одна заглавная буква
                                         </li>
                                         <li className={`flex items-center gap-1 ${passwordForm.newPassword && /[a-z]/.test(passwordForm.newPassword) ? 'text-success' : ''}`}>
                                             {passwordForm.newPassword && /[a-z]/.test(passwordForm.newPassword) ? (
@@ -529,10 +529,10 @@ function Profile() {
                                                     <circle cx="12" cy="12" r="10"></circle>
                                                 </svg>
                                             )}
-                                            At least one lowercase letter
+                                            Хотя бы одна строчная буква
                                         </li>
-                                        <li className={`flex items-center gap-1 ${passwordForm.newPassword && /\d/.test(passwordForm.newPassword) ? 'text-success' : ''}`}>
-                                            {passwordForm.newPassword && /\d/.test(passwordForm.newPassword) ? (
+                                        <li className={`flex items-center gap-1 ${passwordForm.newPassword && /\\d/.test(passwordForm.newPassword) ? 'text-success' : ''}`}>
+                                            {passwordForm.newPassword && /\\d/.test(passwordForm.newPassword) ? (
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M20 6L9 17l-5-5"></path>
                                                 </svg>
@@ -541,7 +541,7 @@ function Profile() {
                                                     <circle cx="12" cy="12" r="10"></circle>
                                                 </svg>
                                             )}
-                                            At least one number
+                                            Хотя бы одна цифра
                                         </li>
                                         <li className={`flex items-center gap-1 ${passwordForm.newPassword && /[^A-Za-z0-9]/.test(passwordForm.newPassword) ? 'text-success' : ''}`}>
                                             {passwordForm.newPassword && /[^A-Za-z0-9]/.test(passwordForm.newPassword) ? (
@@ -553,7 +553,7 @@ function Profile() {
                                                     <circle cx="12" cy="12" r="10"></circle>
                                                 </svg>
                                             )}
-                                            At least one special character
+                                            Хотя бы один специальный символ
                                         </li>
                                     </ul>
                                 </div>
@@ -567,7 +567,7 @@ function Profile() {
                                         {updateMutation.isPending ? (
                                             <>
                                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                <span>Updating...</span>
+                                                <span>Обновление...</span>
                                             </>
                                         ) : (
                                             <>
@@ -575,7 +575,7 @@ function Profile() {
                                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                                 </svg>
-                                                <span>Change Password</span>
+                                                <span>Изменить пароль</span>
                                             </>
                                         )}
                                     </button>
@@ -584,18 +584,18 @@ function Profile() {
                         </div>
                     )}
 
-                    {/* Preferences Tab */}
+                    {/* Вкладка предпочтений */}
                     {activeTab === 'preferences' && (
                         <div className="card">
-                            <h2 className="text-xl font-semibold mb-4">Preferences</h2>
+                            <h2 className="text-xl font-semibold mb-4">Предпочтения</h2>
                             <div className="space-y-4">
                                 <div className="notification-settings">
-                                    <h3 className="text-lg font-medium mb-3">Notifications</h3>
+                                    <h3 className="text-lg font-medium mb-3">Уведомления</h3>
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h4 className="font-medium">Email Notifications</h4>
-                                                <p className="text-sm text-secondary">Receive email notifications for important events</p>
+                                                <h4 className="font-medium">Email-уведомления</h4>
+                                                <p className="text-sm text-secondary">Получать уведомления по электронной почте о важных событиях</p>
                                             </div>
                                             <label className="switch">
                                                 <input type="checkbox" checked />
@@ -604,8 +604,8 @@ function Profile() {
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h4 className="font-medium">System Notifications</h4>
-                                                <p className="text-sm text-secondary">Receive in-app notifications</p>
+                                                <h4 className="font-medium">Системные уведомления</h4>
+                                                <p className="text-sm text-secondary">Получать уведомления внутри приложения</p>
                                             </div>
                                             <label className="switch">
                                                 <input type="checkbox" checked />
@@ -616,31 +616,28 @@ function Profile() {
                                 </div>
 
                                 <div className="appearance-settings mt-6">
-                                    <h3 className="text-lg font-medium mb-3">Appearance</h3>
+                                    <h3 className="text-lg font-medium mb-3">Внешний вид</h3>
                                     <div className="form-group">
-                                        <label htmlFor="theme" className="form-label">Theme</label>
+                                        <label htmlFor="theme" className="form-label">Тема</label>
                                         <select id="theme" className="form-control">
-                                            <option value="dark">Dark Theme</option>
-                                            <option value="light" disabled>Light Theme (Coming Soon)</option>
-                                            <option value="system" disabled>System Default (Coming Soon)</option>
+                                            <option value="dark">Темная тема</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="appearance-settings mt-6">
-                                    <h3 className="text-lg font-medium mb-3">Language</h3>
+                                    <h3 className="text-lg font-medium mb-3">Язык</h3>
                                     <div className="form-group">
-                                        <label htmlFor="language" className="form-label">Interface Language</label>
+                                        <label htmlFor="language" className="form-label">Язык интерфейса</label>
                                         <select id="language" className="form-control">
-                                            <option value="en">English</option>
-                                            <option value="ru">Russian</option>
+                                            <option value="ru">Русский</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="pt-6">
                                     <button className="btn btn-primary">
-                                        Save Preferences
+                                        Сохранить предпочтения
                                     </button>
                                 </div>
                             </div>
@@ -722,7 +719,7 @@ function Profile() {
                     transition: background-color 0.3s ease;
                 }
                 
-                /* Toggle Switch */
+                /* Переключатель */
                 .switch {
                     position: relative;
                     display: inline-block;

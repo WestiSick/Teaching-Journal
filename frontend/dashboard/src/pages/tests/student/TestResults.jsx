@@ -9,7 +9,6 @@ function TestResults() {
     const [studentInfo, setStudentInfo] = useState(null);
     const studentId = localStorage.getItem('testStudentId');
 
-    // Verify student is logged in
     useEffect(() => {
         const storedStudentInfo = localStorage.getItem('testStudentInfo');
         if (!studentId || !storedStudentInfo) {
@@ -20,23 +19,16 @@ function TestResults() {
         try {
             setStudentInfo(JSON.parse(storedStudentInfo));
         } catch (error) {
-            console.error('Error parsing student info:', error);
             navigate('/tests/student/login');
         }
     }, [navigate, studentId]);
 
-    // Fetch test results
     const { data, isLoading, error } = useQuery({
         queryKey: ['test-results', attemptId],
         queryFn: () => studentTestsService.getTestResults(attemptId),
-        enabled: !!attemptId,
-        onSuccess: (response) => {
-            // Add debug logging to see response structure
-            console.log('Test results response:', response);
-        }
+        enabled: !!attemptId
     });
 
-    // FIXED: Access the correct path in the nested data structure
     const results = data?.data?.data || null;
 
     if (isLoading) {
@@ -48,23 +40,17 @@ function TestResults() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Error loading test results: {error.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки результатов теста: {error.message}</div>;
     }
 
     if (!results || !studentInfo) {
         return (
             <div className="alert alert-warning">
-                <h3>Unable to load results</h3>
-                <p>The results data couldn't be found. This might be because the test hasn't been completed yet.</p>
+                <h3>Не удалось загрузить результаты</h3>
+                <p>Данные результатов не найдены. Возможно, тест еще не завершен.</p>
                 <div className="mt-3">
-                    <Link to="/tests/student" className="btn btn-primary">Back to Tests</Link>
+                    <Link to="/tests/student" className="btn btn-primary">Назад к тестам</Link>
                 </div>
-                {data && (
-                    <div className="debug-info mt-4">
-                        <h4>Response Data:</h4>
-                        <pre>{JSON.stringify(data, null, 2)}</pre>
-                    </div>
-                )}
             </div>
         );
     }
@@ -72,7 +58,7 @@ function TestResults() {
     return (
         <div className="test-results-container">
             <div className="results-header">
-                <h1 className="results-title">Test Results</h1>
+                <h1 className="results-title">Результаты теста</h1>
                 <div className="test-info">
                     <div className="test-name">{results.test_info.title}</div>
                     <div className="test-subject">{results.test_info.subject}</div>
@@ -88,10 +74,10 @@ function TestResults() {
                         </svg>
                     </div>
                     <div className="card-content">
-                        <div className="card-label">Your Score</div>
+                        <div className="card-label">Ваш результат</div>
                         <div className="card-value">{results.attempt_info.score_percent.toFixed(1)}%</div>
                         <div className="card-detail">
-                            {results.attempt_info.score} / {results.attempt_info.total_questions} correct answers
+                            {results.attempt_info.score} / {results.attempt_info.total_questions} правильных ответов
                         </div>
                     </div>
                 </div>
@@ -104,7 +90,7 @@ function TestResults() {
                         </svg>
                     </div>
                     <div className="card-content">
-                        <div className="card-label">Time Spent</div>
+                        <div className="card-label">Затраченное время</div>
                         <div className="card-value">{formatDuration(results.attempt_info.duration_seconds)}</div>
                         <div className="card-detail">
                             {formatDate(results.attempt_info.start_time)}
@@ -120,8 +106,8 @@ function TestResults() {
                         </svg>
                     </div>
                     <div className="card-content">
-                        <div className="card-label">Status</div>
-                        <div className="card-value">{results.attempt_info.completed ? 'Completed' : 'Incomplete'}</div>
+                        <div className="card-label">Статус</div>
+                        <div className="card-value">{results.attempt_info.completed ? 'Завершен' : 'Не завершен'}</div>
                         <div className="card-detail">
                             {results.student_info.name} ({results.student_info.group})
                         </div>
@@ -130,15 +116,15 @@ function TestResults() {
             </div>
 
             <div className="results-details">
-                <h2 className="section-title">Question Details</h2>
+                <h2 className="section-title">Детали вопросов</h2>
 
                 <div className="questions-list">
                     {results.responses.map((response, index) => (
                         <div key={response.question_id} className="question-item">
                             <div className="question-header">
-                                <div className="question-number">Question {index + 1}</div>
+                                <div className="question-number">Вопрос {index + 1}</div>
                                 <div className={`question-result ${response.is_correct ? 'result-correct' : 'result-incorrect'}`}>
-                                    {response.is_correct ? 'Correct' : 'Incorrect'}
+                                    {response.is_correct ? 'Верно' : 'Неверно'}
                                 </div>
                             </div>
 
@@ -146,30 +132,30 @@ function TestResults() {
                                 <div className="question-text">{response.question_text}</div>
                                 <div className="question-meta">
                                     <span className="question-type">{formatQuestionType(response.question_type)}</span>
-                                    <span className="time-spent">Time: {formatDuration(response.time_spent)}</span>
+                                    <span className="time-spent">Время: {formatDuration(response.time_spent)}</span>
                                 </div>
                             </div>
 
                             <div className="answer-section">
                                 <div className="your-answer">
-                                    <div className="answer-label">Your Answer:</div>
+                                    <div className="answer-label">Ваш ответ:</div>
                                     <div className="answer-value">
                                         {response.answer_id ? (
                                             <div className={`answer-badge ${response.is_correct ? 'badge-correct' : 'badge-incorrect'}`}>
-                                                Option selected
+                                                Вариант выбран
                                             </div>
                                         ) : response.text_answer ? (
                                             <div className="text-answer">
                                                 {response.text_answer}
                                             </div>
                                         ) : (
-                                            <div className="no-answer">No answer provided</div>
+                                            <div className="no-answer">Ответ не предоставлен</div>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="correct-answer">
-                                    <div className="answer-label">Correct Answer:</div>
+                                    <div className="answer-label">Правильный ответ:</div>
                                     <div className="answer-value">
                                         <div className="text-answer correct">
                                             {response.correct_answer}
@@ -184,10 +170,10 @@ function TestResults() {
 
             <div className="results-actions">
                 <Link to="/tests/student" className="btn btn-secondary">
-                    Back to Tests
+                    Назад к тестам
                 </Link>
                 <Link to="/tests/student/history" className="btn btn-outline">
-                    View Test History
+                    История тестов
                 </Link>
             </div>
 
@@ -417,28 +403,8 @@ function TestResults() {
                     gap: 1rem;
                 }
                 
-                .debug-info {
-                    margin-top: 1rem;
-                    padding: 1rem;
-                    background-color: var(--bg-dark-tertiary);
-                    border-radius: var(--radius-md);
-                    text-align: left;
-                    overflow: auto;
-                    max-height: 300px;
-                }
-                
-                .debug-info pre {
-                    margin: 0;
-                    white-space: pre-wrap;
-                    font-size: 0.875rem;
-                }
-                
                 .mt-3 {
                     margin-top: 0.75rem;
-                }
-                
-                .mt-4 {
-                    margin-top: 1rem;
                 }
                 
                 @media (max-width: 768px) {
@@ -459,19 +425,18 @@ function TestResults() {
     );
 }
 
-// Helper functions
 function formatDuration(seconds) {
-    if (!seconds) return '0s';
+    if (!seconds) return '0с';
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
 
     if (minutes === 0) {
-        return `${remainingSeconds}s`;
+        return `${remainingSeconds}с`;
     } else if (remainingSeconds === 0) {
-        return `${minutes}m`;
+        return `${minutes}м`;
     } else {
-        return `${minutes}m ${remainingSeconds}s`;
+        return `${minutes}м ${remainingSeconds}с`;
     }
 }
 
@@ -484,11 +449,14 @@ function formatDate(dateString) {
 function formatQuestionType(type) {
     if (!type) return '';
 
-    // Convert "multiple_choice" to "Multiple Choice"
-    return type
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+    // Преобразование "multiple_choice" в "Множественный выбор"
+    const typeMap = {
+        'multiple_choice': 'Множественный выбор',
+        'single_choice': 'Одиночный выбор',
+        'text': 'Текстовый ответ'
+    };
+
+    return typeMap[type] || type.split('_').join(' ');
 }
 
 export default TestResults;

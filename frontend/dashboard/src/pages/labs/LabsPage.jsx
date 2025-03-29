@@ -68,7 +68,7 @@ function LabsPage() {
                             }
                         }
                     } catch (error) {
-                        console.error(`Error fetching grades for ${subject.subject}/${group.name}:`, error);
+                        // Ошибка при получении оценок для этой группы, продолжаем с другими
                     }
                 }
             }
@@ -88,8 +88,8 @@ function LabsPage() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Labs</h1>
-                        <p className="text-secondary">Manage and grade laboratory work</p>
+                        <h1 className="page-title">Лабораторные работы</h1>
+                        <p className="text-secondary">Управление и оценка лабораторных работ</p>
                     </div>
                 </div>
                 <div className="premium-feature-card card p-8">
@@ -99,10 +99,10 @@ function LabsPage() {
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">Premium Feature</h3>
-                        <p className="text-secondary mb-4">Lab grading is a premium feature available with a paid subscription.</p>
-                        <p className="text-secondary mb-6">Track student lab progress, share grade reports, and analyze performance metrics.</p>
-                        <button className="btn btn-primary px-6">Upgrade Now</button>
+                        <h3 className="text-xl font-semibold mb-2">Премиум-функция</h3>
+                        <p className="text-secondary mb-4">Оценка лабораторных работ — это премиум-функция, доступная с платной подпиской.</p>
+                        <p className="text-secondary mb-6">Отслеживайте прогресс студентов в лабораторных работах, делитесь отчетами об оценках и анализируйте показатели успеваемости.</p>
+                        <button className="btn btn-primary px-6">Обновить сейчас</button>
                     </div>
                 </div>
             </div>
@@ -126,7 +126,7 @@ function LabsPage() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading labs: {error.message}</p>
+                    <p>Ошибка загрузки лабораторных работ: {error.message}</p>
                 </div>
             </div>
         );
@@ -136,8 +136,8 @@ function LabsPage() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Labs</h1>
-                    <p className="text-secondary">Manage and grade laboratory work</p>
+                    <h1 className="page-title">Лабораторные работы</h1>
+                    <p className="text-secondary">Управление и оценка лабораторных работ</p>
                 </div>
                 <div>
                     <Link to="/labs/shared" className="btn btn-secondary flex items-center gap-2">
@@ -146,7 +146,7 @@ function LabsPage() {
                             <polyline points="16 6 12 2 8 6"></polyline>
                             <line x1="12" y1="2" x2="12" y2="15"></line>
                         </svg>
-                        <span className="hidden sm:inline">Shared Links</span>
+                        <span className="hidden sm:inline">Общие ссылки</span>
                     </Link>
                 </div>
             </div>
@@ -164,14 +164,14 @@ function LabsPage() {
                                 <path d="M14.83 14.83l-4.24-4.24"></path>
                             </svg>
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">No labs found</h3>
-                        <p className="text-secondary mb-6">You haven't set up any lab grades yet. Create lessons with laboratory work type and then set up lab grades for your groups.</p>
+                        <h3 className="text-xl font-semibold mb-2">Лабораторные работы не найдены</h3>
+                        <p className="text-secondary mb-6">Вы ещё не настроили оценки лабораторных работ. Создайте занятия с типом "лабораторная работа", а затем настройте оценки для своих групп.</p>
                         <Link to="/lessons/new" className="btn btn-primary flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            Create Lab Lesson
+                            Создать лабораторное занятие
                         </Link>
                     </div>
                 </div>
@@ -198,11 +198,11 @@ function LabsPage() {
                                     <table className="table w-full">
                                         <thead>
                                         <tr>
-                                            <th>Group</th>
-                                            <th>Students</th>
-                                            <th>Total Labs</th>
-                                            <th>Average Grade</th>
-                                            <th className="text-right">Actions</th>
+                                            <th>Группа</th>
+                                            <th>Студенты</th>
+                                            <th>Всего лабораторных</th>
+                                            <th>Средняя оценка</th>
+                                            <th className="text-right">Действия</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -236,7 +236,7 @@ function LabsPage() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <span className="text-tertiary">N/A</span>
+                                                            <span className="text-tertiary">Н/Д</span>
                                                         );
                                                     })()}
                                                 </td>
@@ -245,7 +245,7 @@ function LabsPage() {
                                                         onClick={() => navigateToLabGrades(subject.subject, group.name)}
                                                         className="btn btn-primary btn-sm"
                                                     >
-                                                        Manage Lab Grades
+                                                        Управление оценками
                                                     </button>
                                                 </td>
                                             </tr>
@@ -255,7 +255,7 @@ function LabsPage() {
                                 </div>
                             ) : (
                                 <div className="p-6 pt-0">
-                                    <p className="text-secondary">No groups with lab work for this subject</p>
+                                    <p className="text-secondary">Нет групп с лабораторными работами для этого предмета</p>
                                 </div>
                             )}
                         </div>

@@ -86,14 +86,14 @@ function UserManagement() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Error loading users: {error.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки пользователей: {error.message}</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">User Management</h1>
-                <Link to="/admin" className="btn btn-secondary">Back to Admin Dashboard</Link>
+                <h1 className="page-title">Управление пользователями</h1>
+                <Link to="/admin" className="btn btn-secondary">Назад к панели администратора</Link>
             </div>
 
             <div className="card">
@@ -102,7 +102,7 @@ function UserManagement() {
                         <div className="search-container">
                             <input
                                 type="text"
-                                placeholder="Search by name or email..."
+                                placeholder="Поиск по имени или email..."
                                 className="form-control"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -115,16 +115,16 @@ function UserManagement() {
                                 value={roleFilter}
                                 onChange={(e) => setRoleFilter(e.target.value)}
                             >
-                                <option value="">All Roles</option>
-                                <option value="admin">Admin</option>
-                                <option value="teacher">Teacher</option>
-                                <option value="free">Free User</option>
+                                <option value="">Все роли</option>
+                                <option value="admin">Администратор</option>
+                                <option value="teacher">Преподаватель</option>
+                                <option value="free">Бесплатный аккаунт</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <span className="badge badge-info">{filteredUsers.length} users</span>
+                        <span className="badge badge-info">{filteredUsers.length} пользователей</span>
                     </div>
                 </div>
 
@@ -133,11 +133,11 @@ function UserManagement() {
                         <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
+                            <th>Имя</th>
                             <th>Email</th>
-                            <th>Role</th>
-                            <th>Stats</th>
-                            <th>Actions</th>
+                            <th>Роль</th>
+                            <th>Статистика</th>
+                            <th>Действия</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -152,14 +152,16 @@ function UserManagement() {
                                                 user.role === 'teacher' ? 'badge-success' :
                                                     'badge-warning'
                                         }`}>
-                                            {user.role}
+                                            {user.role === 'admin' ? 'Администратор' :
+                                                user.role === 'teacher' ? 'Преподаватель' :
+                                                    'Бесплатный'}
                                         </span>
                                 </td>
                                 <td>
                                     {(user.role === 'teacher' || user.role === 'free') && (
                                         <div>
-                                            <small>Lessons: {user.total_lessons || 0}</small><br />
-                                            <small>Hours: {user.total_hours || 0}</small>
+                                            <small>Занятия: {user.total_lessons || 0}</small><br />
+                                            <small>Часы: {user.total_hours || 0}</small>
                                         </div>
                                     )}
                                 </td>
@@ -170,21 +172,21 @@ function UserManagement() {
                                                 className="btn btn-sm btn-outline"
                                                 onClick={() => handleViewTeacher(user.id)}
                                             >
-                                                View
+                                                Просмотр
                                             </button>
                                         )}
                                         <button
                                             className="btn btn-sm btn-primary"
                                             onClick={() => openRoleModal(user)}
                                         >
-                                            Change Role
+                                            Изменить роль
                                         </button>
                                         {user.role !== 'admin' && (
                                             <button
                                                 className="btn btn-sm btn-danger"
                                                 onClick={() => confirmDeleteUser(user)}
                                             >
-                                                Delete
+                                                Удалить
                                             </button>
                                         )}
                                     </div>
@@ -202,7 +204,7 @@ function UserManagement() {
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h3 className="modal-title">Delete User</h3>
+                                <h3 className="modal-title">Удаление пользователя</h3>
                                 <button
                                     type="button"
                                     className="btn-close"
@@ -212,8 +214,8 @@ function UserManagement() {
                                 </button>
                             </div>
                             <div className="modal-body">
-                                <p>Are you sure you want to delete user <strong>{userToDelete?.fio}</strong>?</p>
-                                <p className="text-danger">This action cannot be undone and will delete all associated data!</p>
+                                <p>Вы уверены, что хотите удалить пользователя <strong>{userToDelete?.fio}</strong>?</p>
+                                <p className="text-danger">Это действие нельзя отменить, и все связанные данные будут удалены!</p>
                             </div>
                             <div className="modal-footer">
                                 <button
@@ -221,7 +223,7 @@ function UserManagement() {
                                     className="btn btn-secondary"
                                     onClick={() => setShowConfirmation(false)}
                                 >
-                                    Cancel
+                                    Отмена
                                 </button>
                                 <button
                                     type="button"
@@ -229,7 +231,7 @@ function UserManagement() {
                                     onClick={handleDeleteUser}
                                     disabled={deleteUserMutation.isPending}
                                 >
-                                    {deleteUserMutation.isPending ? 'Deleting...' : 'Delete User'}
+                                    {deleteUserMutation.isPending ? 'Удаление...' : 'Удалить пользователя'}
                                 </button>
                             </div>
                         </div>
@@ -243,7 +245,7 @@ function UserManagement() {
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h3 className="modal-title">Change User Role</h3>
+                                <h3 className="modal-title">Изменение роли пользователя</h3>
                                 <button
                                     type="button"
                                     className="btn-close"
@@ -253,18 +255,18 @@ function UserManagement() {
                                 </button>
                             </div>
                             <div className="modal-body">
-                                <p>Change role for user <strong>{userToModify?.fio}</strong></p>
+                                <p>Изменить роль для пользователя <strong>{userToModify?.fio}</strong></p>
                                 <div className="form-group">
-                                    <label htmlFor="role-select">Select Role</label>
+                                    <label htmlFor="role-select">Выберите роль</label>
                                     <select
                                         id="role-select"
                                         className="form-control"
                                         value={selectedRole}
                                         onChange={(e) => setSelectedRole(e.target.value)}
                                     >
-                                        <option value="admin">Admin</option>
-                                        <option value="teacher">Teacher</option>
-                                        <option value="free">Free User</option>
+                                        <option value="admin">Администратор</option>
+                                        <option value="teacher">Преподаватель</option>
+                                        <option value="free">Бесплатный аккаунт</option>
                                     </select>
                                 </div>
                             </div>
@@ -274,7 +276,7 @@ function UserManagement() {
                                     className="btn btn-secondary"
                                     onClick={() => setUserToModify(null)}
                                 >
-                                    Cancel
+                                    Отмена
                                 </button>
                                 <button
                                     type="button"
@@ -282,7 +284,7 @@ function UserManagement() {
                                     onClick={handleUpdateRole}
                                     disabled={updateRoleMutation.isPending}
                                 >
-                                    {updateRoleMutation.isPending ? 'Updating...' : 'Save Changes'}
+                                    {updateRoleMutation.isPending ? 'Обновление...' : 'Сохранить изменения'}
                                 </button>
                             </div>
                         </div>

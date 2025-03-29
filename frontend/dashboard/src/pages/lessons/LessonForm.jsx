@@ -9,7 +9,7 @@ function LessonForm() {
     const queryClient = useQueryClient();
     const isEditMode = !!id;
 
-    // Form state
+    // Состояние формы
     const [formData, setFormData] = useState({
         group_name: '',
         subject: '',
@@ -21,67 +21,67 @@ function LessonForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // UI state for showing dropdowns
+    // Состояние UI для отображения выпадающих списков
     const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
     const [showGroupDropdown, setShowGroupDropdown] = useState(false);
 
-    // Refs for the input fields to focus them
+    // Ссылки на поля ввода для их фокусировки
     const subjectInputRef = useRef(null);
     const groupInputRef = useRef(null);
 
-    // Refs for the dropdown containers for clicking outside detection
+    // Ссылки на контейнеры выпадающих списков для обнаружения клика вне элемента
     const subjectDropdownRef = useRef(null);
     const groupDropdownRef = useRef(null);
 
-    // Fetch groups for dropdown
+    // Получение групп для выпадающего списка
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
     });
 
-    // Fetch subjects for dropdown
+    // Получение предметов для выпадающего списка
     const { data: subjectsData } = useQuery({
         queryKey: ['subjects'],
         queryFn: lessonService.getSubjects
     });
 
-    // Fetch lesson data if in edit mode
+    // Получение данных занятия в режиме редактирования
     const { data: lessonData, isLoading: lessonLoading } = useQuery({
         queryKey: ['lesson', id],
         queryFn: () => lessonService.getLesson(id),
         enabled: isEditMode
     });
 
-    // Create mutation
+    // Мутация для создания
     const createMutation = useMutation({
         mutationFn: (data) => lessonService.createLesson(data),
         onSuccess: () => {
-            setSuccess('Lesson created successfully');
+            setSuccess('Занятие успешно создано');
             queryClient.invalidateQueries({ queryKey: ['lessons'] });
             queryClient.invalidateQueries({ queryKey: ['subjects'] });
             setTimeout(() => navigate('/lessons'), 1500);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to create lesson');
+            setError(err.response?.data?.error || 'Не удалось создать занятие');
         }
     });
 
-    // Update mutation
+    // Мутация для обновления
     const updateMutation = useMutation({
         mutationFn: (data) => lessonService.updateLesson(id, data),
         onSuccess: () => {
-            setSuccess('Lesson updated successfully');
+            setSuccess('Занятие успешно обновлено');
             queryClient.invalidateQueries({ queryKey: ['lessons'] });
             queryClient.invalidateQueries({ queryKey: ['lesson', id] });
             queryClient.invalidateQueries({ queryKey: ['subjects'] });
             setTimeout(() => navigate(`/lessons/${id}`), 1500);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to update lesson');
+            setError(err.response?.data?.error || 'Не удалось обновить занятие');
         }
     });
 
-    // Populate form with lesson data if in edit mode
+    // Заполнение формы данными занятия в режиме редактирования
     useEffect(() => {
         if (isEditMode && lessonData?.data?.data) {
             const lesson = lessonData.data.data;
@@ -96,7 +96,7 @@ function LessonForm() {
         }
     }, [isEditMode, lessonData]);
 
-    // Handle clicking outside of dropdowns to close them
+    // Обработка клика вне выпадающих списков для их закрытия
     useEffect(() => {
         function handleClickOutside(event) {
             if (subjectDropdownRef.current && !subjectDropdownRef.current.contains(event.target)) {
@@ -139,27 +139,27 @@ function LessonForm() {
         setSuccess('');
 
         if (!formData.group_name) {
-            setError('Group is required');
+            setError('Необходимо указать группу');
             return false;
         }
 
         if (!formData.subject) {
-            setError('Subject is required');
+            setError('Необходимо указать предмет');
             return false;
         }
 
         if (!formData.topic) {
-            setError('Topic is required');
+            setError('Необходимо указать тему');
             return false;
         }
 
         if (!formData.date) {
-            setError('Date is required');
+            setError('Необходимо указать дату');
             return false;
         }
 
         if (!formData.hours || formData.hours <= 0) {
-            setError('Hours must be greater than 0');
+            setError('Количество часов должно быть больше 0');
             return false;
         }
 
@@ -178,7 +178,7 @@ function LessonForm() {
         }
     };
 
-    // Loading state for edit mode
+    // Состояние загрузки для режима редактирования
     if (isEditMode && lessonLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -190,7 +190,7 @@ function LessonForm() {
     const groups = groupsData?.data?.data || [];
     const subjects = subjectsData?.data?.data || [];
 
-    // Filter groups and subjects based on current input
+    // Фильтрация групп и предметов на основе текущего ввода
     const filteredGroups = groups.filter(group =>
         group.name.toLowerCase().includes(formData.group_name.toLowerCase())
     );
@@ -203,9 +203,9 @@ function LessonForm() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">{isEditMode ? 'Edit Lesson' : 'Add New Lesson'}</h1>
+                    <h1 className="page-title">{isEditMode ? 'Редактировать занятие' : 'Добавить новое занятие'}</h1>
                     <p className="text-secondary">
-                        {isEditMode ? 'Update lesson information' : 'Create a new lesson for your group'}
+                        {isEditMode ? 'Обновление информации о занятии' : 'Создание нового занятия для вашей группы'}
                     </p>
                 </div>
                 <Link to="/lessons" className="btn btn-secondary flex items-center gap-2">
@@ -213,7 +213,7 @@ function LessonForm() {
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    <span className="hidden sm:inline">Back</span>
+                    <span className="hidden sm:inline">Назад</span>
                 </Link>
             </div>
 
@@ -245,9 +245,9 @@ function LessonForm() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Group Selection */}
+                        {/* Выбор группы */}
                         <div className="form-group" ref={groupDropdownRef}>
-                            <label htmlFor="group_name" className="form-label">Group <span className="text-danger">*</span></label>
+                            <label htmlFor="group_name" className="form-label">Группа <span className="text-danger">*</span></label>
                             <div className="relative dropdown-container">
                                 <div className="input-with-icon">
                                     <input
@@ -260,7 +260,7 @@ function LessonForm() {
                                         ref={groupInputRef}
                                         required
                                         className="form-control pl-10"
-                                        placeholder="Enter or select group"
+                                        placeholder="Введите или выберите группу"
                                         autoComplete="off"
                                     />
                                     <div className="input-icon left">
@@ -282,21 +282,21 @@ function LessonForm() {
                                             >
                                                 <span className="font-medium">{group.name}</span>
                                                 <span className="text-sm text-tertiary ml-2">
-                                                    {group.student_count} students
+                                                    {group.student_count} студентов
                                                 </span>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                                 <small className="text-tertiary mt-1 block">
-                                    Type to search or enter a new group name
+                                    Введите для поиска или укажите новое название группы
                                 </small>
                             </div>
                         </div>
 
-                        {/* Subject Input */}
+                        {/* Ввод предмета */}
                         <div className="form-group" ref={subjectDropdownRef}>
-                            <label htmlFor="subject" className="form-label">Subject <span className="text-danger">*</span></label>
+                            <label htmlFor="subject" className="form-label">Предмет <span className="text-danger">*</span></label>
                             <div className="relative dropdown-container">
                                 <div className="input-with-icon">
                                     <input
@@ -309,7 +309,7 @@ function LessonForm() {
                                         ref={subjectInputRef}
                                         required
                                         className="form-control pl-10"
-                                        placeholder="Enter or select subject"
+                                        placeholder="Введите или выберите предмет"
                                         autoComplete="off"
                                     />
                                     <div className="input-icon left">
@@ -333,15 +333,15 @@ function LessonForm() {
                                     </div>
                                 )}
                                 <small className="text-tertiary mt-1 block">
-                                    Type to search or enter a new subject name
+                                    Введите для поиска или укажите новое название предмета
                                 </small>
                             </div>
                         </div>
                     </div>
 
-                    {/* Topic Input */}
+                    {/* Ввод темы */}
                     <div className="form-group">
-                        <label htmlFor="topic" className="form-label">Topic <span className="text-danger">*</span></label>
+                        <label htmlFor="topic" className="form-label">Тема <span className="text-danger">*</span></label>
                         <div className="input-with-icon">
                             <input
                                 type="text"
@@ -351,7 +351,7 @@ function LessonForm() {
                                 onChange={handleChange}
                                 required
                                 className="form-control pl-10"
-                                placeholder="Enter lesson topic"
+                                placeholder="Введите тему занятия"
                             />
                             <div className="input-icon left">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -364,9 +364,9 @@ function LessonForm() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Lesson Type */}
+                        {/* Тип занятия */}
                         <div className="form-group">
-                            <label htmlFor="type" className="form-label">Lesson Type <span className="text-danger">*</span></label>
+                            <label htmlFor="type" className="form-label">Тип занятия <span className="text-danger">*</span></label>
                             <div className="input-with-icon">
                                 <select
                                     id="type"
@@ -392,9 +392,9 @@ function LessonForm() {
                             </div>
                         </div>
 
-                        {/* Date Input */}
+                        {/* Ввод даты */}
                         <div className="form-group">
-                            <label htmlFor="date" className="form-label">Date <span className="text-danger">*</span></label>
+                            <label htmlFor="date" className="form-label">Дата <span className="text-danger">*</span></label>
                             <div className="input-with-icon">
                                 <input
                                     type="date"
@@ -416,9 +416,9 @@ function LessonForm() {
                             </div>
                         </div>
 
-                        {/* Hours Input */}
+                        {/* Ввод часов */}
                         <div className="form-group">
-                            <label htmlFor="hours" className="form-label">Hours <span className="text-danger">*</span></label>
+                            <label htmlFor="hours" className="form-label">Часов <span className="text-danger">*</span></label>
                             <div className="input-with-icon">
                                 <input
                                     type="number"
@@ -450,7 +450,7 @@ function LessonForm() {
                             {createMutation.isPending || updateMutation.isPending ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Saving...</span>
+                                    <span>Сохранение...</span>
                                 </>
                             ) : isEditMode ? (
                                 <>
@@ -459,7 +459,7 @@ function LessonForm() {
                                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                         <polyline points="7 3 7 8 15 8"></polyline>
                                     </svg>
-                                    <span>Update Lesson</span>
+                                    <span>Обновить занятие</span>
                                 </>
                             ) : (
                                 <>
@@ -467,7 +467,7 @@ function LessonForm() {
                                         <line x1="12" y1="5" x2="12" y2="19"></line>
                                         <line x1="5" y1="12" x2="19" y2="12"></line>
                                     </svg>
-                                    <span>Create Lesson</span>
+                                    <span>Создать занятие</span>
                                 </>
                             )}
                         </button>
@@ -476,7 +476,7 @@ function LessonForm() {
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            <span>Cancel</span>
+                            <span>Отмена</span>
                         </Link>
                     </div>
                 </form>

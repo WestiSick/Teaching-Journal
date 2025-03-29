@@ -5,14 +5,6 @@ export function ProtectedRoute({ children, requireAdmin = false }) {
     const { isAuthenticated, isAdmin, currentUser } = useAuth();
     const location = useLocation();
 
-    console.log("Protected route check:", {
-        isAuthenticated,
-        isAdmin,
-        requireAdmin,
-        currentUser,
-        pathname: location.pathname
-    });
-
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }

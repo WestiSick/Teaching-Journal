@@ -15,20 +15,20 @@ function AttendancePage() {
         date_to: ''
     });
 
-    // Fetch attendance data with filters
+    // Получение данных посещаемости с фильтрами
     const { data, isLoading, error } = useQuery({
         queryKey: ['attendance', filters],
         queryFn: () => attendanceService.getAttendance(filters),
-        enabled: !isFree // Only fetch if user has subscription
+        enabled: !isFree // Загружать только если пользователь имеет подписку
     });
 
-    // Fetch groups for filter dropdown
+    // Загрузка групп для выпадающего списка фильтров
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
     });
 
-    // Fetch subjects for filter dropdown
+    // Загрузка предметов для выпадающего списка фильтров
     const { data: subjectsData } = useQuery({
         queryKey: ['subjects'],
         queryFn: lessonService.getSubjects
@@ -38,7 +38,7 @@ function AttendancePage() {
     const groups = groupsData?.data?.data || [];
     const subjects = subjectsData?.data?.data || [];
 
-    // Set initial date filters to current month
+    // Установка начальных фильтров даты на текущий месяц
     useEffect(() => {
         const today = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -70,24 +70,23 @@ function AttendancePage() {
     };
 
     /**
-     * Parse and format the date string
-     * Handles both "DD.MM.YYYY" format and ISO date strings
+     * Форматирование строки даты
+     * Обрабатывает как формат "ДД.ММ.ГГГГ", так и строки даты в ISO формате
      */
     const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
+        if (!dateString) return 'Н/Д';
 
         try {
-            // Check if the date is in DD.MM.YYYY format
+            // Проверка, если дата в формате ДД.ММ.ГГГГ
             if (dateString.includes('.')) {
                 const [day, month, year] = dateString.split('.');
                 return new Date(`${year}-${month}-${day}`).toLocaleDateString();
             }
 
-            // Otherwise assume it's ISO or another format that Date can handle
+            // Иначе предполагаем, что это ISO или другой формат, который Date может обработать
             return new Date(dateString).toLocaleDateString();
         } catch (error) {
-            console.error('Error formatting date:', error, dateString);
-            return dateString; // Return the original string if parsing fails
+            return dateString; // Возвращаем исходную строку, если анализ не удался
         }
     };
 
@@ -105,26 +104,25 @@ function AttendancePage() {
 
     const handleExport = async () => {
         try {
-            // Always use 'lesson' mode
+            // Всегда используем режим 'lesson'
             const response = await attendanceService.exportAttendance('lesson');
 
-            // Create a blob from the response
+            // Создаем blob из ответа
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
             const url = window.URL.createObjectURL(blob);
 
-            // Create a temporary link and trigger download
+            // Создаем временную ссылку и запускаем скачивание
             const a = document.createElement('a');
             a.href = url;
-            a.download = `attendance_export_lesson_${new Date().toISOString().split('T')[0]}.xlsx`;
+            a.download = `отчет_посещаемости_занятия_${new Date().toISOString().split('T')[0]}.xlsx`;
             document.body.appendChild(a);
             a.click();
 
-            // Clean up
+            // Очистка
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            console.error('Error exporting attendance:', error);
-            alert('Failed to export attendance data');
+            alert('Не удалось экспортировать данные о посещаемости');
         }
     };
 
@@ -133,8 +131,8 @@ function AttendancePage() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Attendance</h1>
-                        <p className="text-secondary">Track student attendance and participation</p>
+                        <h1 className="page-title">Посещаемость</h1>
+                        <p className="text-secondary">Отслеживание посещаемости и активности студентов</p>
                     </div>
                 </div>
                 <div className="card p-0 overflow-hidden">
@@ -144,10 +142,10 @@ function AttendancePage() {
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">Premium Feature</h3>
-                        <p className="mb-2">Attendance tracking is available with a paid subscription plan.</p>
-                        <p className="mb-6">Track students' attendance, generate reports, and get insights on participation rates.</p>
-                        <button className="btn btn-primary">Upgrade Now</button>
+                        <h3 className="text-xl font-semibold mb-2">Премиум-функция</h3>
+                        <p className="mb-2">Отслеживание посещаемости доступно с платной подпиской.</p>
+                        <p className="mb-6">Отслеживайте посещаемость студентов, создавайте отчеты и получайте аналитику.</p>
+                        <button className="btn btn-primary">Обновить сейчас</button>
                     </div>
                 </div>
             </div>
@@ -171,7 +169,7 @@ function AttendancePage() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading attendance data: {error.message}</p>
+                    <p>Ошибка загрузки данных о посещаемости: {error.message}</p>
                 </div>
             </div>
         );
@@ -181,8 +179,8 @@ function AttendancePage() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Attendance</h1>
-                    <p className="text-secondary">Track and manage student attendance</p>
+                    <h1 className="page-title">Посещаемость</h1>
+                    <p className="text-secondary">Отслеживание и управление посещаемостью студентов</p>
                 </div>
                 <RequireSubscription>
                     <div className="flex flex-wrap gap-2">
@@ -195,7 +193,7 @@ function AttendancePage() {
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
-                            <span className="hidden sm:inline">Export</span>
+                            <span className="hidden sm:inline">Экспорт</span>
                         </button>
 
                         <Link to="/attendance/reports" className="btn btn-primary flex items-center gap-2">
@@ -204,17 +202,17 @@ function AttendancePage() {
                                 <line x1="12" y1="20" x2="12" y2="4"></line>
                                 <line x1="6" y1="20" x2="6" y2="14"></line>
                             </svg>
-                            <span className="hidden sm:inline">Reports</span>
+                            <span className="hidden sm:inline">Отчеты</span>
                         </Link>
                     </div>
                 </RequireSubscription>
             </div>
 
-            {/* Compact Filters */}
+            {/* Компактные фильтры */}
             <div className="bg-dark-secondary rounded-lg mb-6 p-3">
                 <div className="flex flex-wrap items-end gap-2">
                     <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="group" className="form-label text-xs mb-1">Group</label>
+                        <label htmlFor="group" className="form-label text-xs mb-1">Группа</label>
                         <select
                             id="group"
                             name="group"
@@ -222,7 +220,7 @@ function AttendancePage() {
                             onChange={handleFilterChange}
                             className="form-control py-1 text-sm"
                         >
-                            <option value="">All Groups</option>
+                            <option value="">Все группы</option>
                             {groups.map(group => (
                                 <option key={group.name} value={group.name}>{group.name}</option>
                             ))}
@@ -230,7 +228,7 @@ function AttendancePage() {
                     </div>
 
                     <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="subject" className="form-label text-xs mb-1">Subject</label>
+                        <label htmlFor="subject" className="form-label text-xs mb-1">Предмет</label>
                         <select
                             id="subject"
                             name="subject"
@@ -238,7 +236,7 @@ function AttendancePage() {
                             onChange={handleFilterChange}
                             className="form-control py-1 text-sm"
                         >
-                            <option value="">All Subjects</option>
+                            <option value="">Все предметы</option>
                             {subjects.map(subject => (
                                 <option key={subject} value={subject}>{subject}</option>
                             ))}
@@ -246,7 +244,7 @@ function AttendancePage() {
                     </div>
 
                     <div className="flex-1 min-w-[110px]">
-                        <label htmlFor="date_from" className="form-label text-xs mb-1">From</label>
+                        <label htmlFor="date_from" className="form-label text-xs mb-1">От</label>
                         <input
                             type="date"
                             id="date_from"
@@ -258,7 +256,7 @@ function AttendancePage() {
                     </div>
 
                     <div className="flex-1 min-w-[110px]">
-                        <label htmlFor="date_to" className="form-label text-xs mb-1">To</label>
+                        <label htmlFor="date_to" className="form-label text-xs mb-1">До</label>
                         <input
                             type="date"
                             id="date_to"
@@ -272,7 +270,7 @@ function AttendancePage() {
                     <button
                         onClick={clearFilters}
                         className="btn btn-outline py-1 px-3 h-[34px] flex items-center gap-1 text-xs"
-                        title="Clear all filters"
+                        title="Очистить все фильтры"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 12a9 9 0 0 1-9 9c-2.39 0-4.68-.94-6.4-2.65L3 16"></path>
@@ -280,12 +278,12 @@ function AttendancePage() {
                             <path d="M3 8h6"></path>
                             <path d="M15 16h6"></path>
                         </svg>
-                        Clear
+                        Очистить
                     </button>
                 </div>
             </div>
 
-            {/* Attendance Table */}
+            {/* Таблица посещаемости */}
             {attendanceRecords.length === 0 ? (
                 <div className="card p-8">
                     <div className="text-center">
@@ -297,8 +295,8 @@ function AttendancePage() {
                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                             </svg>
                         </div>
-                        <h3 className="text-xl mb-2">No attendance records found</h3>
-                        <p className="text-tertiary mb-6">Try changing your filters or record attendance for your lessons.</p>
+                        <h3 className="text-xl mb-2">Записи о посещаемости не найдены</h3>
+                        <p className="text-tertiary mb-6">Попробуйте изменить фильтры или отметить посещаемость на занятиях.</p>
                     </div>
                 </div>
             ) : (
@@ -307,12 +305,12 @@ function AttendancePage() {
                         <table className="table">
                             <thead>
                             <tr>
-                                <th width="120">Date</th>
-                                <th>Subject</th>
-                                <th>Group</th>
-                                <th>Topic</th>
-                                <th>Attendance</th>
-                                <th width="100" className="text-right">Actions</th>
+                                <th width="120">Дата</th>
+                                <th>Предмет</th>
+                                <th>Группа</th>
+                                <th>Тема</th>
+                                <th>Посещаемость</th>
+                                <th width="100" className="text-right">Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -325,7 +323,7 @@ function AttendancePage() {
                                             {record.group_name}
                                         </Link>
                                     </td>
-                                    <td>{record.topic || 'N/A'}</td>
+                                    <td>{record.topic || 'Н/Д'}</td>
                                     <td>
                                         <div className="attendance-indicator">
                                             <div className="attendance-count">
@@ -348,7 +346,7 @@ function AttendancePage() {
                                     <td>
                                         <div className="flex justify-end">
                                             <Link to={`/attendance/${record.lesson_id}`} className="btn btn-sm btn-primary">
-                                                Manage
+                                                Управление
                                             </Link>
                                         </div>
                                     </td>
@@ -360,7 +358,7 @@ function AttendancePage() {
                 </div>
             )}
 
-            {/* Custom styles for attendance */}
+            {/* Пользовательские стили для посещаемости */}
             <style jsx="true">{`
                 .attendance-indicator {
                     display: flex;

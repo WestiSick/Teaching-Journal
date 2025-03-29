@@ -1,4 +1,3 @@
-// frontend/dashboard/src/pages/tickets/TicketsPage.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -16,33 +15,17 @@ function TicketsPage() {
         queryFn: () => ticketService.getTickets({ status: filter, sort: sortBy })
     });
 
-    // Only fetch stats if user is admin
     const { data: statsData, isLoading: statsLoading } = useQuery({
         queryKey: ['ticket-stats'],
         queryFn: ticketService.getTicketStats,
         retry: 1,         // Only retry once
         retryDelay: 1000, // Wait 1 second before retrying
-        onError: (error) => {
-            console.error('Failed to load ticket stats:', error);
-        },
-        // Skip this query for non-admin users
         enabled: isAdmin
     });
 
-    // Debug the stats data (for admin only)
-    useEffect(() => {
-        if (statsData && isAdmin) {
-            console.log('Stats data received:', statsData);
-        }
-    }, [statsData, isAdmin]);
-
     const tickets = data?.data?.data || [];
 
-    // Extract stats safely with fallbacks (for admin only)
     const stats = isAdmin ? (statsData?.data?.data || {}) : {};
-    if (isAdmin) {
-        console.log('Stats object for display:', stats);
-    }
 
     const totalTickets = stats.total || 0;
     const newTickets = stats.new || 0;
@@ -58,7 +41,6 @@ function TicketsPage() {
         setSortBy(event.target.value);
     };
 
-    // Function to get appropriate badge class for ticket status
     const getStatusBadge = (status) => {
         switch(status.toLowerCase()) {
             case 'new':
@@ -76,7 +58,6 @@ function TicketsPage() {
         }
     };
 
-    // Function to get appropriate badge class for ticket priority
     const getPriorityBadge = (priority) => {
         switch(priority.toLowerCase()) {
             case 'low':
@@ -101,15 +82,15 @@ function TicketsPage() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Support Tickets</h1>
-                    <p className="text-secondary">View and manage all support tickets</p>
+                    <h1 className="page-title">Тикеты поддержки</h1>
+                    <p className="text-secondary">Просмотр и управление всеми тикетами поддержки</p>
                 </div>
                 <Link to="/tickets/new" className="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    New Ticket
+                    Новый тикет
                 </Link>
             </div>
 
@@ -118,23 +99,23 @@ function TicketsPage() {
                 !statsLoading ? (
                     <div className="grid grid-cols-5 gap-4 mb-6">
                         <div className="stats-card" style={{ borderLeftColor: 'var(--primary)' }}>
-                            <div className="stats-card-title">Total Tickets</div>
+                            <div className="stats-card-title">Всего тикетов</div>
                             <div className="stats-card-value">{totalTickets}</div>
                         </div>
                         <div className="stats-card" style={{ borderLeftColor: 'var(--primary)' }}>
-                            <div className="stats-card-title">New</div>
+                            <div className="stats-card-title">Новых</div>
                             <div className="stats-card-value">{newTickets}</div>
                         </div>
                         <div className="stats-card" style={{ borderLeftColor: 'var(--warning)' }}>
-                            <div className="stats-card-title">In Progress</div>
+                            <div className="stats-card-title">В работе</div>
                             <div className="stats-card-value">{inProgressTickets}</div>
                         </div>
                         <div className="stats-card" style={{ borderLeftColor: 'var(--success)' }}>
-                            <div className="stats-card-title">Resolved</div>
+                            <div className="stats-card-title">Решенных</div>
                             <div className="stats-card-value">{resolvedTickets}</div>
                         </div>
                         <div className="stats-card" style={{ borderLeftColor: 'var(--neutral-500)' }}>
-                            <div className="stats-card-title">Closed</div>
+                            <div className="stats-card-title">Закрытых</div>
                             <div className="stats-card-value">{closedTickets}</div>
                         </div>
                     </div>
@@ -153,38 +134,38 @@ function TicketsPage() {
                             className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => handleFilterChange('all')}
                         >
-                            All
+                            Все
                         </button>
                         <button
                             className={`btn ${filter === 'new' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => handleFilterChange('new')}
                         >
-                            New
+                            Новые
                         </button>
                         <button
                             className={`btn ${filter === 'inprogress' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => handleFilterChange('inprogress')}
                         >
-                            In Progress
+                            В работе
                         </button>
                         <button
                             className={`btn ${filter === 'resolved' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => handleFilterChange('resolved')}
                         >
-                            Resolved
+                            Решенные
                         </button>
                         <button
                             className={`btn ${filter === 'closed' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => handleFilterChange('closed')}
                         >
-                            Closed
+                            Закрытые
                         </button>
                         {isAdmin && (
                             <button
                                 className={`btn ${filter === 'assigned' ? 'btn-primary' : 'btn-outline'}`}
                                 onClick={() => handleFilterChange('assigned')}
                             >
-                                Assigned to Me
+                                Назначенные мне
                             </button>
                         )}
                     </div>
@@ -196,13 +177,13 @@ function TicketsPage() {
                             value={sortBy}
                             onChange={handleSortChange}
                         >
-                            <option value="last_activity">Latest Activity</option>
-                            <option value="created_desc">Newest</option>
-                            <option value="created_asc">Oldest</option>
-                            <option value="priority_desc">Highest Priority</option>
-                            <option value="priority_asc">Lowest Priority</option>
-                            <option value="status_asc">Status (A-Z)</option>
-                            <option value="status_desc">Status (Z-A)</option>
+                            <option value="last_activity">Последняя активность</option>
+                            <option value="created_desc">Новые</option>
+                            <option value="created_asc">Старые</option>
+                            <option value="priority_desc">Высший приоритет</option>
+                            <option value="priority_asc">Низший приоритет</option>
+                            <option value="status_asc">Статус (А-Я)</option>
+                            <option value="status_desc">Статус (Я-А)</option>
                         </select>
                     </div>
                 </div>
@@ -218,7 +199,7 @@ function TicketsPage() {
                             <line x1="12" y1="8" x2="12" y2="12"></line>
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
-                        <span>Error loading tickets: {error.message}</span>
+                        <span>Ошибка загрузки тикетов: {error.message}</span>
                     </div>
                 ) : tickets.length === 0 ? (
                     <div className="text-center p-8">
@@ -231,11 +212,11 @@ function TicketsPage() {
                                 <line x1="10" y1="9" x2="8" y2="9"></line>
                             </svg>
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">No tickets found</h3>
-                        <p className="mb-4">There are no tickets matching your current filters.</p>
+                        <h3 className="text-xl font-semibold mb-2">Тикеты не найдены</h3>
+                        <p className="mb-4">Нет тикетов, соответствующих текущим фильтрам.</p>
                         <div className="flex gap-2 justify-center">
-                            <button onClick={() => handleFilterChange('all')} className="btn btn-outline">View All Tickets</button>
-                            <Link to="/tickets/new" className="btn btn-primary">Create a Ticket</Link>
+                            <button onClick={() => handleFilterChange('all')} className="btn btn-outline">Показать все тикеты</button>
+                            <Link to="/tickets/new" className="btn btn-primary">Создать тикет</Link>
                         </div>
                     </div>
                 ) : (
@@ -244,14 +225,14 @@ function TicketsPage() {
                             <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Title</th>
-                                <th>Status</th>
-                                <th>Priority</th>
-                                <th>Category</th>
-                                <th>Created By</th>
-                                <th>Created</th>
-                                <th>Last Activity</th>
-                                <th className="text-right">Actions</th>
+                                <th>Заголовок</th>
+                                <th>Статус</th>
+                                <th>Приоритет</th>
+                                <th>Категория</th>
+                                <th>Создан</th>
+                                <th>Дата создания</th>
+                                <th>Последняя активность</th>
+                                <th className="text-right">Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -274,17 +255,17 @@ function TicketsPage() {
                                             </span>
                                     </td>
                                     <td>{ticket.category}</td>
-                                    <td>{ticket.created_by_user?.name || `User #${ticket.created_by}`}</td>
+                                    <td>{ticket.created_by_user?.name || `Пользователь #${ticket.created_by}`}</td>
                                     <td>{formatDate(ticket.created_at)}</td>
                                     <td>{formatDate(ticket.last_activity)}</td>
                                     <td className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Link to={`/tickets/${ticket.id}`} className="btn btn-sm btn-outline">
-                                                View
+                                                Просмотр
                                             </Link>
                                             {(isAdmin || currentUser?.id === ticket.created_by) && (
                                                 <Link to={`/tickets/${ticket.id}/edit`} className="btn btn-sm btn-primary">
-                                                    Edit
+                                                    Редактировать
                                                 </Link>
                                             )}
                                         </div>

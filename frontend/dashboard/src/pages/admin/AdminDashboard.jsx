@@ -6,20 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 
 function AdminDashboard() {
     useEffect(() => {
-        // Отладочная информация
-        console.log("Admin Dashboard Debug:");
-        console.log("Current token:", localStorage.getItem('token'));
-        try {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const decoded = jwtDecode(token);
-                console.log("Token payload:", decoded);
-                console.log("User role in token:", decoded.user_role);
-                console.log("Is token expired:", decoded.exp < Date.now() / 1000);
-            }
-        } catch (error) {
-            console.error("Error decoding token:", error);
-        }
+        // Убраны отладочные логи
     }, []);
 
     // Fetch users for basic statistics
@@ -54,40 +41,40 @@ function AdminDashboard() {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Admin Dashboard</h1>
+                <h1 className="page-title">Панель администратора</h1>
             </div>
 
             {/* Stats Overview */}
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="stats-card" style={{ borderLeftColor: 'var(--primary)' }}>
-                    <div className="stats-card-title">Total Users</div>
+                    <div className="stats-card-title">Всего пользователей</div>
                     <div className="stats-card-value">{totalUsers}</div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Registered accounts</span>
+                        <span className="text-tertiary">Зарегистрированных аккаунтов</span>
                     </div>
                 </div>
 
                 <div className="stats-card" style={{ borderLeftColor: 'var(--success)' }}>
-                    <div className="stats-card-title">Teachers</div>
+                    <div className="stats-card-title">Преподаватели</div>
                     <div className="stats-card-value">{teacherCount}</div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Paid accounts</span>
+                        <span className="text-tertiary">Платные аккаунты</span>
                     </div>
                 </div>
 
                 <div className="stats-card" style={{ borderLeftColor: 'var(--warning)' }}>
-                    <div className="stats-card-title">Free Users</div>
+                    <div className="stats-card-title">Бесплатные пользователи</div>
                     <div className="stats-card-value">{freeUserCount}</div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Limited access</span>
+                        <span className="text-tertiary">Ограниченный доступ</span>
                     </div>
                 </div>
 
                 <div className="stats-card" style={{ borderLeftColor: 'var(--danger)' }}>
-                    <div className="stats-card-title">Admins</div>
+                    <div className="stats-card-title">Администраторы</div>
                     <div className="stats-card-value">{adminCount}</div>
                     <div className="stats-card-description">
-                        <span className="text-tertiary">Admin access</span>
+                        <span className="text-tertiary">Административный доступ</span>
                     </div>
                 </div>
             </div>
@@ -97,22 +84,22 @@ function AdminDashboard() {
                 <div className="col-span-8">
                     <div className="card">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">User Management</h2>
-                            <Link to="/admin/users" className="btn btn-sm btn-outline">View All Users</Link>
+                            <h2 className="text-xl font-semibold">Управление пользователями</h2>
+                            <Link to="/admin/users" className="btn btn-sm btn-outline">Просмотреть всех пользователей</Link>
                         </div>
 
                         {usersLoading ? (
-                            <p>Loading users...</p>
+                            <p>Загрузка пользователей...</p>
                         ) : (
                             <div className="table-container">
                                 <table className="table">
                                     <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Actions</th>
+                                        <th>Имя</th>
+                                        <th>Почта</th>
+                                        <th>Роль</th>
+                                        <th>Действия</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -133,7 +120,7 @@ function AdminDashboard() {
                                             <td>
                                                 {user.role !== 'admin' && (
                                                     <Link to={`/admin/teachers/${user.id}`} className="btn btn-sm btn-outline">
-                                                        View Details
+                                                        Подробнее
                                                     </Link>
                                                 )}
                                             </td>
@@ -148,21 +135,21 @@ function AdminDashboard() {
                     {/* Recent System Logs */}
                     <div className="card mt-6">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">Recent System Logs</h2>
-                            <Link to="/admin/logs" className="btn btn-sm btn-outline">View All Logs</Link>
+                            <h2 className="text-xl font-semibold">Недавние системные логи</h2>
+                            <Link to="/admin/logs" className="btn btn-sm btn-outline">Просмотреть все логи</Link>
                         </div>
 
                         {logsLoading ? (
-                            <p>Loading logs...</p>
+                            <p>Загрузка логов...</p>
                         ) : (
                             <div className="table-container">
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th>Timestamp</th>
-                                        <th>User</th>
-                                        <th>Action</th>
-                                        <th>Details</th>
+                                        <th>Время</th>
+                                        <th>Пользователь</th>
+                                        <th>Действие</th>
+                                        <th>Подробности</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -184,7 +171,7 @@ function AdminDashboard() {
                 {/* Right Column */}
                 <div className="col-span-4">
                     <div className="card">
-                        <h2 className="text-xl font-semibold mb-4">Admin Tools</h2>
+                        <h2 className="text-xl font-semibold mb-4">Инструменты администратора</h2>
                         <div className="admin-tools">
                             <Link to="/admin/users" className="tool-card">
                                 <div className="tool-icon" style={{ backgroundColor: 'var(--primary-lighter)', color: 'var(--primary)' }}>
@@ -196,8 +183,8 @@ function AdminDashboard() {
                                     </svg>
                                 </div>
                                 <div className="tool-content">
-                                    <h3 className="tool-title">User Management</h3>
-                                    <p className="tool-description">Manage users, update roles, and delete accounts</p>
+                                    <h3 className="tool-title">Управление пользователями</h3>
+                                    <p className="tool-description">Управление пользователями, обновление ролей и удаление аккаунтов</p>
                                 </div>
                             </Link>
 
@@ -212,15 +199,15 @@ function AdminDashboard() {
                                     </svg>
                                 </div>
                                 <div className="tool-content">
-                                    <h3 className="tool-title">System Logs</h3>
-                                    <p className="tool-description">View activity logs and monitor system events</p>
+                                    <h3 className="tool-title">Системные логи</h3>
+                                    <p className="tool-description">Просмотр журналов активности и мониторинг системных событий</p>
                                 </div>
                             </Link>
                         </div>
                     </div>
 
                     <div className="card mt-6">
-                        <h2 className="text-xl font-semibold mb-4">User Activity</h2>
+                        <h2 className="text-xl font-semibold mb-4">Активность пользователей</h2>
                         <div className="chart-placeholder">
                             <div className="empty-chart">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-tertiary">
@@ -228,7 +215,7 @@ function AdminDashboard() {
                                     <line x1="12" y1="20" x2="12" y2="4"></line>
                                     <line x1="6" y1="20" x2="6" y2="14"></line>
                                 </svg>
-                                <p>Activity chart will be displayed here</p>
+                                <p>Здесь будет отображаться график активности</p>
                             </div>
                         </div>
                     </div>

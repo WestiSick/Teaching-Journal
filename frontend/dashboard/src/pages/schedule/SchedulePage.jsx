@@ -19,27 +19,27 @@ function SchedulePage() {
     const [error, setError] = useState(null);
     const [scheduleItems, setScheduleItems] = useState([]);
     const progressInterval = useRef(null);
-    // New state for teacher autocomplete
+    // Новое состояние для автозаполнения имени преподавателя
     const [allTeachers, setAllTeachers] = useState([]);
     const [teacherSuggestions, setTeacherSuggestions] = useState([]);
 
-    // Load teachers from API
+    // Загрузка преподавателей из API
     const loadTeachers = async () => {
         try {
             const response = await fetch('https://kis.vgltu.ru/list?type=Teacher');
             const teachers = await response.json();
             setAllTeachers(teachers);
 
-            // Initialize with a few suggestions
+            // Инициализация с несколькими предложениями
             const maxSuggestions = window.innerHeight > window.innerWidth ? 4 : 6;
             const initialSuggestions = teachers.slice(0, maxSuggestions);
             setTeacherSuggestions(initialSuggestions);
         } catch (error) {
-            console.error("Error loading teachers:", error);
+            // Ошибка загрузки преподавателей
         }
     };
 
-    // Update teacher suggestions based on input
+    // Обновление предложений преподавателей на основе ввода
     const updateTeacherSuggestions = (input) => {
         const inputLower = input.toLowerCase();
         const filtered = allTeachers
@@ -48,7 +48,7 @@ function SchedulePage() {
         setTeacherSuggestions(filtered);
     };
 
-    // Fetch schedule data
+    // Получение данных расписания
     const fetchSchedule = async () => {
         setIsLoading(true);
         setError(null);
@@ -57,24 +57,24 @@ function SchedulePage() {
             setScheduleItems(response.data.data.scheduleItems || []);
             return response.data;
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to fetch schedule');
+            setError(err.response?.data?.error || 'Не удалось загрузить расписание');
             throw err;
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Handle form submission
+    // Обработка отправки формы
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             await fetchSchedule();
         } catch (error) {
-            console.error("Error fetching schedule:", error);
+            // Ошибка при получении расписания
         }
     };
 
-    // Start async fetch for larger date ranges
+    // Начало асинхронного получения для больших диапазонов дат
     const startAsyncFetch = async () => {
         try {
             setAsyncJobId(null);
@@ -90,7 +90,7 @@ function SchedulePage() {
             const jobId = response.data.data.jobID;
             setAsyncJobId(jobId);
 
-            // Start progress tracking
+            // Начало отслеживания прогресса
             if (progressInterval.current) {
                 clearInterval(progressInterval.current);
             }
@@ -108,20 +108,18 @@ function SchedulePage() {
                         setScheduleItems(resultsResponse.data.data.scheduleItems || []);
                     }
                 } catch (error) {
-                    console.error("Error tracking progress:", error);
                     clearInterval(progressInterval.current);
                 }
             }, 1000);
         } catch (error) {
-            console.error("Error starting async fetch:", error);
-            setError("Failed to start async fetch");
+            setError("Не удалось начать асинхронную загрузку");
         }
     };
 
-    // Add selected lessons to the system
+    // Добавление выбранных уроков в систему
     const addSelectedLessons = async () => {
         if (selectedItems.length === 0) {
-            alert("Please select lessons to add");
+            alert("Пожалуйста, выберите занятия для добавления");
             return;
         }
 
@@ -130,10 +128,10 @@ function SchedulePage() {
                 scheduleItems: selectedItems
             });
 
-            // Update UI to show which items are now in the system
+            // Обновление интерфейса, чтобы показать, какие элементы теперь в системе
             const added = response.data.data.added;
             if (added > 0) {
-                // Refresh the schedule data
+                // Обновление данных расписания
                 if (asyncJobId) {
                     const resultsResponse = await scheduleService.getResults(asyncJobId);
                     setAsyncResults(resultsResponse.data.data);
@@ -142,22 +140,21 @@ function SchedulePage() {
                     await fetchSchedule();
                 }
 
-                // Clear selection
+                // Очистка выбора
                 setSelectedItems([]);
 
-                alert(`Successfully added ${added} lessons to the system.`);
+                alert(`Успешно добавлено ${added} занятий в систему.`);
             } else {
-                alert("No new lessons were added. They may already exist in the system.");
+                alert("Новые занятия не были добавлены. Возможно, они уже существуют в системе.");
             }
         } catch (error) {
-            console.error("Error adding lessons:", error);
-            alert("Failed to add lessons to the system");
+            alert("Не удалось добавить занятия в систему");
         }
     };
 
-    // Handle checkbox selection
+    // Обработка выбора флажка
     const handleSelectItem = (item) => {
-        if (item.inSystem) return; // Skip if already in system
+        if (item.inSystem) return; // Пропустить, если уже в системе
 
         const isSelected = selectedItems.some(selected => selected.id === item.id);
 
@@ -168,23 +165,23 @@ function SchedulePage() {
         }
     };
 
-    // Select all items that aren't in the system yet
+    // Выбрать все элементы, которые еще не в системе
     const selectAllAvailable = () => {
         const availableItems = scheduleItems.filter(item => !item.inSystem);
         setSelectedItems(availableItems);
     };
 
-    // Clear all selections
+    // Очистить все выделения
     const clearSelection = () => {
         setSelectedItems([]);
     };
 
-    // Load teachers when component mounts
+    // Загрузка преподавателей при монтировании компонента
     useEffect(() => {
         loadTeachers();
     }, []);
 
-    // Clean up interval on unmount
+    // Очистка интервала при размонтировании
     useEffect(() => {
         return () => {
             if (progressInterval.current) {
@@ -197,16 +194,16 @@ function SchedulePage() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Schedule</h1>
-                    <p className="text-secondary">Find and import lessons from the university schedule</p>
+                    <h1 className="page-title">Расписание</h1>
+                    <p className="text-secondary">Поиск и импорт занятий из расписания университета</p>
                 </div>
             </div>
 
-            {/* Compact Schedule Search Form */}
+            {/* Компактная форма поиска расписания */}
             <div className="bg-dark-secondary rounded-lg mb-6 p-3">
                 <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-2">
                     <div className="flex-1 min-w-[200px]">
-                        <label htmlFor="teacher" className="form-label text-xs mb-1">Teacher Name</label>
+                        <label htmlFor="teacher" className="form-label text-xs mb-1">Имя преподавателя</label>
                         <input
                             type="text"
                             id="teacher"
@@ -217,7 +214,7 @@ function SchedulePage() {
                                 setSearchParams({...searchParams, teacher: newValue});
                                 updateTeacherSuggestions(newValue);
                             }}
-                            placeholder="Enter teacher name"
+                            placeholder="Введите имя преподавателя"
                             list="teacherSuggestions"
                             required
                         />
@@ -229,7 +226,7 @@ function SchedulePage() {
                     </div>
 
                     <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="date" className="form-label text-xs mb-1">Start Date</label>
+                        <label htmlFor="date" className="form-label text-xs mb-1">Дата начала</label>
                         <input
                             type="date"
                             id="date"
@@ -241,7 +238,7 @@ function SchedulePage() {
                     </div>
 
                     <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="endDate" className="form-label text-xs mb-1">End Date (Optional)</label>
+                        <label htmlFor="endDate" className="form-label text-xs mb-1">Дата окончания (необязательно)</label>
                         <input
                             type="date"
                             id="endDate"
@@ -264,7 +261,7 @@ function SchedulePage() {
                                     <polyline points="23 20 23 14 17 14"></polyline>
                                     <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
                                 </svg>
-                                Async
+                                Асинхронно
                             </button>
                         </RequireSubscription>
 
@@ -277,19 +274,19 @@ function SchedulePage() {
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
-                            Search
+                            Поиск
                         </button>
                     </div>
                 </form>
             </div>
 
-            {/* Async Job Progress Tracking */}
+            {/* Отслеживание прогресса асинхронной задачи */}
             {asyncProgress && (
                 <div className="card mb-6">
-                    <h3 className="text-lg font-medium mb-4">Async Job Progress</h3>
+                    <h3 className="text-lg font-medium mb-4">Прогресс асинхронной задачи</h3>
                     <div className="mb-4">
                         <div className="flex justify-between mb-2">
-                            <span className="text-secondary">Status: {asyncProgress.status}</span>
+                            <span className="text-secondary">Статус: {asyncProgress.status}</span>
                             <span className="text-secondary">{asyncProgress.progress}%</span>
                         </div>
                         <div className="progress">
@@ -301,15 +298,15 @@ function SchedulePage() {
                     </div>
                     <div className="text-sm text-secondary">
                         {asyncProgress.finished ? (
-                            <p>Job completed! Found {asyncProgress.itemCount} schedule items.</p>
+                            <p>Задача завершена! Найдено {asyncProgress.itemCount} элементов расписания.</p>
                         ) : (
-                            <p>Processing period {asyncProgress.completed} of {asyncProgress.totalPeriods}...</p>
+                            <p>Обработка периода {asyncProgress.completed} из {asyncProgress.totalPeriods}...</p>
                         )}
                     </div>
                 </div>
             )}
 
-            {/* Schedule Results */}
+            {/* Результаты расписания */}
             {error && (
                 <div className="alert alert-danger mb-6">
                     <div className="flex items-center gap-3">
@@ -332,7 +329,7 @@ function SchedulePage() {
             {!isLoading && scheduleItems.length > 0 && (
                 <div className="card mb-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">Schedule Results ({scheduleItems.length} items)</h3>
+                        <h3 className="text-lg font-medium">Результаты расписания ({scheduleItems.length} элементов)</h3>
                         <div className="flex gap-2">
                             <RequireSubscription>
                                 <button
@@ -343,7 +340,7 @@ function SchedulePage() {
                                         <polyline points="9 11 12 14 22 4"></polyline>
                                         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                                     </svg>
-                                    Select All
+                                    Выбрать все
                                 </button>
 
                                 <button
@@ -353,7 +350,7 @@ function SchedulePage() {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M19 12H5"></path>
                                     </svg>
-                                    Clear
+                                    Очистить
                                 </button>
 
                                 <button
@@ -366,7 +363,7 @@ function SchedulePage() {
                                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                         <polyline points="7 3 7 8 15 8"></polyline>
                                     </svg>
-                                    Add Selected ({selectedItems.length})
+                                    Добавить выбранные ({selectedItems.length})
                                 </button>
                             </RequireSubscription>
                         </div>
@@ -377,15 +374,15 @@ function SchedulePage() {
                             <thead>
                             <tr>
                                 <th className="w-10">
-                                    <span className="sr-only">Select</span>
+                                    <span className="sr-only">Выбрать</span>
                                 </th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Subject</th>
-                                <th>Type</th>
-                                <th>Group</th>
-                                <th>Auditorium</th>
-                                <th>Status</th>
+                                <th>Дата</th>
+                                <th>Время</th>
+                                <th>Предмет</th>
+                                <th>Тип</th>
+                                <th>Группа</th>
+                                <th>Аудитория</th>
+                                <th>Статус</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -410,9 +407,9 @@ function SchedulePage() {
                                     <td>{item.auditorium}</td>
                                     <td>
                                         {item.inSystem ? (
-                                            <span className="badge badge-success">In System</span>
+                                            <span className="badge badge-success">В системе</span>
                                         ) : (
-                                            <span className="badge badge-info">Not Added</span>
+                                            <span className="badge badge-info">Не добавлено</span>
                                         )}
                                     </td>
                                 </tr>
@@ -434,13 +431,13 @@ function SchedulePage() {
                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                             </svg>
                         </div>
-                        <h3 className="text-xl mb-2">No schedule items found</h3>
-                        <p className="text-secondary mb-6">Try searching for a different teacher or date range.</p>
+                        <h3 className="text-xl mb-2">Элементы расписания не найдены</h3>
+                        <p className="text-secondary mb-6">Попробуйте поискать другого преподавателя или диапазон дат.</p>
                     </div>
                 </div>
             )}
 
-            {/* Additional styles */}
+            {/* Дополнительные стили */}
             <style jsx="true">{`
                 .form-checkbox {
                     appearance: none;

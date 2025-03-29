@@ -18,7 +18,6 @@ function PublicSharedGrades() {
                 setSharedData(response.data.data);
                 setLoading(false);
             } catch (err) {
-                console.error('Error loading shared grades:', err);
                 setError(err);
                 setLoading(false);
             }
@@ -67,7 +66,7 @@ function PublicSharedGrades() {
             <div className="public-shared-container">
                 <div className="loading-container">
                     <div className="spinner"></div>
-                    <p className="loading-text">Loading shared grades...</p>
+                    <p className="loading-text">Загрузка оценок...</p>
                 </div>
             </div>
         );
@@ -86,9 +85,9 @@ function PublicSharedGrades() {
                                 <line x1="15" y1="9" x2="9" y2="15"></line>
                             </svg>
                         </div>
-                        <h1>Shared Link Expired</h1>
-                        <p>This shared lab grades link has expired or been deleted.</p>
-                        <p className="error-hint">Please contact your teacher for a new link.</p>
+                        <h1>Срок действия ссылки истек</h1>
+                        <p>Срок действия этой ссылки на оценки лабораторных работ истек или она была удалена.</p>
+                        <p className="error-hint">Пожалуйста, обратитесь к преподавателю за новой ссылкой.</p>
                     </div>
                 </div>
             );
@@ -104,9 +103,9 @@ function PublicSharedGrades() {
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
                     </div>
-                    <h1>Error</h1>
-                    <p>The shared lab grades could not be loaded.</p>
-                    <p className="error-detail">{error.message || 'Unknown error occurred'}</p>
+                    <h1>Ошибка</h1>
+                    <p>Невозможно загрузить оценки лабораторных работ.</p>
+                    <p className="error-detail">{error.message || 'Произошла неизвестная ошибка'}</p>
                 </div>
             </div>
         );
@@ -123,9 +122,9 @@ function PublicSharedGrades() {
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
                     </div>
-                    <h1>Invalid Link</h1>
-                    <p>The shared lab grades link is invalid or has been removed.</p>
-                    <p className="error-hint">Please check the URL or contact your teacher.</p>
+                    <h1>Недействительная ссылка</h1>
+                    <p>Ссылка на оценки лабораторных работ недействительна или была удалена.</p>
+                    <p className="error-hint">Пожалуйста, проверьте URL или обратитесь к преподавателю.</p>
                 </div>
             </div>
         );
@@ -157,7 +156,7 @@ function PublicSharedGrades() {
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                         <div>
-                            <span className="info-label">Shared by:</span>
+                            <span className="info-label">Опубликовано:</span>
                             <span className="info-value">{sharedData.shared_by}</span>
                         </div>
                     </div>
@@ -167,8 +166,8 @@ function PublicSharedGrades() {
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         <div>
-                            <span className="info-label">Expires on:</span>
-                            <span className="info-value">{new Date(sharedData.expires_at).toLocaleDateString()} at {new Date(sharedData.expires_at).toLocaleTimeString()}</span>
+                            <span className="info-label">Срок действия до:</span>
+                            <span className="info-value">{new Date(sharedData.expires_at).toLocaleDateString()} в {new Date(sharedData.expires_at).toLocaleTimeString()}</span>
                         </div>
                     </div>
                 </div>
@@ -178,11 +177,11 @@ function PublicSharedGrades() {
                         <table className="grades-table">
                             <thead>
                             <tr>
-                                <th className="student-column">Student</th>
+                                <th className="student-column">Студент</th>
                                 {Array.from({ length: sharedData.total_labs }, (_, i) => (
-                                    <th key={i} className="lab-column">Lab {i + 1}</th>
+                                    <th key={i} className="lab-column">Лаб. {i + 1}</th>
                                 ))}
-                                <th className="average-column">Average</th>
+                                <th className="average-column">Средний балл</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -197,14 +196,14 @@ function PublicSharedGrades() {
                                         </td>
                                     ))}
                                     <td className={`average-cell ${getAverageClass(student.nonZeroAverage)}`}>
-                                        {student.nonZeroAverage ? student.nonZeroAverage.toFixed(1) : 'N/A'}
+                                        {student.nonZeroAverage ? student.nonZeroAverage.toFixed(1) : 'Н/Д'}
                                     </td>
                                 </tr>
                             ))}
                             </tbody>
                             <tfoot>
                             <tr>
-                                <td><strong>Group Average</strong></td>
+                                <td><strong>Средний балл группы</strong></td>
                                 {Array.from({ length: sharedData.total_labs }, () => (
                                     <td></td>
                                 ))}
@@ -222,22 +221,22 @@ function PublicSharedGrades() {
                             <line x1="12" y1="8" x2="12" y2="12"></line>
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
-                        <p>No students or grades to display</p>
+                        <p>Нет студентов или оценок для отображения</p>
                     </div>
                 )}
 
                 <div className="share-footer">
                     <p>
-                        This is a read-only view of lab grades.
+                        Это режим просмотра оценок лабораторных работ (только для чтения).
                     </p>
                     <div className="share-dates">
                         <div className="date-item">
-                            <span className="date-label">Created:</span>
+                            <span className="date-label">Создано:</span>
                             <span className="date-value">{new Date(sharedData.created_at).toLocaleDateString()}</span>
                         </div>
                         <div className="date-divider">|</div>
                         <div className="date-item">
-                            <span className="date-label">Valid until:</span>
+                            <span className="date-label">Действительно до:</span>
                             <span className="date-value">{new Date(sharedData.expires_at).toLocaleDateString()}</span>
                         </div>
                     </div>

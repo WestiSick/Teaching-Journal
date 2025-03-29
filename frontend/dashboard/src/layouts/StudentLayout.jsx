@@ -12,7 +12,6 @@ function StudentLayout() {
                 const info = JSON.parse(studentInfoStr);
                 setStudentInfo(info);
             } catch (error) {
-                console.error('Error parsing student info:', error);
             }
         }
     }, []);
@@ -29,7 +28,7 @@ function StudentLayout() {
                 <header className="student-header">
                     <div className="student-info">
                         <div className="student-avatar">
-                            {studentInfo.fio?.charAt(0).toUpperCase() || 'S'}
+                            {studentInfo.fio?.charAt(0).toUpperCase() || 'С'}
                         </div>
                         <div>
                             <div className="student-name">{studentInfo.fio}</div>
@@ -37,10 +36,10 @@ function StudentLayout() {
                         </div>
                     </div>
                     <div className="header-actions">
-                        <Link to="/tests/student" className="header-link">My Tests</Link>
-                        <Link to="/tests/student/history" className="header-link">Test History</Link>
+                        <Link to="/tests/student" className="header-link">Мои Тесты</Link>
+                        <Link to="/tests/student/history" className="header-link">История Тестов</Link>
                         <button onClick={handleLogout} className="btn btn-outline logout-btn">
-                            Logout
+                            Выход
                         </button>
                     </div>
                 </header>

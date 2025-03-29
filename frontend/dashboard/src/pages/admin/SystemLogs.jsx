@@ -53,21 +53,21 @@ function SystemLogs() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Error loading logs: {error.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки логов: {error.message}</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">System Logs</h1>
-                <Link to="/admin" className="btn btn-secondary">Back to Admin Dashboard</Link>
+                <h1 className="page-title">Системные логи</h1>
+                <Link to="/admin" className="btn btn-secondary">Вернуться к панели администратора</Link>
             </div>
 
             <div className="card mb-4">
-                <h3 className="mb-3">Filters</h3>
+                <h3 className="mb-3">Фильтры</h3>
                 <div className="grid grid-cols-4 gap-4">
                     <div className="form-group">
-                        <label htmlFor="user_id">User ID</label>
+                        <label htmlFor="user_id">ID пользователя</label>
                         <input
                             type="text"
                             id="user_id"
@@ -75,11 +75,11 @@ function SystemLogs() {
                             className="form-control"
                             value={filters.user_id}
                             onChange={handleFilterChange}
-                            placeholder="Filter by user ID"
+                            placeholder="Фильтровать по ID пользователя"
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="action">Action</label>
+                        <label htmlFor="action">Действие</label>
                         <input
                             type="text"
                             id="action"
@@ -87,11 +87,11 @@ function SystemLogs() {
                             className="form-control"
                             value={filters.action}
                             onChange={handleFilterChange}
-                            placeholder="Filter by action"
+                            placeholder="Фильтровать по действию"
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="from_date">From Date</label>
+                        <label htmlFor="from_date">С даты</label>
                         <input
                             type="date"
                             id="from_date"
@@ -102,7 +102,7 @@ function SystemLogs() {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="to_date">To Date</label>
+                        <label htmlFor="to_date">По дату</label>
                         <input
                             type="date"
                             id="to_date"
@@ -118,16 +118,16 @@ function SystemLogs() {
                         className="btn btn-secondary"
                         onClick={handleClearFilters}
                     >
-                        Clear Filters
+                        Очистить фильтры
                     </button>
                 </div>
             </div>
 
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2 className="text-xl font-semibold">Log Entries</h2>
+                    <h2 className="text-xl font-semibold">Записи логов</h2>
                     <div className="d-flex align-items-center">
-                        <span className="mr-2">Show:</span>
+                        <span className="mr-2">Показать:</span>
                         <select
                             value={limit}
                             onChange={(e) => {
@@ -150,17 +150,17 @@ function SystemLogs() {
                         <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Timestamp</th>
-                            <th>User ID</th>
-                            <th>User</th>
-                            <th>Action</th>
-                            <th>Details</th>
+                            <th>Время</th>
+                            <th>ID пользователя</th>
+                            <th>Пользователь</th>
+                            <th>Действие</th>
+                            <th>Подробности</th>
                         </tr>
                         </thead>
                         <tbody>
                         {logs.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="text-center">No logs found</td>
+                                <td colSpan="6" className="text-center">Логи не найдены</td>
                             </tr>
                         ) : (
                             logs.map(log => (
@@ -197,7 +197,7 @@ function SystemLogs() {
                         </button>
 
                         <div className="pagination-info">
-                            Page {pagination.current_page} of {pagination.total_pages}
+                            Страница {pagination.current_page} из {pagination.total_pages}
                         </div>
 
                         <button

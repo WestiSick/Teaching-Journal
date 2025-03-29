@@ -50,15 +50,15 @@ function TeacherDetail() {
     }
 
     if (!teacher) {
-        return <div className="alert alert-danger">Teacher not found</div>;
+        return <div className="alert alert-danger">Преподаватель не найден</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Teacher Details</h1>
+                <h1 className="page-title">Детали преподавателя</h1>
                 <div>
-                    <Link to="/admin/users" className="btn btn-secondary">Back to Users</Link>
+                    <Link to="/admin/users" className="btn btn-secondary">Назад к пользователям</Link>
                 </div>
             </div>
 
@@ -81,19 +81,19 @@ function TeacherDetail() {
 
                 <div className="stats-grid mt-4">
                     <div className="stat-item">
-                        <div className="stat-label">Total Lessons</div>
+                        <div className="stat-label">Всего занятий</div>
                         <div className="stat-value">{teacher.total_lessons || 0}</div>
                     </div>
                     <div className="stat-item">
-                        <div className="stat-label">Total Hours</div>
+                        <div className="stat-label">Всего часов</div>
                         <div className="stat-value">{teacher.total_hours || 0}</div>
                     </div>
                     <div className="stat-item">
-                        <div className="stat-label">Groups</div>
+                        <div className="stat-label">Группы</div>
                         <div className="stat-value">{groups.length}</div>
                     </div>
                     <div className="stat-item">
-                        <div className="stat-label">Subjects</div>
+                        <div className="stat-label">Предметы</div>
                         <div className="stat-value">{subjects.length}</div>
                     </div>
                 </div>
@@ -107,25 +107,25 @@ function TeacherDetail() {
                             className="tab-button tab-button-active"
                             onClick={() => navigate(`/admin/teachers/${id}`)}
                         >
-                            Overview
+                            Обзор
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/groups`)}
                         >
-                            Groups
+                            Группы
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/attendance`)}
                         >
-                            Attendance
+                            Посещаемость
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/labs`)}
                         >
-                            Labs
+                            Лабораторные
                         </button>
                     </div>
                 </div>
@@ -137,21 +137,21 @@ function TeacherDetail() {
                     {/* Groups Overview */}
                     <div className="card mb-6">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">Groups</h2>
+                            <h2 className="text-xl font-semibold">Группы</h2>
                             <Link to={`/admin/teachers/${id}/groups`} className="btn btn-sm btn-outline">
-                                View All Groups
+                                Просмотреть все группы
                             </Link>
                         </div>
 
                         {groups.length === 0 ? (
-                            <p>No groups found for this teacher</p>
+                            <p>Для этого преподавателя не найдено групп</p>
                         ) : (
                             <div className="table-container">
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th>Group</th>
-                                        <th>Students</th>
+                                        <th>Группа</th>
+                                        <th>Студенты</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -170,24 +170,24 @@ function TeacherDetail() {
                     {/* Recent Attendance */}
                     <div className="card">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">Recent Attendance</h2>
+                            <h2 className="text-xl font-semibold">Недавняя посещаемость</h2>
                             <Link to={`/admin/teachers/${id}/attendance`} className="btn btn-sm btn-outline">
-                                View All Attendance
+                                Просмотреть всю посещаемость
                             </Link>
                         </div>
 
                         {attendance.length === 0 ? (
-                            <p>No attendance records found for this teacher</p>
+                            <p>Для этого преподавателя не найдено записей посещаемости</p>
                         ) : (
                             <div className="table-container">
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Subject</th>
-                                        <th>Group</th>
-                                        <th>Topic</th>
-                                        <th>Attendance</th>
+                                        <th>Дата</th>
+                                        <th>Предмет</th>
+                                        <th>Группа</th>
+                                        <th>Тема</th>
+                                        <th>Посещаемость</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -225,10 +225,10 @@ function TeacherDetail() {
                 <div className="col-span-4">
                     {/* Subjects */}
                     <div className="card mb-6">
-                        <h2 className="text-xl font-semibold mb-4">Subjects Taught</h2>
+                        <h2 className="text-xl font-semibold mb-4">Преподаваемые предметы</h2>
 
                         {subjects.length === 0 ? (
-                            <p>No subjects found for this teacher</p>
+                            <p>Для этого преподавателя не найдено предметов</p>
                         ) : (
                             <div className="subjects-list">
                                 {subjects.map((subject, index) => (
@@ -236,7 +236,7 @@ function TeacherDetail() {
                                         <div className="subject-color" style={{ backgroundColor: getSubjectColor(index) }}></div>
                                         <div className="subject-details">
                                             <div className="subject-name">{subject.subject}</div>
-                                            <div className="subject-group-count">{subject.groups.length} groups</div>
+                                            <div className="subject-group-count">{subject.groups.length} групп</div>
                                         </div>
                                     </div>
                                 ))}
@@ -247,14 +247,14 @@ function TeacherDetail() {
                     {/* Lab Grades Summary */}
                     <div className="card">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h2 className="text-xl font-semibold">Lab Grades</h2>
+                            <h2 className="text-xl font-semibold">Оценки лабораторных</h2>
                             <Link to={`/admin/teachers/${id}/labs`} className="btn btn-sm btn-outline">
-                                View Details
+                                Подробнее
                             </Link>
                         </div>
 
                         {subjects.length === 0 ? (
-                            <p>No lab grades found for this teacher</p>
+                            <p>Для этого преподавателя не найдено оценок лабораторных</p>
                         ) : (
                             <div className="lab-summary">
                                 {subjects.slice(0, 5).map((subject, index) => (
@@ -278,7 +278,7 @@ function TeacherDetail() {
                                                 </div>
                                             ))}
                                             {subject.groups.length > 2 && (
-                                                <div className="more-groups">+{subject.groups.length - 2} more groups</div>
+                                                <div className="more-groups">+{subject.groups.length - 2} групп</div>
                                             )}
                                         </div>
                                     </div>

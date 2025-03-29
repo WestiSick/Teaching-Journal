@@ -8,7 +8,6 @@ function MainLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-    // Handle responsive sidebar visibility
     useEffect(() => {
         const handleResize = () => {
             const mobile = window.innerWidth < 1024;
@@ -21,7 +20,7 @@ function MainLayout() {
         };
 
         window.addEventListener('resize', handleResize);
-        handleResize(); // Initialize on mount
+        handleResize();
 
         return () => {
             window.removeEventListener('resize', handleResize);
@@ -35,7 +34,7 @@ function MainLayout() {
 
     return (
         <div className="layout-container">
-            {/* Overlay for mobile when sidebar is open */}
+            {/* Оверлей для мобильных устройств, когда боковая панель открыта */}
             {isMobile && sidebarOpen && (
                 <div
                     className="sidebar-overlay"
@@ -43,7 +42,7 @@ function MainLayout() {
                 ></div>
             )}
 
-            {/* Sidebar */}
+            {/* Боковая панель */}
             <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-logo">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -56,7 +55,7 @@ function MainLayout() {
                         <button
                             className="close-sidebar"
                             onClick={() => setSidebarOpen(false)}
-                            aria-label="Close sidebar"
+                            aria-label="Закрыть боковую панель"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -75,7 +74,7 @@ function MainLayout() {
                             <rect x="14" y="12" width="7" height="9"></rect>
                             <rect x="3" y="16" width="7" height="5"></rect>
                         </svg>
-                        <span>Dashboard</span>
+                        <span>Панель управления</span>
                     </NavLink>
 
                     <NavLink to="/lessons" className={({ isActive }) =>
@@ -84,7 +83,7 @@ function MainLayout() {
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                         </svg>
-                        <span>Lessons</span>
+                        <span>Пары</span>
                     </NavLink>
 
                     <NavLink to="/groups" className={({ isActive }) =>
@@ -95,7 +94,7 @@ function MainLayout() {
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
-                        <span>Groups</span>
+                        <span>Группы</span>
                     </NavLink>
 
                     <NavLink to="/students" className={({ isActive }) =>
@@ -104,7 +103,7 @@ function MainLayout() {
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
-                        <span>Students</span>
+                        <span>Студенты</span>
                     </NavLink>
 
                     <NavLink to="/attendance" className={({ isActive }) =>
@@ -115,7 +114,7 @@ function MainLayout() {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <span>Attendance</span>
+                        <span>Посещаемость</span>
                     </NavLink>
 
                     <NavLink to="/labs" className={({ isActive }) =>
@@ -128,7 +127,7 @@ function MainLayout() {
                             <path d="M5.17 14.83l4.24-4.24"></path>
                             <path d="M14.83 14.83l-4.24-4.24"></path>
                         </svg>
-                        <span>Labs</span>
+                        <span>Лабораторные работы</span>
                     </NavLink>
 
                     {isAdmin && (
@@ -138,7 +137,7 @@ function MainLayout() {
                                 <circle cx="12" cy="12" r="3"></circle>
                                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                             </svg>
-                            <span>Admin Panel</span>
+                            <span>Панель Администратора</span>
                         </NavLink>
                     )}
 
@@ -150,7 +149,7 @@ function MainLayout() {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <span>Schedule</span>
+                        <span>Расписание</span>
                     </NavLink>
 
                     <NavLink to="/tickets" className={({ isActive }) =>
@@ -162,7 +161,7 @@ function MainLayout() {
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                             <line x1="10" y1="9" x2="8" y2="9"></line>
                         </svg>
-                        <span>Tickets</span>
+                        <span>Тикеты</span>
                     </NavLink>
 
                     <NavLink to="/tests" className={({ isActive }) =>
@@ -173,7 +172,7 @@ function MainLayout() {
                             <line x1="6" y1="6" x2="6.01" y2="6"></line>
                             <line x1="6" y1="18" x2="6.01" y2="18"></line>
                         </svg>
-                        <span>Tests</span>
+                        <span>Тесты</span>
                     </NavLink>
 
                 </div>
@@ -186,7 +185,7 @@ function MainLayout() {
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
-                        <span>Profile</span>
+                        <span>Профиль</span>
                     </NavLink>
 
                     <button onClick={handleLogout} className="sidebar-link text-danger">
@@ -195,7 +194,7 @@ function MainLayout() {
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
-                        <span>Logout</span>
+                        <span>Выход</span>
                     </button>
                 </div>
             </aside>
@@ -206,7 +205,7 @@ function MainLayout() {
                         <button
                             className="menu-toggle"
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                            aria-label={sidebarOpen ? "Закрыть боковую панель" : "Открыть боковую панель"}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -219,15 +218,15 @@ function MainLayout() {
                     <div className="topbar-right">
                         <div className="user-status">
                             <span className={`status-indicator ${currentUser?.role === 'admin' ? 'status-admin' : 'status-user'}`}></span>
-                            <span className="status-text">{currentUser?.role || 'Guest'}</span>
+                            <span className="status-text">{currentUser?.role || 'Гость'}</span>
                         </div>
 
                         <div className="user-profile" onClick={() => navigate('/profile')}>
                             <div className="user-avatar">
-                                {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
+                                {currentUser?.email?.charAt(0).toUpperCase() || 'П'}
                             </div>
                             <div className="user-info">
-                                <div className="user-name">{currentUser?.email || 'User'}</div>
+                                <div className="user-name">{currentUser?.email || 'Пользователь'}</div>
                             </div>
                         </div>
                     </div>

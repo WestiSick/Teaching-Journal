@@ -11,7 +11,6 @@ function TestHistory() {
     const [subjectFilter, setSubjectFilter] = useState('');
     const [subjects, setSubjects] = useState([]);
 
-    // Verify student is logged in
     useEffect(() => {
         const storedStudentInfo = localStorage.getItem('testStudentInfo');
         if (!studentId || !storedStudentInfo) {
@@ -22,32 +21,23 @@ function TestHistory() {
         try {
             setStudentInfo(JSON.parse(storedStudentInfo));
         } catch (error) {
-            console.error('Error parsing student info:', error);
             navigate('/tests/student/login');
         }
     }, [navigate, studentId]);
 
-    // Fetch test history
     const { data, isLoading, error } = useQuery({
         queryKey: ['test-history', studentId],
         queryFn: () => studentTestsService.getTestHistory(studentId),
         enabled: !!studentId,
         onSuccess: (response) => {
-            // Add debug logging for API response
-            console.log('Test history response:', response);
-
-            // Use the correct data path from response
             const attempts = response?.data?.data?.attempts || [];
-            // Extract unique subjects for filtering
             const uniqueSubjects = [...new Set(attempts.map(attempt => attempt.subject))];
             setSubjects(uniqueSubjects);
         }
     });
 
-    // Correctly access the nested data structure
     const testHistory = data?.data?.data?.attempts || [];
 
-    // Apply filters
     const filteredHistory = testHistory.filter(attempt => {
         const matchesStatus = filter === 'all' ||
             (filter === 'completed' && attempt.completed) ||
@@ -73,57 +63,57 @@ function TestHistory() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Failed to load test history: {error.message}</div>;
+        return <div className="alert alert-danger">Не удалось загрузить историю тестов: {error.message}</div>;
     }
 
     if (!studentInfo) {
-        return null; // Will redirect in useEffect
+        return null;
     }
 
     return (
         <div className="test-history-container">
             <div className="history-header">
                 <div className="history-title">
-                    <h1>Test History</h1>
+                    <h1>История тестов</h1>
                     <div className="student-info">
                         {studentInfo.fio} ({studentInfo.email})
                     </div>
                 </div>
                 <div className="header-actions">
-                    <Link to="/tests/student" className="btn btn-secondary">Back to Tests</Link>
+                    <Link to="/tests/student" className="btn btn-secondary">Назад к тестам</Link>
                     <button
                         className="btn btn-outline"
                         onClick={handleLogout}
                     >
-                        Logout
+                        Выйти
                     </button>
                 </div>
             </div>
 
             <div className="filter-container">
                 <div className="filter-group">
-                    <label htmlFor="statusFilter">Status:</label>
+                    <label htmlFor="statusFilter">Статус:</label>
                     <select
                         id="statusFilter"
                         className="form-control"
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
                     >
-                        <option value="all">All Attempts</option>
-                        <option value="completed">Completed</option>
-                        <option value="incomplete">Incomplete</option>
+                        <option value="all">Все попытки</option>
+                        <option value="completed">Завершенные</option>
+                        <option value="incomplete">Незавершенные</option>
                     </select>
                 </div>
 
                 <div className="filter-group">
-                    <label htmlFor="subjectFilter">Subject:</label>
+                    <label htmlFor="subjectFilter">Предмет:</label>
                     <select
                         id="subjectFilter"
                         className="form-control"
                         value={subjectFilter}
                         onChange={(e) => setSubjectFilter(e.target.value)}
                     >
-                        <option value="">All Subjects</option>
+                        <option value="">Все предметы</option>
                         {subjects.map((subject, index) => (
                             <option key={index} value={subject}>{subject}</option>
                         ))}
@@ -131,7 +121,7 @@ function TestHistory() {
                 </div>
 
                 <div className="filter-count">
-                    <span className="badge badge-info">{filteredHistory.length} attempts</span>
+                    <span className="badge badge-info">{filteredHistory.length} попыток</span>
                 </div>
             </div>
 
@@ -144,8 +134,8 @@ function TestHistory() {
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                         <polyline points="10 9 9 9 8 9"></polyline>
                     </svg>
-                    <h3>No Test Attempts Found</h3>
-                    <p>You haven't taken any tests that match the selected filters.</p>
+                    <h3>Попытки не найдены</h3>
+                    <p>Вы не проходили тесты, соответствующие выбранным фильтрам.</p>
                     {(filter !== 'all' || subjectFilter !== '') && (
                         <button
                             className="btn btn-outline mt-3"
@@ -154,7 +144,7 @@ function TestHistory() {
                                 setSubjectFilter('');
                             }}
                         >
-                            Clear Filters
+                            Очистить фильтры
                         </button>
                     )}
                 </div>
@@ -164,13 +154,13 @@ function TestHistory() {
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Test</th>
-                                <th>Subject</th>
-                                <th>Date</th>
-                                <th>Score</th>
-                                <th>Status</th>
-                                <th>Duration</th>
-                                <th>Actions</th>
+                                <th>Тест</th>
+                                <th>Предмет</th>
+                                <th>Дата</th>
+                                <th>Результат</th>
+                                <th>Статус</th>
+                                <th>Длительность</th>
+                                <th>Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -188,13 +178,13 @@ function TestHistory() {
                                     </td>
                                     <td>
                                             <span className={`status-badge ${attempt.completed ? 'status-completed' : 'status-incomplete'}`}>
-                                                {attempt.completed ? 'Completed' : 'Incomplete'}
+                                                {attempt.completed ? 'Завершен' : 'Не завершен'}
                                             </span>
                                     </td>
                                     <td>{formatDuration(attempt.duration_seconds)}</td>
                                     <td>
                                         <Link to={`/tests/student/results/${attempt.attempt_id}`} className="btn btn-sm btn-outline">
-                                            View Results
+                                            Результаты
                                         </Link>
                                     </td>
                                 </tr>
@@ -206,30 +196,30 @@ function TestHistory() {
             )}
 
             <div className="performance-summary">
-                <h2 className="section-title">Performance Summary</h2>
+                <h2 className="section-title">Сводка результатов</h2>
 
                 <div className="summary-grid">
                     <div className="summary-card">
-                        <div className="summary-title">Average Score</div>
+                        <div className="summary-title">Средний балл</div>
                         <div className="summary-value">
                             {calculateAverageScore(filteredHistory).toFixed(1)}%
                         </div>
                     </div>
 
                     <div className="summary-card">
-                        <div className="summary-title">Total Attempts</div>
+                        <div className="summary-title">Всего попыток</div>
                         <div className="summary-value">{filteredHistory.length}</div>
                     </div>
 
                     <div className="summary-card">
-                        <div className="summary-title">Completed Tests</div>
+                        <div className="summary-title">Завершенные тесты</div>
                         <div className="summary-value">
                             {filteredHistory.filter(attempt => attempt.completed).length}
                         </div>
                     </div>
 
                     <div className="summary-card">
-                        <div className="summary-title">Average Duration</div>
+                        <div className="summary-title">Среднее время</div>
                         <div className="summary-value">
                             {formatDuration(calculateAverageDuration(filteredHistory))}
                         </div>
@@ -442,19 +432,18 @@ function TestHistory() {
     );
 }
 
-// Helper functions
 function formatDuration(seconds) {
-    if (!seconds) return '0s';
+    if (!seconds) return '0с';
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
 
     if (minutes === 0) {
-        return `${remainingSeconds}s`;
+        return `${remainingSeconds}с`;
     } else if (remainingSeconds === 0) {
-        return `${minutes}m`;
+        return `${minutes}м`;
     } else {
-        return `${minutes}m ${remainingSeconds}s`;
+        return `${minutes}м ${remainingSeconds}с`;
     }
 }
 

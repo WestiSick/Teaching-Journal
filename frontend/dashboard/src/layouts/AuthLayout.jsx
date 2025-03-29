@@ -23,7 +23,7 @@ function AuthLayout() {
                     </div>
                     <div className="branding-text">
                         <h1>Teacher Journal</h1>
-                        <p>Modern educational management platform</p>
+                        <p>Современная платформа управления образованием</p>
                     </div>
                     <div className="branding-features">
                         <div className="feature-item">
@@ -36,8 +36,8 @@ function AuthLayout() {
                                 </svg>
                             </div>
                             <div>
-                                <h3>Student Management</h3>
-                                <p>Manage student records and group assignments efficiently</p>
+                                <h3>Управление Студентами</h3>
+                                <p>Эффективное управление записями студентов и групповыми заданиями</p>
                             </div>
                         </div>
                         <div className="feature-item">
@@ -50,8 +50,8 @@ function AuthLayout() {
                                 </svg>
                             </div>
                             <div>
-                                <h3>Attendance Tracking</h3>
-                                <p>Monitor student attendance with visual analytics</p>
+                                <h3>Отслеживание Посещаемости</h3>
+                                <p>Мониторинг посещаемости студентов с визуальной аналитикой</p>
                             </div>
                         </div>
                         <div className="feature-item">
@@ -66,8 +66,8 @@ function AuthLayout() {
                                 </svg>
                             </div>
                             <div>
-                                <h3>Lab Work Assessment</h3>
-                                <p>Grade and track laboratory work performance</p>
+                                <h3>Оценка Лабораторных Работ</h3>
+                                <p>Оценка и отслеживание выполнения лабораторных работ</p>
                             </div>
                         </div>
                     </div>

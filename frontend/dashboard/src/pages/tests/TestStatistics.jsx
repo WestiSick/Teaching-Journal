@@ -5,7 +5,6 @@ import { adminTestsService } from '../../services/testsService';
 function TestStatistics() {
     const { id } = useParams();
 
-    // Fetch test statistics
     const { data, isLoading, error } = useQuery({
         queryKey: ['test-statistics', id],
         queryFn: () => adminTestsService.getTestStatistics(id),
@@ -23,27 +22,27 @@ function TestStatistics() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Failed to load test statistics: {error.message}</div>;
+        return <div className="alert alert-danger">Не удалось загрузить статистику теста: {error.message}</div>;
     }
 
     if (!stats) {
-        return <div className="alert alert-warning">No statistics found for this test</div>;
+        return <div className="alert alert-warning">Статистика для этого теста не найдена</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Test Statistics</h1>
-                <Link to={`/tests/${id}`} className="btn btn-secondary">Back to Test</Link>
+                <h1 className="page-title">Статистика теста</h1>
+                <Link to={`/tests/${id}`} className="btn btn-secondary">Назад к тесту</Link>
             </div>
 
             <div className="test-info card mb-6">
                 <div className="test-header">
-                    <h2 className="test-title">{stats.test_info?.title || 'Unnamed Test'}</h2>
+                    <h2 className="test-title">{stats.test_info?.title || 'Без названия'}</h2>
                     <div className="test-meta">
-                        <span className="test-subject">{stats.test_info?.subject || 'No Subject'}</span>
+                        <span className="test-subject">{stats.test_info?.subject || 'Без предмета'}</span>
                         <span className={`test-status ${stats.test_info?.is_active ? 'status-active' : 'status-inactive'}`}>
-                            {stats.test_info?.is_active ? 'Active' : 'Inactive'}
+                            {stats.test_info?.is_active ? 'Активен' : 'Неактивен'}
                         </span>
                     </div>
                 </div>
@@ -51,22 +50,22 @@ function TestStatistics() {
 
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="stats-card">
-                    <div className="stats-card-title">Total Attempts</div>
+                    <div className="stats-card-title">Всего попыток</div>
                     <div className="stats-card-value">{stats.overall_stats?.total_attempts || 0}</div>
                 </div>
 
                 <div className="stats-card">
-                    <div className="stats-card-title">Completed Attempts</div>
+                    <div className="stats-card-title">Завершенные попытки</div>
                     <div className="stats-card-value">{stats.overall_stats?.completed_count || 0}</div>
                 </div>
 
                 <div className="stats-card">
-                    <div className="stats-card-title">Average Score</div>
+                    <div className="stats-card-title">Средний балл</div>
                     <div className="stats-card-value">{(stats.overall_stats?.average_score || 0).toFixed(1)}%</div>
                 </div>
 
                 <div className="stats-card">
-                    <div className="stats-card-title">Average Duration</div>
+                    <div className="stats-card-title">Среднее время</div>
                     <div className="stats-card-value">{formatDuration(stats.overall_stats?.average_duration || 0)}</div>
                 </div>
             </div>
@@ -74,29 +73,29 @@ function TestStatistics() {
             <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8">
                     <div className="card mb-6">
-                        <h3 className="text-xl font-semibold mb-4">Question Performance</h3>
+                        <h3 className="text-xl font-semibold mb-4">Результаты по вопросам</h3>
 
                         {!stats.question_stats || stats.question_stats.length === 0 ? (
                             <div className="empty-state">
-                                <p>No question performance data available yet.</p>
+                                <p>Данные о результатах вопросов пока недоступны.</p>
                             </div>
                         ) : (
                             <div className="table-container">
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th>Question</th>
-                                        <th>Type</th>
-                                        <th>Correct %</th>
-                                        <th>Attempted</th>
-                                        <th>Avg. Time</th>
+                                        <th>Вопрос</th>
+                                        <th>Тип</th>
+                                        <th>Верных %</th>
+                                        <th>Попыток</th>
+                                        <th>Сред. время</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     {(stats.question_stats || []).map((question) => (
                                         <tr key={question.question_id}>
                                             <td className="question-cell">
-                                                <div className="question-position">Q{question.position}</div>
+                                                <div className="question-position">В{question.position}</div>
                                                 <div className="question-text">{truncateText(question.question_text, 60)}</div>
                                             </td>
                                             <td>{formatQuestionType(question.question_type)}</td>
@@ -124,11 +123,11 @@ function TestStatistics() {
 
                 <div className="col-span-4">
                     <div className="card mb-6">
-                        <h3 className="text-xl font-semibold mb-4">Student Performance</h3>
+                        <h3 className="text-xl font-semibold mb-4">Результаты студентов</h3>
 
                         {!stats.student_performance || stats.student_performance.length === 0 ? (
                             <div className="empty-state">
-                                <p>No student has attempted this test yet.</p>
+                                <p>Никто из студентов еще не проходил этот тест.</p>
                             </div>
                         ) : (
                             <div className="student-performance-list">
@@ -137,9 +136,9 @@ function TestStatistics() {
                                         <div className="student-info">
                                             <div className="student-name">{student.student_name}</div>
                                             <div className="student-meta">
-                                                {student.attempt_count} {student.attempt_count === 1 ? 'attempt' : 'attempts'}
+                                                {student.attempt_count} {getAttemptWord(student.attempt_count)}
                                                 <span className="meta-separator">•</span>
-                                                Last: {formatDate(student.last_attempt)}
+                                                Последняя: {formatDate(student.last_attempt)}
                                             </div>
                                         </div>
                                         <div className="student-score">
@@ -154,7 +153,7 @@ function TestStatistics() {
                     </div>
 
                     <div className="card">
-                        <h3 className="text-xl font-semibold mb-4">Completion Rate</h3>
+                        <h3 className="text-xl font-semibold mb-4">Процент завершения</h3>
 
                         <div className="completion-chart">
                             <div className="chart-container">
@@ -173,18 +172,18 @@ function TestStatistics() {
                                 <div className="chart-labels">
                                     <div className="chart-label">
                                         <div className="label-color" style={{ backgroundColor: 'var(--success)' }}></div>
-                                        <div className="label-text">Completed</div>
+                                        <div className="label-text">Завершено</div>
                                         <div className="label-value">{stats.overall_stats?.completed_count || 0}</div>
                                     </div>
                                     <div className="chart-label">
                                         <div className="label-color" style={{ backgroundColor: 'var(--warning)' }}></div>
-                                        <div className="label-text">Incomplete</div>
+                                        <div className="label-text">Не завершено</div>
                                         <div className="label-value">{(stats.overall_stats?.total_attempts || 0) - (stats.overall_stats?.completed_count || 0)}</div>
                                     </div>
                                 </div>
                             </div>
                             <div className="chart-summary">
-                                <div className="summary-label">Completion Rate</div>
+                                <div className="summary-label">Процент завершения</div>
                                 <div className="summary-value">
                                     {(stats.overall_stats?.total_attempts || 0) === 0
                                         ? '0%'
@@ -456,19 +455,18 @@ function TestStatistics() {
     );
 }
 
-// Helper functions
 function formatDuration(seconds) {
-    if (!seconds) return '0s';
+    if (!seconds) return '0с';
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
 
     if (minutes === 0) {
-        return `${remainingSeconds}s`;
+        return `${remainingSeconds}с`;
     } else if (remainingSeconds === 0) {
-        return `${minutes}m`;
+        return `${minutes}м`;
     } else {
-        return `${minutes}m ${remainingSeconds}s`;
+        return `${minutes}м ${remainingSeconds}с`;
     }
 }
 
@@ -480,7 +478,14 @@ function truncateText(text, maxLength) {
 
 function formatQuestionType(type) {
     if (!type) return '';
-    return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    const typeMap = {
+        'multiple_choice': 'Множественный выбор',
+        'single_choice': 'Одиночный выбор',
+        'text': 'Текстовый ответ'
+    };
+
+    return typeMap[type] || type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 function getProgressBarClass(percent) {
@@ -499,6 +504,12 @@ function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString();
+}
+
+function getAttemptWord(count) {
+    if (count === 1) return 'попытка';
+    if (count >= 2 && count <= 4) return 'попытки';
+    return 'попыток';
 }
 
 export default TestStatistics;

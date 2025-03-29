@@ -8,7 +8,6 @@ function StudentTestsPage() {
     const [studentInfo, setStudentInfo] = useState(null);
     const studentId = localStorage.getItem('testStudentId');
 
-    // Check if student is logged in
     useEffect(() => {
         const storedStudentInfo = localStorage.getItem('testStudentInfo');
         if (!studentId || !storedStudentInfo) {
@@ -19,33 +18,22 @@ function StudentTestsPage() {
         try {
             setStudentInfo(JSON.parse(storedStudentInfo));
         } catch (error) {
-            console.error('Error parsing student info:', error);
             navigate('/tests/student/login');
         }
     }, [navigate, studentId]);
 
-    // Fetch available tests
     const { data, isLoading, error } = useQuery({
         queryKey: ['available-tests', studentId],
         queryFn: () => studentTestsService.getAvailableTests(studentId),
         enabled: !!studentId,
     });
 
-    // Add debug logging for API response
-    useEffect(() => {
-        if (data) {
-            console.log('Available tests API response:', data);
-        }
-    }, [data]);
-
-    // Fetch student test history
     const { data: historyData, isLoading: historyLoading } = useQuery({
         queryKey: ['test-history', studentId],
         queryFn: () => studentTestsService.getTestHistory(studentId),
         enabled: !!studentId,
     });
 
-    // FIXED: Correctly access the API response data structure
     const availableTests = data?.data?.data || [];
     const testHistory = historyData?.data?.data?.attempts || [];
 
@@ -57,31 +45,21 @@ function StudentTestsPage() {
 
     const handleStartTest = async (testId) => {
         try {
-            // Convert studentId to number if it's stored as a string
             const studentIdNum = parseInt(studentId, 10);
 
-            // Log what we're sending to help debug
-            console.log('Starting test with:', { testId, studentId: studentIdNum });
-
             const response = await studentTestsService.startTest(testId, studentIdNum);
-            console.log('Start test response:', response);
 
-            // Access the correct data path
             const attemptId = response.data?.data?.attempt_id;
 
             if (!attemptId) {
-                console.error('No attempt ID found in response:', response);
-                alert('Failed to start test: No attempt ID returned. Please try again.');
+                alert('Не удалось начать тест: не возвращен ID попытки. Пожалуйста, попробуйте снова.');
                 return;
             }
 
-            // Navigate to the test taking page
             navigate(`/tests/student/take/${attemptId}`);
         } catch (error) {
-            console.error('Error starting test:', error);
-            // Show more detailed error information
-            const errorMessage = error.response?.data?.error || 'Unknown error occurred';
-            alert(`Failed to start test: ${errorMessage}. Please try again.`);
+            const errorMessage = error.response?.data?.error || 'Произошла неизвестная ошибка';
+            alert(`Не удалось начать тест: ${errorMessage}. Пожалуйста, попробуйте снова.`);
         }
     };
 
@@ -94,11 +72,11 @@ function StudentTestsPage() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Failed to load available tests: {error.message}</div>;
+        return <div className="alert alert-danger">Не удалось загрузить доступные тесты: {error.message}</div>;
     }
 
     if (!studentInfo) {
-        return null; // Will redirect in useEffect
+        return null;
     }
 
     return (
@@ -125,12 +103,12 @@ function StudentTestsPage() {
                     className="btn btn-outline"
                     onClick={handleLogout}
                 >
-                    Logout
+                    Выйти
                 </button>
             </div>
 
             <div className="dashboard-content">
-                <h3 className="section-title">Available Tests</h3>
+                <h3 className="section-title">Доступные тесты</h3>
 
                 {availableTests.length === 0 ? (
                     <div className="empty-state">
@@ -140,8 +118,8 @@ function StudentTestsPage() {
                             <line x1="6" y1="6" x2="6.01" y2="6"></line>
                             <line x1="6" y1="18" x2="6.01" y2="18"></line>
                         </svg>
-                        <h3>No Tests Available</h3>
-                        <p>There are no tests available for you at the moment.</p>
+                        <h3>Нет доступных тестов</h3>
+                        <p>На данный момент для вас нет доступных тестов.</p>
                     </div>
                 ) : (
                     <div className="tests-grid">
@@ -150,19 +128,19 @@ function StudentTestsPage() {
                                 <div className="test-card-content">
                                     <h3 className="test-title">{test.title}</h3>
                                     <div className="test-subject">{test.subject}</div>
-                                    <p className="test-description">{test.description || 'No description available.'}</p>
+                                    <p className="test-description">{test.description || 'Описание отсутствует.'}</p>
 
                                     <div className="test-meta">
                                         <div className="meta-item">
-                                            <span className="meta-label">Questions:</span>
+                                            <span className="meta-label">Вопросов:</span>
                                             <span className="meta-value">{test.questions_count}</span>
                                         </div>
                                         <div className="meta-item">
-                                            <span className="meta-label">Time:</span>
+                                            <span className="meta-label">Время:</span>
                                             <span className="meta-value">{formatDuration(test.time_per_question * test.questions_count)}</span>
                                         </div>
                                         <div className="meta-item">
-                                            <span className="meta-label">Attempts:</span>
+                                            <span className="meta-label">Попытки:</span>
                                             <span className="meta-value">
                                                 {test.attempts_used} / {test.max_attempts}
                                             </span>
@@ -171,7 +149,7 @@ function StudentTestsPage() {
 
                                     {test.highest_score > 0 && (
                                         <div className="previous-score">
-                                            Highest Score: <span className={`score-badge ${getScoreBadgeClass(test.highest_score)}`}>
+                                            Лучший результат: <span className={`score-badge ${getScoreBadgeClass(test.highest_score)}`}>
                                                 {test.highest_score}%
                                             </span>
                                         </div>
@@ -184,7 +162,7 @@ function StudentTestsPage() {
                                         onClick={() => handleStartTest(test.id)}
                                         disabled={!test.can_attempt}
                                     >
-                                        {test.can_attempt ? 'Start Test' : 'No Attempts Left'}
+                                        {test.can_attempt ? 'Начать тест' : 'Нет доступных попыток'}
                                     </button>
                                 </div>
                             </div>
@@ -194,19 +172,19 @@ function StudentTestsPage() {
 
                 {testHistory.length > 0 && (
                     <div className="test-history-section">
-                        <h3 className="section-title">Test History</h3>
+                        <h3 className="section-title">История тестов</h3>
 
                         <div className="table-container">
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Test</th>
-                                    <th>Subject</th>
-                                    <th>Date</th>
-                                    <th>Score</th>
-                                    <th>Status</th>
-                                    <th>Duration</th>
-                                    <th>Actions</th>
+                                    <th>Тест</th>
+                                    <th>Предмет</th>
+                                    <th>Дата</th>
+                                    <th>Результат</th>
+                                    <th>Статус</th>
+                                    <th>Длительность</th>
+                                    <th>Действия</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -222,13 +200,13 @@ function StudentTestsPage() {
                                         </td>
                                         <td>
                                                 <span className={`status-badge ${attempt.completed ? 'status-completed' : 'status-incomplete'}`}>
-                                                    {attempt.completed ? 'Completed' : 'Incomplete'}
+                                                    {attempt.completed ? 'Завершен' : 'Не завершен'}
                                                 </span>
                                         </td>
                                         <td>{formatDuration(attempt.duration_seconds)}</td>
                                         <td>
                                             <Link to={`/tests/student/results/${attempt.attempt_id}`} className="btn btn-sm btn-outline">
-                                                View Results
+                                                Результаты
                                             </Link>
                                         </td>
                                     </tr>
@@ -239,7 +217,7 @@ function StudentTestsPage() {
 
                         <div className="history-view-all">
                             <Link to="/tests/student/history" className="btn btn-secondary">
-                                View All History
+                                Вся история
                             </Link>
                         </div>
                     </div>
@@ -476,19 +454,18 @@ function StudentTestsPage() {
     );
 }
 
-// Helper functions
 function formatDuration(seconds) {
-    if (!seconds) return '0s';
+    if (!seconds) return '0с';
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
 
     if (minutes === 0) {
-        return `${remainingSeconds}s`;
+        return `${remainingSeconds}с`;
     } else if (remainingSeconds === 0) {
-        return `${minutes}m`;
+        return `${minutes}м`;
     } else {
-        return `${minutes}m ${remainingSeconds}s`;
+        return `${minutes}м ${remainingSeconds}с`;
     }
 }
 

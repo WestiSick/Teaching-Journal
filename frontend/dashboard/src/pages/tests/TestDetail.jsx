@@ -10,14 +10,12 @@ function TestDetail() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [questionToDelete, setQuestionToDelete] = useState(null);
 
-    // Fetch test details
     const { data: testData, isLoading, error } = useQuery({
         queryKey: ['test', id],
         queryFn: () => adminTestsService.getTestDetails(id),
         retry: 1
     });
 
-    // Delete test mutation
     const deleteTestMutation = useMutation({
         mutationFn: () => adminTestsService.deleteTest(id),
         onSuccess: () => {
@@ -26,7 +24,6 @@ function TestDetail() {
         }
     });
 
-    // Delete question mutation
     const deleteQuestionMutation = useMutation({
         mutationFn: (questionId) => adminTestsService.deleteQuestion(id, questionId),
         onSuccess: () => {
@@ -36,7 +33,6 @@ function TestDetail() {
         }
     });
 
-    // Toggle test active status mutation
     const toggleActiveMutation = useMutation({
         mutationFn: (isActive) => adminTestsService.updateTest(id, { is_active: isActive }),
         onSuccess: () => {
@@ -47,7 +43,7 @@ function TestDetail() {
     const test = testData?.data?.data;
 
     const handleDeleteTest = () => {
-        if (window.confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
+        if (window.confirm('Вы уверены, что хотите удалить этот тест? Это действие нельзя отменить.')) {
             deleteTestMutation.mutate();
         }
     };
@@ -78,17 +74,15 @@ function TestDetail() {
     }
 
     if (error) {
-        return <div className="alert alert-danger">Error loading test: {error.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки теста: {error.message}</div>;
     }
 
     if (!test) {
-        return <div className="alert alert-danger">Test not found</div>;
+        return <div className="alert alert-danger">Тест не найден</div>;
     }
 
-    // Ensure questions is an array even if it's null
     const questions = Array.isArray(test.questions) ? test.questions : [];
 
-    // Ensure stats exists
     const stats = test.stats || {
         total_attempts: 0,
         completed_count: 0,
@@ -99,23 +93,23 @@ function TestDetail() {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Test Details</h1>
+                <h1 className="page-title">Детали теста</h1>
                 <div className="header-actions">
                     <button
                         className={`btn ${test.is_active ? 'btn-warning' : 'btn-success'} mr-2`}
                         onClick={toggleTestActive}
                         disabled={toggleActiveMutation.isPending}
                     >
-                        {toggleActiveMutation.isPending ? 'Updating...' : (test.is_active ? 'Deactivate' : 'Activate')}
+                        {toggleActiveMutation.isPending ? 'Обновление...' : (test.is_active ? 'Деактивировать' : 'Активировать')}
                     </button>
-                    <Link to={`/tests/${id}/edit`} className="btn btn-primary mr-2">Edit Test</Link>
-                    <Link to={`/tests/${id}/statistics`} className="btn btn-secondary mr-2">View Statistics</Link>
+                    <Link to={`/tests/${id}/edit`} className="btn btn-primary mr-2">Редактировать тест</Link>
+                    <Link to={`/tests/${id}/statistics`} className="btn btn-secondary mr-2">Просмотр статистики</Link>
                     <button
                         className="btn btn-danger"
                         onClick={handleDeleteTest}
                         disabled={deleteTestMutation.isPending}
                     >
-                        {deleteTestMutation.isPending ? 'Deleting...' : 'Delete Test'}
+                        {deleteTestMutation.isPending ? 'Удаление...' : 'Удалить тест'}
                     </button>
                 </div>
             </div>
@@ -130,40 +124,40 @@ function TestDetail() {
                                     <span className="test-subject">{test.subject}</span>
                                     <span className="test-status">
                                         <span className={`status-dot ${test.is_active ? 'status-active' : 'status-inactive'}`}></span>
-                                        {test.is_active ? 'Active' : 'Inactive'}
+                                        {test.is_active ? 'Активен' : 'Неактивен'}
                                     </span>
                                 </div>
                             </div>
                             <div className="test-stats">
                                 <div className="stat-item">
                                     <div className="stat-value">{questions.length}</div>
-                                    <div className="stat-label">Questions</div>
+                                    <div className="stat-label">Вопросов</div>
                                 </div>
                                 <div className="stat-item">
                                     <div className="stat-value">{stats.total_attempts}</div>
-                                    <div className="stat-label">Attempts</div>
+                                    <div className="stat-label">Попыток</div>
                                 </div>
                                 <div className="stat-item">
                                     <div className="stat-value">{test.max_attempts}</div>
-                                    <div className="stat-label">Max Attempts</div>
+                                    <div className="stat-label">Макс. попыток</div>
                                 </div>
                                 <div className="stat-item">
-                                    <div className="stat-value">{test.time_per_question}s</div>
-                                    <div className="stat-label">Per Question</div>
+                                    <div className="stat-value">{test.time_per_question}с</div>
+                                    <div className="stat-label">На вопрос</div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="test-description">
-                            <h3 className="text-lg font-semibold mb-2">Description</h3>
-                            <p>{test.description || 'No description provided.'}</p>
+                            <h3 className="text-lg font-semibold mb-2">Описание</h3>
+                            <p>{test.description || 'Описание не предоставлено.'}</p>
                         </div>
                     </div>
 
                     <div className="card">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                            <h3 className="text-lg font-semibold">Questions</h3>
-                            <Link to={`/tests/${id}/edit`} className="btn btn-sm btn-outline">Add Questions</Link>
+                            <h3 className="text-lg font-semibold">Вопросы</h3>
+                            <Link to={`/tests/${id}/edit`} className="btn btn-sm btn-outline">Добавить вопросы</Link>
                         </div>
 
                         {questions.length === 0 ? (
@@ -172,29 +166,29 @@ function TestDetail() {
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="8" y1="12" x2="16" y2="12"></line>
                                 </svg>
-                                <h3>No Questions Added</h3>
-                                <p>This test doesn't have any questions yet.</p>
-                                <Link to={`/tests/${id}/edit`} className="btn btn-primary mt-3">Add Questions</Link>
+                                <h3>Нет добавленных вопросов</h3>
+                                <p>В этом тесте пока нет вопросов.</p>
+                                <Link to={`/tests/${id}/edit`} className="btn btn-primary mt-3">Добавить вопросы</Link>
                             </div>
                         ) : (
                             <div className="questions-list">
                                 {questions.map((question, index) => (
                                     <div key={question.id || index} className="question-item">
                                         <div className="question-header">
-                                            <div className="question-number">Question {index + 1}</div>
+                                            <div className="question-number">Вопрос {index + 1}</div>
                                             <div className="question-actions">
                                                 <button
                                                     className="btn btn-sm btn-danger"
                                                     onClick={() => confirmDeleteQuestion(question.id)}
                                                 >
-                                                    Delete
+                                                    Удалить
                                                 </button>
                                             </div>
                                         </div>
                                         <div className="question-content">
                                             <div className="question-text">{question.question_text}</div>
                                             <div className="question-meta">
-                                                <span className="question-type">{(question.question_type || '').replace('_', ' ')}</span>
+                                                <span className="question-type">{formatQuestionType(question.question_type || '')}</span>
                                             </div>
                                         </div>
                                         <div className="answer-list">
@@ -206,7 +200,7 @@ function TestDetail() {
                                                     <div className="answer-indicator">{String.fromCharCode(65 + ansIndex)}</div>
                                                     <div className="answer-text">{answer.answer_text}</div>
                                                     {answer.is_correct && (
-                                                        <div className="answer-badge">Correct</div>
+                                                        <div className="answer-badge">Верно</div>
                                                     )}
                                                 </div>
                                             ))}
@@ -220,49 +214,49 @@ function TestDetail() {
 
                 <div className="col-span-4">
                     <div className="card mb-6">
-                        <h3 className="text-lg font-semibold mb-3">Test Statistics</h3>
+                        <h3 className="text-lg font-semibold mb-3">Статистика теста</h3>
                         <div className="stats-overview">
                             <div className="stat-row">
-                                <div className="stat-label">Total Attempts</div>
+                                <div className="stat-label">Всего попыток</div>
                                 <div className="stat-value">{stats.total_attempts}</div>
                             </div>
                             <div className="stat-row">
-                                <div className="stat-label">Completed Attempts</div>
+                                <div className="stat-label">Завершенные попытки</div>
                                 <div className="stat-value">{stats.completed_count}</div>
                             </div>
                             <div className="stat-row">
-                                <div className="stat-label">Average Score</div>
+                                <div className="stat-label">Средний балл</div>
                                 <div className="stat-value">{stats.average_score.toFixed(1)}%</div>
                             </div>
                             <div className="stat-row">
-                                <div className="stat-label">Average Duration</div>
+                                <div className="stat-label">Среднее время</div>
                                 <div className="stat-value">{formatDuration(stats.average_duration)}</div>
                             </div>
                         </div>
                         <div className="mt-3">
                             <Link to={`/tests/${id}/statistics`} className="btn btn-outline w-full">
-                                View Detailed Statistics
+                                Подробная статистика
                             </Link>
                         </div>
                     </div>
 
                     <div className="card">
-                        <h3 className="text-lg font-semibold mb-3">Test Information</h3>
+                        <h3 className="text-lg font-semibold mb-3">Информация о тесте</h3>
                         <div className="info-list">
                             <div className="info-item">
-                                <div className="info-label">Created</div>
+                                <div className="info-label">Создан</div>
                                 <div className="info-value">{new Date(test.created_at).toLocaleString()}</div>
                             </div>
                             <div className="info-item">
-                                <div className="info-label">Last Updated</div>
+                                <div className="info-label">Последнее обновление</div>
                                 <div className="info-value">{new Date(test.updated_at).toLocaleString()}</div>
                             </div>
                             <div className="info-item">
-                                <div className="info-label">Creator ID</div>
+                                <div className="info-label">ID создателя</div>
                                 <div className="info-value">{test.creator_id}</div>
                             </div>
                             <div className="info-item">
-                                <div className="info-label">Time Limit</div>
+                                <div className="info-label">Ограничение по времени</div>
                                 <div className="info-value">{formatDuration(test.time_per_question * questions.length)}</div>
                             </div>
                         </div>
@@ -270,14 +264,14 @@ function TestDetail() {
                         <div className="mt-4">
                             <div className="d-flex gap-2">
                                 <Link to="/tests" className="btn btn-secondary">
-                                    Back to Tests
+                                    Назад к тестам
                                 </Link>
                                 <button
                                     className="btn btn-danger"
                                     onClick={handleDeleteTest}
                                     disabled={deleteTestMutation.isPending}
                                 >
-                                    {deleteTestMutation.isPending ? 'Deleting...' : 'Delete Test'}
+                                    {deleteTestMutation.isPending ? 'Удаление...' : 'Удалить тест'}
                                 </button>
                             </div>
                         </div>
@@ -285,12 +279,12 @@ function TestDetail() {
                 </div>
             </div>
 
-            {/* Delete Question Modal */}
+            {/* Модальное окно удаления вопроса */}
             {showDeleteModal && (
                 <div className="modal-overlay">
                     <div className="modal-container">
                         <div className="modal-header">
-                            <h3>Delete Question</h3>
+                            <h3>Удалить вопрос</h3>
                             <button
                                 className="modal-close"
                                 onClick={() => setShowDeleteModal(false)}
@@ -299,21 +293,21 @@ function TestDetail() {
                             </button>
                         </div>
                         <div className="modal-body">
-                            <p>Are you sure you want to delete this question? This action cannot be undone.</p>
+                            <p>Вы уверены, что хотите удалить этот вопрос? Это действие нельзя отменить.</p>
                         </div>
                         <div className="modal-footer">
                             <button
                                 className="btn btn-secondary"
                                 onClick={() => setShowDeleteModal(false)}
                             >
-                                Cancel
+                                Отмена
                             </button>
                             <button
                                 className="btn btn-danger"
                                 onClick={handleDeleteQuestion}
                                 disabled={deleteQuestionMutation.isPending}
                             >
-                                {deleteQuestionMutation.isPending ? 'Deleting...' : 'Delete Question'}
+                                {deleteQuestionMutation.isPending ? 'Удаление...' : 'Удалить вопрос'}
                             </button>
                         </div>
                     </div>
@@ -616,20 +610,29 @@ function TestDetail() {
     );
 }
 
-// Helper function to format duration in seconds to a human-readable string
 function formatDuration(seconds) {
-    if (!seconds) return '0s';
+    if (!seconds) return '0с';
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
 
     if (minutes === 0) {
-        return `${remainingSeconds}s`;
+        return `${remainingSeconds}с`;
     } else if (remainingSeconds === 0) {
-        return `${minutes}m`;
+        return `${minutes}м`;
     } else {
-        return `${minutes}m ${remainingSeconds}s`;
+        return `${minutes}м ${remainingSeconds}с`;
     }
+}
+
+function formatQuestionType(type) {
+    const typeMap = {
+        'multiple_choice': 'Множественный выбор',
+        'single_choice': 'Одиночный выбор',
+        'text': 'Текстовый ответ'
+    };
+
+    return typeMap[type] || type.replace('_', ' ');
 }
 
 export default TestDetail;

@@ -35,7 +35,7 @@ function SharedLinks() {
     const deleteMutation = useMutation({
         mutationFn: (token) => labService.deleteSharedLink(token),
         onSuccess: () => {
-            setSuccess('Shared link deleted successfully');
+            setSuccess('Общая ссылка успешно удалена');
             queryClient.invalidateQueries({ queryKey: ['shared-links'] });
             setShowConfirmation(false);
             setLinkToDelete(null);
@@ -46,7 +46,7 @@ function SharedLinks() {
             }, 3000);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to delete shared link');
+            setError(err.response?.data?.error || 'Не удалось удалить общую ссылку');
             setShowConfirmation(false);
 
             // Clear error message after a delay
@@ -78,7 +78,7 @@ function SharedLinks() {
         navigator.clipboard.writeText(shareUrl)
             .then(() => {
                 setCopiedLink(token);
-                setSuccess('Link copied to clipboard');
+                setSuccess('Ссылка скопирована в буфер обмена');
 
                 // Clear success message after a delay
                 setTimeout(() => {
@@ -86,7 +86,7 @@ function SharedLinks() {
                 }, 3000);
             })
             .catch(() => {
-                setError('Failed to copy link');
+                setError('Не удалось скопировать ссылку');
 
                 // Clear error message after a delay
                 setTimeout(() => {
@@ -120,9 +120,9 @@ function SharedLinks() {
 
         // Format date based on when it is
         if (isToday) {
-            return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            return `Сегодня в ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         } else if (isTomorrow) {
-            return `Tomorrow at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            return `Завтра в ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         } else {
             return date.toLocaleDateString([], {
                 year: 'numeric',
@@ -139,15 +139,15 @@ function SharedLinks() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Shared Lab Grade Links</h1>
-                        <p className="text-secondary">Manage and track shared lab grade links</p>
+                        <h1 className="page-title">Общие ссылки на оценки лабораторных работ</h1>
+                        <p className="text-secondary">Управление и отслеживание общих ссылок на оценки лабораторных работ</p>
                     </div>
                     <Link to="/labs" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
                 <RequireSubscription />
@@ -160,15 +160,15 @@ function SharedLinks() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Shared Lab Grade Links</h1>
-                        <p className="text-secondary">Manage and track shared lab grade links</p>
+                        <h1 className="page-title">Общие ссылки на оценки лабораторных работ</h1>
+                        <p className="text-secondary">Управление и отслеживание общих ссылок на оценки лабораторных работ</p>
                     </div>
                     <Link to="/labs" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
                 <div className="flex items-center justify-center h-64">
@@ -183,15 +183,15 @@ function SharedLinks() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Shared Lab Grade Links</h1>
-                        <p className="text-secondary">Manage and track shared lab grade links</p>
+                        <h1 className="page-title">Общие ссылки на оценки лабораторных работ</h1>
+                        <p className="text-secondary">Управление и отслеживание общих ссылок на оценки лабораторных работ</p>
                     </div>
                     <Link to="/labs" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
                 <div className="alert alert-danger mb-6">
@@ -201,7 +201,7 @@ function SharedLinks() {
                             <line x1="12" y1="9" x2="12" y2="13"></line>
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
-                        <p>Error loading shared links: {fetchError.message}</p>
+                        <p>Ошибка загрузки общих ссылок: {fetchError.message}</p>
                     </div>
                 </div>
             </div>
@@ -214,15 +214,15 @@ function SharedLinks() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Shared Lab Grade Links</h1>
-                    <p className="text-secondary">Manage and track shared lab grade links</p>
+                    <h1 className="page-title">Общие ссылки на оценки лабораторных работ</h1>
+                    <p className="text-secondary">Управление и отслеживание общих ссылок на оценки лабораторных работ</p>
                 </div>
                 <Link to="/labs" className="btn btn-secondary flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    <span className="hidden sm:inline">Back</span>
+                    <span className="hidden sm:inline">Назад</span>
                 </Link>
             </div>
 
@@ -253,9 +253,9 @@ function SharedLinks() {
 
             <div className="card p-0 overflow-hidden">
                 <div className="p-6 border-b border-border-color">
-                    <h2 className="text-xl font-semibold">Active Share Links</h2>
+                    <h2 className="text-xl font-semibold">Активные общие ссылки</h2>
                     <p className="text-secondary mt-1">
-                        Links to lab grades that you've shared with students
+                        Ссылки на оценки лабораторных работ, которыми вы поделились со студентами
                     </p>
                 </div>
 
@@ -267,16 +267,16 @@ function SharedLinks() {
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium mb-2">No shared links found</h3>
+                        <h3 className="text-lg font-medium mb-2">Общие ссылки не найдены</h3>
                         <p className="text-secondary text-center mb-6">
-                            You haven't created any share links yet. You can create share links from the lab grades page.
+                            Вы еще не создали ни одной общей ссылки. Вы можете создать общие ссылки на странице оценок лабораторных работ.
                         </p>
                         <Link to="/labs" className="btn btn-primary flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                             </svg>
-                            Create Share Link
+                            Создать общую ссылку
                         </Link>
                     </div>
                 ) : (
@@ -284,13 +284,13 @@ function SharedLinks() {
                         <table className="table w-full">
                             <thead>
                             <tr>
-                                <th>Subject</th>
-                                <th>Group</th>
-                                <th>Created</th>
-                                <th>Expires</th>
-                                <th>Status</th>
-                                <th>Views</th>
-                                <th className="text-right">Actions</th>
+                                <th>Предмет</th>
+                                <th>Группа</th>
+                                <th>Создано</th>
+                                <th>Истекает</th>
+                                <th>Статус</th>
+                                <th>Просмотры</th>
+                                <th className="text-right">Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -331,7 +331,7 @@ function SharedLinks() {
                                                             <line x1="18" y1="6" x2="6" y2="18"></line>
                                                             <line x1="6" y1="6" x2="18" y2="18"></line>
                                                         </svg>
-                                                        Expired
+                                                        Истекло
                                                     </span>
                                             ) : isAlmostExpired ? (
                                                 <span className="badge bg-warning-lighter text-warning px-3 py-1 inline-flex items-center gap-1">
@@ -340,7 +340,7 @@ function SharedLinks() {
                                                             <line x1="12" y1="8" x2="12" y2="12"></line>
                                                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                                         </svg>
-                                                        Expiring Soon
+                                                        Скоро истечет
                                                     </span>
                                             ) : (
                                                 <span className="badge bg-success-lighter text-success px-3 py-1 inline-flex items-center gap-1">
@@ -348,7 +348,7 @@ function SharedLinks() {
                                                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                                                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                                         </svg>
-                                                        Active
+                                                        Активно
                                                     </span>
                                             )}
                                         </td>
@@ -368,19 +368,19 @@ function SharedLinks() {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="btn btn-sm btn-secondary"
-                                                    title="View shared page"
+                                                    title="Просмотр общей страницы"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                         <circle cx="12" cy="12" r="3"></circle>
                                                     </svg>
-                                                    <span className="hidden sm:inline ml-1">View</span>
+                                                    <span className="hidden sm:inline ml-1">Просмотр</span>
                                                 </a>
                                                 <button
                                                     onClick={() => handleCopyLink(link.token)}
                                                     className={`btn btn-sm ${copiedLink === link.token ? 'btn-success' : 'btn-primary'}`}
                                                     disabled={isExpired}
-                                                    title="Copy link to clipboard"
+                                                    title="Копировать ссылку в буфер обмена"
                                                 >
                                                     {copiedLink === link.token ? (
                                                         <>
@@ -388,7 +388,7 @@ function SharedLinks() {
                                                                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                                                                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                                             </svg>
-                                                            <span className="hidden sm:inline ml-1">Copied</span>
+                                                            <span className="hidden sm:inline ml-1">Скопировано</span>
                                                         </>
                                                     ) : (
                                                         <>
@@ -396,20 +396,20 @@ function SharedLinks() {
                                                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                                             </svg>
-                                                            <span className="hidden sm:inline ml-1">Copy</span>
+                                                            <span className="hidden sm:inline ml-1">Копировать</span>
                                                         </>
                                                     )}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(link.token, link)}
                                                     className="btn btn-sm btn-danger"
-                                                    title="Delete link"
+                                                    title="Удалить ссылку"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                         <polyline points="3 6 5 6 21 6"></polyline>
                                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                                     </svg>
-                                                    <span className="hidden sm:inline ml-1">Delete</span>
+                                                    <span className="hidden sm:inline ml-1">Удалить</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -430,7 +430,7 @@ function SharedLinks() {
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    Tips for Sharing Lab Grades
+                    Советы по совместному использованию оценок лабораторных работ
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="flex gap-3">
@@ -442,9 +442,9 @@ function SharedLinks() {
                             </svg>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-1">Create from Lab Grades Page</h4>
+                            <h4 className="font-medium mb-1">Создание со страницы оценок</h4>
                             <p className="text-secondary text-sm">
-                                To create a new shared link, navigate to a specific lab grades page and use the "Generate Share Link" button.
+                                Чтобы создать новую общую ссылку, перейдите на страницу оценок лабораторных работ и используйте кнопку "Поделиться оценками".
                             </p>
                         </div>
                     </div>
@@ -456,9 +456,9 @@ function SharedLinks() {
                             </svg>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-1">Links Auto-Expire</h4>
+                            <h4 className="font-medium mb-1">Автоматическое истечение срока действия ссылок</h4>
                             <p className="text-secondary text-sm">
-                                Shared links automatically expire after the time period you set. You can always create a new link if needed.
+                                Срок действия общих ссылок автоматически истекает по истечении указанного периода времени. Вы всегда можете создать новую ссылку при необходимости.
                             </p>
                         </div>
                     </div>
@@ -470,9 +470,9 @@ function SharedLinks() {
                             </svg>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-1">Track Views</h4>
+                            <h4 className="font-medium mb-1">Отслеживание просмотров</h4>
                             <p className="text-secondary text-sm">
-                                You can see how many times each link has been accessed to monitor student engagement.
+                                Вы можете видеть, сколько раз была просмотрена каждая ссылка, чтобы отслеживать активность студентов.
                             </p>
                         </div>
                     </div>
@@ -484,9 +484,9 @@ function SharedLinks() {
                             </svg>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-1">Secure Access</h4>
+                            <h4 className="font-medium mb-1">Безопасный доступ</h4>
                             <p className="text-secondary text-sm">
-                                Anyone with the link can view the grades. Delete a link at any time to revoke access.
+                                Любой, у кого есть ссылка, может просматривать оценки. Вы можете удалить ссылку в любое время, чтобы отозвать доступ.
                             </p>
                         </div>
                     </div>
@@ -497,13 +497,13 @@ function SharedLinks() {
             {showConfirmation && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-bg-dark-secondary p-6 rounded-lg shadow-xl max-w-md w-full">
-                        <h3 className="text-xl font-bold mb-4">Confirm Deletion</h3>
-                        <p className="mb-2">Are you sure you want to delete this shared link?</p>
+                        <h3 className="text-xl font-bold mb-4">Подтверждение удаления</h3>
+                        <p className="mb-2">Вы уверены, что хотите удалить эту общую ссылку?</p>
                         {linkToDelete && (
                             <div className="bg-bg-dark-tertiary p-4 rounded-md mb-4">
                                 <p className="font-medium">{linkToDelete.subject} - {linkToDelete.group}</p>
                                 <p className="text-sm text-secondary mt-1">
-                                    Once deleted, students will no longer be able to access these lab grades.
+                                    После удаления студенты больше не смогут получить доступ к этим оценкам лабораторных работ.
                                 </p>
                             </div>
                         )}
@@ -512,7 +512,7 @@ function SharedLinks() {
                                 onClick={() => setShowConfirmation(false)}
                                 className="btn btn-secondary"
                             >
-                                Cancel
+                                Отмена
                             </button>
                             <button
                                 onClick={confirmDelete}
@@ -522,7 +522,7 @@ function SharedLinks() {
                                 {deleteMutation.isPending ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        Deleting...
+                                        Удаление...
                                     </>
                                 ) : (
                                     <>
@@ -530,7 +530,7 @@ function SharedLinks() {
                                             <polyline points="3 6 5 6 21 6"></polyline>
                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                         </svg>
-                                        Delete Link
+                                        Удалить ссылку
                                     </>
                                 )}
                             </button>

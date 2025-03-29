@@ -1,4 +1,3 @@
-// frontend/dashboard/src/pages/tickets/TicketDetail.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,25 +19,21 @@ function TicketDetail() {
     const [uploadingFiles, setUploadingFiles] = useState(false);
     const [activeTab, setActiveTab] = useState('details');
 
-    // Fetch ticket details
     const { data: ticketData, isLoading: ticketLoading, error: ticketError, refetch: refetchTicket } = useQuery({
         queryKey: ['ticket', id],
         queryFn: () => ticketService.getTicket(id)
     });
 
-    // Fetch comments
     const { data: commentsData, isLoading: commentsLoading, error: commentsError, refetch: refetchComments } = useQuery({
         queryKey: ['ticket-comments', id],
         queryFn: () => ticketService.getComments(id)
     });
 
-    // Fetch attachments
     const { data: attachmentsData, isLoading: attachmentsLoading, error: attachmentsError, refetch: refetchAttachments } = useQuery({
         queryKey: ['ticket-attachments', id],
         queryFn: () => ticketService.getAttachments(id)
     });
 
-    // Add comment mutation
     const addCommentMutation = useMutation({
         mutationFn: (commentData) => ticketService.addComment(id, commentData),
         onSuccess: () => {
@@ -46,14 +41,12 @@ function TicketDetail() {
             refetchTicket();
             setNewComment('');
             setIsInternal(false);
-            // Handle file uploads after comment is posted
             if (selectedFiles.length > 0) {
                 handleFileUpload();
             }
         }
     });
 
-    // Update ticket status mutation
     const updateTicketMutation = useMutation({
         mutationFn: (data) => ticketService.updateTicket(id, data),
         onSuccess: () => {
@@ -61,7 +54,6 @@ function TicketDetail() {
         }
     });
 
-    // Delete ticket mutation
     const deleteTicketMutation = useMutation({
         mutationFn: () => ticketService.deleteTicket(id),
         onSuccess: () => {
@@ -73,7 +65,6 @@ function TicketDetail() {
     const comments = commentsData?.data?.data || [];
     const attachments = attachmentsData?.data?.data || [];
 
-    // Auto-scroll to comment section when clicking reply button
     const scrollToCommentInput = () => {
         setActiveTab('comments');
         setTimeout(() => {
@@ -81,7 +72,6 @@ function TicketDetail() {
         }, 100);
     };
 
-    // Handle comment submission
     const handleCommentSubmit = (e) => {
         e.preventDefault();
         if (!newComment.trim()) return;
@@ -94,12 +84,10 @@ function TicketDetail() {
         addCommentMutation.mutate(commentData);
     };
 
-    // Handle file selection
     const handleFileSelect = (e) => {
         setSelectedFiles([...e.target.files]);
     };
 
-    // Handle file upload
     const handleFileUpload = async () => {
         if (selectedFiles.length === 0) return;
 
@@ -115,7 +103,6 @@ function TicketDetail() {
                 setFileUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
             }
 
-            // Reset file input and refresh attachments
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
@@ -123,33 +110,27 @@ function TicketDetail() {
             refetchAttachments();
 
         } catch (error) {
-            console.error('Error uploading files:', error);
         } finally {
             setUploadingFiles(false);
         }
     };
 
-    // Handle status change
     const handleStatusChange = (newStatus) => {
         updateTicketMutation.mutate({ status: newStatus });
     };
 
-    // Handle ticket deletion
     const handleDeleteTicket = () => {
-        if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
+        if (window.confirm('Вы уверены, что хотите удалить этот тикет? Это действие нельзя отменить.')) {
             deleteTicketMutation.mutate();
         }
     };
 
-    // Download attachment
     const handleDownloadAttachment = async (attachmentId, fileName) => {
         try {
             const response = await ticketService.downloadAttachment(attachmentId);
 
-            // Create a blob from the response data
             const blob = new Blob([response.data]);
 
-            // Create a link and trigger download
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -159,7 +140,6 @@ function TicketDetail() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            console.error('Error downloading attachment:', error);
         }
     };
 
@@ -189,22 +169,21 @@ function TicketDetail() {
         }
     };
 
-    // Format relative time (e.g., "2 hours ago")
     const getRelativeTime = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
         const diffInSeconds = Math.floor((now - date) / 1000);
 
-        if (diffInSeconds < 60) return 'just now';
+        if (diffInSeconds < 60) return 'только что';
 
         const diffInMinutes = Math.floor(diffInSeconds / 60);
-        if (diffInMinutes < 60) return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+        if (diffInMinutes < 60) return `${diffInMinutes} ${diffInMinutes === 1 ? 'минуту' : diffInMinutes < 5 ? 'минуты' : 'минут'} назад`;
 
         const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24) return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+        if (diffInHours < 24) return `${diffInHours} ${diffInHours === 1 ? 'час' : diffInHours < 5 ? 'часа' : 'часов'} назад`;
 
         const diffInDays = Math.floor(diffInHours / 24);
-        if (diffInDays < 30) return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+        if (diffInDays < 30) return `${diffInDays} ${diffInDays === 1 ? 'день' : diffInDays < 5 ? 'дня' : 'дней'} назад`;
 
         return formatDate(dateString);
     };
@@ -226,10 +205,10 @@ function TicketDetail() {
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <span>Error loading ticket: {ticketError.message}</span>
+                    <span>Ошибка загрузки тикета: {ticketError.message}</span>
                 </div>
                 <div className="mt-4">
-                    <Link to="/tickets" className="btn btn-primary">Return to Tickets</Link>
+                    <Link to="/tickets" className="btn btn-primary">Вернуться к тикетам</Link>
                 </div>
             </div>
         );
@@ -244,10 +223,10 @@ function TicketDetail() {
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <span>Ticket not found</span>
+                    <span>Тикет не найден</span>
                 </div>
                 <div className="mt-4">
-                    <Link to="/tickets" className="btn btn-primary">Return to Tickets</Link>
+                    <Link to="/tickets" className="btn btn-primary">Вернуться к тикетам</Link>
                 </div>
             </div>
         );
@@ -289,8 +268,8 @@ function TicketDetail() {
                         </div>
                         <h1 className="text-2xl font-bold mb-2">{ticket.title}</h1>
                         <div className="flex items-center text-text-tertiary text-sm mb-1">
-                            <span>Opened by </span>
-                            <span className="font-medium text-text-secondary ml-1">{ticket.created_by_user?.name || `User #${ticket.created_by}`}</span>
+                            <span>Открыт </span>
+                            <span className="font-medium text-text-secondary ml-1">{ticket.created_by_user?.name || `Пользователь #${ticket.created_by}`}</span>
                             <span className="mx-2">•</span>
                             <span>{getRelativeTime(ticket.created_at)}</span>
                             <span className="mx-2">•</span>
@@ -305,7 +284,7 @@ function TicketDetail() {
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
-                            Back
+                            Назад
                         </Link>
                         <button
                             onClick={scrollToCommentInput}
@@ -314,7 +293,7 @@ function TicketDetail() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                             </svg>
-                            Reply
+                            Ответить
                         </button>
                         {canEdit && (
                             <Link to={`/tickets/${id}/edit`} className="btn btn-sm btn-outline flex items-center gap-1">
@@ -322,7 +301,7 @@ function TicketDetail() {
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
-                                Edit
+                                Редактировать
                             </Link>
                         )}
                         {canDelete && (
@@ -331,7 +310,7 @@ function TicketDetail() {
                                     <polyline points="3 6 5 6 21 6"></polyline>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                 </svg>
-                                Delete
+                                Удалить
                             </button>
                         )}
                     </div>
@@ -346,21 +325,21 @@ function TicketDetail() {
                                 className="btn btn-sm btn-outline"
                                 disabled={ticket.status === 'New'}
                             >
-                                Mark as New
+                                Отметить как Новый
                             </button>
                             <button
                                 onClick={() => handleStatusChange('Open')}
                                 className="btn btn-sm btn-outline"
                                 disabled={ticket.status === 'Open'}
                             >
-                                Mark as Open
+                                Отметить как Открытый
                             </button>
                             <button
                                 onClick={() => handleStatusChange('InProgress')}
                                 className="btn btn-sm btn-warning"
                                 disabled={ticket.status === 'InProgress'}
                             >
-                                Mark In Progress
+                                Отметить В Работе
                             </button>
                         </>
                     )}
@@ -371,7 +350,7 @@ function TicketDetail() {
                             className="btn btn-sm btn-success"
                             disabled={ticket.status === 'Resolved' || ticket.status === 'Closed'}
                         >
-                            Mark as Resolved
+                            Отметить как Решенный
                         </button>
                     )}
 
@@ -380,7 +359,7 @@ function TicketDetail() {
                             onClick={() => handleStatusChange('Open')}
                             className="btn btn-sm btn-outline"
                         >
-                            Reopen Ticket
+                            Переоткрыть тикет
                         </button>
                     )}
 
@@ -390,7 +369,7 @@ function TicketDetail() {
                             className="btn btn-sm btn-secondary"
                             disabled={ticket.status === 'Closed'}
                         >
-                            Close Ticket
+                            Закрыть тикет
                         </button>
                     )}
                 </div>
@@ -403,26 +382,26 @@ function TicketDetail() {
                         className={`px-4 py-2 font-medium rounded-t-lg ${activeTab === 'details' ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary'}`}
                         onClick={() => setActiveTab('details')}
                     >
-                        Details
+                        Детали
                     </button>
                     <button
                         className={`px-4 py-2 font-medium rounded-t-lg ${activeTab === 'comments' ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary'}`}
                         onClick={() => setActiveTab('comments')}
                     >
-                        Comments {comments.length > 0 && `(${comments.length})`}
+                        Комментарии {comments.length > 0 && `(${comments.length})`}
                     </button>
                     <button
                         className={`px-4 py-2 font-medium rounded-t-lg ${activeTab === 'attachments' ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary'}`}
                         onClick={() => setActiveTab('attachments')}
                     >
-                        Attachments {attachments.length > 0 && `(${attachments.length})`}
+                        Вложения {attachments.length > 0 && `(${attachments.length})`}
                     </button>
                     {currentUser?.role === 'admin' && ticket.history && ticket.history.length > 0 && (
                         <button
                             className={`px-4 py-2 font-medium rounded-t-lg ${activeTab === 'history' ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary'}`}
                             onClick={() => setActiveTab('history')}
                         >
-                            History
+                            История
                         </button>
                     )}
                 </div>
@@ -434,7 +413,7 @@ function TicketDetail() {
                     {/* Details Tab */}
                     {activeTab === 'details' && (
                         <div className="card mb-6">
-                            <h2 className="text-xl font-semibold mb-4">Description</h2>
+                            <h2 className="text-xl font-semibold mb-4">Описание</h2>
                             <div className="bg-bg-dark-tertiary p-6 rounded-lg whitespace-pre-wrap">
                                 {ticket.description}
                             </div>
@@ -444,7 +423,7 @@ function TicketDetail() {
                     {/* Comments Tab */}
                     {activeTab === 'comments' && (
                         <div className="card mb-6">
-                            <h2 className="text-xl font-semibold mb-4">Comments</h2>
+                            <h2 className="text-xl font-semibold mb-4">Комментарии</h2>
 
                             {commentsLoading ? (
                                 <div className="flex justify-center items-center p-6">
@@ -457,8 +436,8 @@ function TicketDetail() {
                                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                         </svg>
                                     </div>
-                                    <p className="text-text-secondary text-lg font-medium">No comments yet</p>
-                                    <p className="text-text-tertiary">Be the first to add a comment to this ticket</p>
+                                    <p className="text-text-secondary text-lg font-medium">Комментариев пока нет</p>
+                                    <p className="text-text-tertiary">Будьте первым, кто добавит комментарий к этому тикету</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4 mb-6">
@@ -470,10 +449,10 @@ function TicketDetail() {
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 bg-bg-dark-secondary text-primary rounded-full flex items-center justify-center font-semibold text-lg">
-                                                        {comment.user?.name?.charAt(0).toUpperCase() || 'U'}
+                                                        {comment.user?.name?.charAt(0).toUpperCase() || 'П'}
                                                     </div>
                                                     <div>
-                                                        <div className="font-medium">{comment.user?.name || `User #${comment.user_id}`}</div>
+                                                        <div className="font-medium">{comment.user?.name || `Пользователь #${comment.user_id}`}</div>
                                                         <div className="text-text-tertiary text-sm">{getRelativeTime(comment.created_at)}</div>
                                                     </div>
                                                 </div>
@@ -482,7 +461,7 @@ function TicketDetail() {
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                                                         </svg>
-                                                        Internal Note
+                                                        Внутренняя заметка
                                                     </span>
                                                 )}
                                             </div>
@@ -496,14 +475,14 @@ function TicketDetail() {
 
                             {/* Add Comment Form */}
                             <div className="mt-6 pt-6 border-t border-border-color">
-                                <h3 className="font-semibold text-lg mb-3">Add a Comment</h3>
+                                <h3 className="font-semibold text-lg mb-3">Добавить комментарий</h3>
                                 <form onSubmit={handleCommentSubmit}>
                                     <div className="form-group">
                                         <textarea
                                             ref={commentInputRef}
                                             className="form-control"
                                             rows="5"
-                                            placeholder="Write your comment here..."
+                                            placeholder="Напишите ваш комментарий здесь..."
                                             value={newComment}
                                             onChange={(e) => setNewComment(e.target.value)}
                                             required
@@ -528,11 +507,11 @@ function TicketDetail() {
                                                         <polyline points="17 8 12 3 7 8"></polyline>
                                                         <line x1="12" y1="3" x2="12" y2="15"></line>
                                                     </svg>
-                                                    Attach Files
+                                                    Прикрепить файлы
                                                 </label>
                                                 {selectedFiles.length > 0 && (
                                                     <span className="text-sm text-text-secondary">
-                                                        {selectedFiles.length} file(s) selected
+                                                        {selectedFiles.length} файл(ов) выбрано
                                                     </span>
                                                 )}
                                             </div>
@@ -548,7 +527,7 @@ function TicketDetail() {
                                                         className="mr-2"
                                                     />
                                                     <label htmlFor="internal-note" className="text-sm">
-                                                        Mark as Internal Note
+                                                        Отметить как внутреннюю заметку
                                                     </label>
                                                 </div>
                                             )}
@@ -562,7 +541,7 @@ function TicketDetail() {
                                             {addCommentMutation.isPending ? (
                                                 <>
                                                     <div className="spinner w-4 h-4 mr-2"></div>
-                                                    Posting...
+                                                    Отправка...
                                                 </>
                                             ) : (
                                                 <>
@@ -570,7 +549,7 @@ function TicketDetail() {
                                                         <path d="M22 2L11 13"></path>
                                                         <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
                                                     </svg>
-                                                    Post Comment
+                                                    Отправить комментарий
                                                 </>
                                             )}
                                         </button>
@@ -589,7 +568,7 @@ function TicketDetail() {
                                             </div>
                                             <span className="text-sm whitespace-nowrap">{fileUploadProgress}%</span>
                                         </div>
-                                        <p className="text-sm text-text-tertiary">Uploading {selectedFiles.length} file(s)...</p>
+                                        <p className="text-sm text-text-tertiary">Загрузка {selectedFiles.length} файл(ов)...</p>
                                     </div>
                                 )}
                             </div>
@@ -599,7 +578,7 @@ function TicketDetail() {
                     {/* Attachments Tab */}
                     {activeTab === 'attachments' && (
                         <div className="card mb-6">
-                            <h2 className="text-xl font-semibold mb-4">Attachments</h2>
+                            <h2 className="text-xl font-semibold mb-4">Вложения</h2>
 
                             {attachmentsLoading ? (
                                 <div className="flex justify-center items-center p-6">
@@ -613,8 +592,8 @@ function TicketDetail() {
                                             <polyline points="13 2 13 9 20 9"></polyline>
                                         </svg>
                                     </div>
-                                    <p className="text-text-secondary text-lg font-medium">No attachments</p>
-                                    <p className="text-text-tertiary mb-4">This ticket doesn't have any file attachments</p>
+                                    <p className="text-text-secondary text-lg font-medium">Нет вложений</p>
+                                    <p className="text-text-tertiary mb-4">У этого тикета нет прикрепленных файлов</p>
 
                                     <div className="flex justify-center">
                                         <input
@@ -631,14 +610,14 @@ function TicketDetail() {
                                                 <polyline points="17 8 12 3 7 8"></polyline>
                                                 <line x1="12" y1="3" x2="12" y2="15"></line>
                                             </svg>
-                                            Add Attachment
+                                            Добавить вложение
                                         </label>
                                     </div>
 
                                     {selectedFiles.length > 0 && (
                                         <div className="mt-4 text-left bg-bg-dark p-4 rounded-lg">
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="font-medium">{selectedFiles.length} file(s) selected</span>
+                                                <span className="font-medium">{selectedFiles.length} файл(ов) выбрано</span>
                                                 <button
                                                     onClick={handleFileUpload}
                                                     className="btn btn-sm btn-primary"
@@ -647,15 +626,15 @@ function TicketDetail() {
                                                     {uploadingFiles ? (
                                                         <>
                                                             <div className="spinner w-3 h-3 mr-1"></div>
-                                                            Uploading...
+                                                            Загрузка...
                                                         </>
-                                                    ) : "Upload Files"}
+                                                    ) : "Загрузить файлы"}
                                                 </button>
                                             </div>
                                             <ul className="text-sm space-y-1">
                                                 {Array.from(selectedFiles).map((file, index) => (
                                                     <li key={index} className="text-text-secondary">
-                                                        {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                                                        {file.name} ({(file.size / 1024).toFixed(1)} КБ)
                                                     </li>
                                                 ))}
                                             </ul>
@@ -674,7 +653,7 @@ function TicketDetail() {
                                                 </div>
                                                 <span className="text-sm whitespace-nowrap">{fileUploadProgress}%</span>
                                             </div>
-                                            <p className="text-sm text-text-tertiary">Uploading {selectedFiles.length} file(s)...</p>
+                                            <p className="text-sm text-text-tertiary">Загрузка {selectedFiles.length} файл(ов)...</p>
                                         </div>
                                     )}
                                 </div>
@@ -696,13 +675,13 @@ function TicketDetail() {
                                                     {attachment.file_name}
                                                 </div>
                                                 <div className="text-sm text-text-tertiary">
-                                                    {(attachment.file_size / 1024).toFixed(1)} KB
+                                                    {(attachment.file_size / 1024).toFixed(1)} КБ
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={() => handleDownloadAttachment(attachment.id, attachment.file_name)}
                                                 className="btn btn-sm btn-outline"
-                                                title="Download file"
+                                                title="Скачать файл"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -720,7 +699,7 @@ function TicketDetail() {
                     {/* History Tab (Admin Only) */}
                     {activeTab === 'history' && currentUser?.role === 'admin' && ticket.history && ticket.history.length > 0 && (
                         <div className="card mb-6">
-                            <h2 className="text-xl font-semibold mb-4">Ticket History</h2>
+                            <h2 className="text-xl font-semibold mb-4">История тикета</h2>
                             <div className="relative pl-5 border-l-2 border-border-color">
                                 {ticket.history.map((history, index) => (
                                     <div key={index} className="mb-5 relative">
@@ -739,12 +718,12 @@ function TicketDetail() {
                                             <div className="bg-bg-dark-tertiary p-3 rounded-lg">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div className="p-2 bg-bg-dark rounded-md">
-                                                        <div className="text-text-tertiary text-xs mb-1">Previous</div>
-                                                        <div className="text-text-secondary">{history.old_value || '(empty)'}</div>
+                                                        <div className="text-text-tertiary text-xs mb-1">Предыдущее</div>
+                                                        <div className="text-text-secondary">{history.old_value || '(пусто)'}</div>
                                                     </div>
                                                     <div className="p-2 bg-bg-dark rounded-md">
-                                                        <div className="text-text-tertiary text-xs mb-1">New</div>
-                                                        <div className="text-text-primary">{history.new_value || '(empty)'}</div>
+                                                        <div className="text-text-tertiary text-xs mb-1">Новое</div>
+                                                        <div className="text-text-primary">{history.new_value || '(пусто)'}</div>
                                                     </div>
                                                 </div>
                                                 <div className="text-text-tertiary text-xs mt-2">
@@ -763,13 +742,13 @@ function TicketDetail() {
                 <div className="col-span-12 lg:col-span-4">
                     {/* Ticket Info Card */}
                     <div className="card mb-6 sticky top-4">
-                        <h3 className="text-lg font-semibold mb-4">Ticket Information</h3>
+                        <h3 className="text-lg font-semibold mb-4">Информация о тикете</h3>
 
                         <div className="space-y-4">
                             <div className="flex bg-bg-dark-tertiary p-3 rounded-lg">
                                 <div className="w-5 h-10 mr-3" style={{ backgroundColor: getStatusColor(ticket.status) }}></div>
                                 <div className="flex-1">
-                                    <div className="text-text-tertiary text-xs">Status</div>
+                                    <div className="text-text-tertiary text-xs">Статус</div>
                                     <div className="font-medium">{ticket.status}</div>
                                 </div>
                             </div>
@@ -777,24 +756,24 @@ function TicketDetail() {
                             <div className="flex bg-bg-dark-tertiary p-3 rounded-lg">
                                 <div className="w-5 h-10 mr-3" style={{ backgroundColor: getPriorityColor(ticket.priority) }}></div>
                                 <div className="flex-1">
-                                    <div className="text-text-tertiary text-xs">Priority</div>
+                                    <div className="text-text-tertiary text-xs">Приоритет</div>
                                     <div className="font-medium">{ticket.priority}</div>
                                 </div>
                             </div>
 
                             <div className="bg-bg-dark-tertiary p-3 rounded-lg">
-                                <div className="text-text-tertiary text-xs mb-1">Category</div>
+                                <div className="text-text-tertiary text-xs mb-1">Категория</div>
                                 <div className="font-medium">{ticket.category}</div>
                             </div>
 
                             <div className="bg-bg-dark-tertiary p-3 rounded-lg">
-                                <div className="text-text-tertiary text-xs mb-1">Created By</div>
+                                <div className="text-text-tertiary text-xs mb-1">Создан</div>
                                 <div className="flex items-center">
                                     <div className="w-8 h-8 bg-bg-dark-secondary text-primary rounded-full flex items-center justify-center font-semibold mr-2">
-                                        {ticket.created_by_user?.name?.charAt(0).toUpperCase() || 'U'}
+                                        {ticket.created_by_user?.name?.charAt(0).toUpperCase() || 'П'}
                                     </div>
                                     <div>
-                                        <div className="font-medium">{ticket.created_by_user?.name || `User #${ticket.created_by}`}</div>
+                                        <div className="font-medium">{ticket.created_by_user?.name || `Пользователь #${ticket.created_by}`}</div>
                                         <div className="text-xs text-text-tertiary">{ticket.created_by_user?.email}</div>
                                     </div>
                                 </div>
@@ -802,13 +781,13 @@ function TicketDetail() {
 
                             {ticket.assigned_to && (
                                 <div className="bg-bg-dark-tertiary p-3 rounded-lg">
-                                    <div className="text-text-tertiary text-xs mb-1">Assigned To</div>
+                                    <div className="text-text-tertiary text-xs mb-1">Назначен</div>
                                     <div className="flex items-center">
                                         <div className="w-8 h-8 bg-bg-dark-secondary text-success rounded-full flex items-center justify-center font-semibold mr-2">
-                                            {ticket.assigned_to_user?.name?.charAt(0).toUpperCase() || 'U'}
+                                            {ticket.assigned_to_user?.name?.charAt(0).toUpperCase() || 'П'}
                                         </div>
                                         <div>
-                                            <div className="font-medium">{ticket.assigned_to_user?.name || `User #${ticket.assigned_to}`}</div>
+                                            <div className="font-medium">{ticket.assigned_to_user?.name || `Пользователь #${ticket.assigned_to}`}</div>
                                             <div className="text-xs text-text-tertiary">{ticket.assigned_to_user?.email}</div>
                                         </div>
                                     </div>
@@ -816,12 +795,12 @@ function TicketDetail() {
                             )}
 
                             <div className="bg-bg-dark-tertiary p-3 rounded-lg">
-                                <div className="text-text-tertiary text-xs mb-1">Created</div>
+                                <div className="text-text-tertiary text-xs mb-1">Создан</div>
                                 <div className="font-medium">{formatDate(ticket.created_at)}</div>
                             </div>
 
                             <div className="bg-bg-dark-tertiary p-3 rounded-lg">
-                                <div className="text-text-tertiary text-xs mb-1">Last Updated</div>
+                                <div className="text-text-tertiary text-xs mb-1">Последнее обновление</div>
                                 <div className="font-medium">{formatDate(ticket.updated_at)}</div>
                             </div>
                         </div>

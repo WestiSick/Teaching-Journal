@@ -10,20 +10,20 @@ function GroupDetail() {
     const navigate = useNavigate();
     const decodedName = decodeURIComponent(name);
 
-    // Fetch group details
+    // Загрузка данных группы
     const { data: groupData, isLoading: groupLoading, error: groupError } = useQuery({
         queryKey: ['group', decodedName],
         queryFn: () => groupService.getGroup(decodedName)
     });
 
-    // Fetch students in group
+    // Загрузка студентов в группе
     const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useQuery({
         queryKey: ['group-students', decodedName],
         queryFn: () => groupService.getStudentsInGroup(decodedName),
         enabled: !groupLoading && !groupError
     });
 
-    // Fetch lessons for this group
+    // Загрузка занятий для этой группы
     const { data: lessonsData, isLoading: lessonsLoading, error: lessonsError } = useQuery({
         queryKey: ['lessons', { group: decodedName }],
         queryFn: () => lessonService.getLessons({ group: decodedName }),
@@ -35,56 +35,55 @@ function GroupDetail() {
     const lessons = lessonsData?.data?.data || [];
 
     const handleDelete = async () => {
-        if (window.confirm(`Are you sure you want to delete the group "${decodedName}"? This will remove all associated data.`)) {
+        if (window.confirm(`Вы уверены, что хотите удалить группу "${decodedName}"? Это действие удалит все связанные данные.`)) {
             try {
                 await groupService.deleteGroup(decodedName);
                 navigate('/groups');
             } catch (error) {
-                console.error('Error deleting group:', error);
-                alert('Failed to delete group');
+                alert('Не удалось удалить группу');
             }
         }
     };
 
     if (groupLoading) {
-        return <div className="loader">Loading...</div>;
+        return <div className="loader">Загрузка...</div>;
     }
 
     if (groupError) {
-        return <div className="alert alert-danger">Error loading group: {groupError.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки группы: {groupError.message}</div>;
     }
 
     if (!group) {
-        return <div className="alert alert-warning">Group not found</div>;
+        return <div className="alert alert-warning">Группа не найдена</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1>Group: {decodedName}</h1>
+                <h1>Группа: {decodedName}</h1>
                 <div>
-                    <Link to="/groups" className="btn btn-secondary">Back to Groups</Link>
+                    <Link to="/groups" className="btn btn-secondary">Назад к списку групп</Link>
                     <RequireSubscription>
                         <Link to={`/groups/${encodeURIComponent(decodedName)}/edit`} className="btn btn-primary" style={{ marginLeft: '10px' }}>
-                            Edit Group
+                            Редактировать группу
                         </Link>
                         <button
                             onClick={handleDelete}
                             className="btn btn-danger"
                             style={{ marginLeft: '10px' }}
                         >
-                            Delete Group
+                            Удалить группу
                         </button>
                     </RequireSubscription>
                 </div>
             </div>
 
             <div className="card">
-                <h2>Group Information</h2>
-                <p><strong>Total Students:</strong> {group.student_count || students.length || 0}</p>
+                <h2>Информация о группе</h2>
+                <p><strong>Всего студентов:</strong> {group.student_count || students.length || 0}</p>
                 {group.subjects && group.subjects.length > 0 && (
                     <div>
-                        <h3>Subjects</h3>
+                        <h3>Предметы</h3>
                         <ul>
                             {group.subjects.map(subject => (
                                 <li key={subject}>{subject}</li>
@@ -94,31 +93,31 @@ function GroupDetail() {
                 )}
             </div>
 
-            {/* Students List */}
+            {/* Список студентов */}
             <div className="card" style={{ marginTop: '20px' }}>
                 <div className="d-flex justify-content-between align-items-center">
-                    <h2>Students</h2>
+                    <h2>Студенты</h2>
                     <RequireSubscription>
                         <Link to="/students/new" className="btn btn-primary"
                               onClick={() => localStorage.setItem('preselectedGroup', decodedName)}>
-                            Add Student
+                            Добавить студента
                         </Link>
                     </RequireSubscription>
                 </div>
 
                 {studentsLoading ? (
-                    <p>Loading students...</p>
+                    <p>Загрузка студентов...</p>
                 ) : studentsError ? (
-                    <div className="alert alert-danger">Error loading students: {studentsError.message}</div>
+                    <div className="alert alert-danger">Ошибка загрузки студентов: {studentsError.message}</div>
                 ) : students.length === 0 ? (
-                    <p>No students in this group</p>
+                    <p>В этой группе нет студентов</p>
                 ) : (
                     <div className="table-responsive">
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Actions</th>
+                                <th>Имя</th>
+                                <th>Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -128,7 +127,7 @@ function GroupDetail() {
                                     <td>
                                         <RequireSubscription>
                                             <Link to={`/students/${student.id}`} className="btn btn-sm btn-secondary">
-                                                View
+                                                Просмотр
                                             </Link>
                                         </RequireSubscription>
                                     </td>
@@ -140,34 +139,34 @@ function GroupDetail() {
                 )}
             </div>
 
-            {/* Recent Lessons */}
+            {/* Недавние занятия */}
             <div className="card" style={{ marginTop: '20px' }}>
                 <div className="d-flex justify-content-between align-items-center">
-                    <h2>Recent Lessons</h2>
+                    <h2>Недавние занятия</h2>
                     <RequireSubscription>
                         <Link to="/lessons/new" className="btn btn-primary"
                               onClick={() => localStorage.setItem('preselectedGroup', decodedName)}>
-                            Add Lesson
+                            Добавить занятие
                         </Link>
                     </RequireSubscription>
                 </div>
 
                 {lessonsLoading ? (
-                    <p>Loading lessons...</p>
+                    <p>Загрузка занятий...</p>
                 ) : lessonsError ? (
-                    <div className="alert alert-danger">Error loading lessons: {lessonsError.message}</div>
+                    <div className="alert alert-danger">Ошибка загрузки занятий: {lessonsError.message}</div>
                 ) : lessons.length === 0 ? (
-                    <p>No lessons for this group yet</p>
+                    <p>Для этой группы еще нет занятий</p>
                 ) : (
                     <div className="table-responsive">
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Subject</th>
-                                <th>Topic</th>
-                                <th>Type</th>
-                                <th>Actions</th>
+                                <th>Дата</th>
+                                <th>Предмет</th>
+                                <th>Тема</th>
+                                <th>Тип</th>
+                                <th>Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -179,7 +178,7 @@ function GroupDetail() {
                                     <td>{lesson.type}</td>
                                     <td>
                                         <Link to={`/lessons/${lesson.id}`} className="btn btn-sm btn-secondary">
-                                            View
+                                            Просмотр
                                         </Link>
                                     </td>
                                 </tr>
@@ -190,7 +189,7 @@ function GroupDetail() {
                             <div style={{ textAlign: 'center', marginTop: '10px' }}>
                                 <Link to="/lessons" className="btn btn-sm btn-secondary"
                                       onClick={() => localStorage.setItem('preselectedGroupFilter', decodedName)}>
-                                    View All Lessons
+                                    Показать все занятия
                                 </Link>
                             </div>
                         )}

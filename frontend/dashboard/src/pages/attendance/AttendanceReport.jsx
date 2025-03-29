@@ -12,10 +12,10 @@ function AttendanceReport() {
         subject: '',
         date_from: '',
         date_to: '',
-        report_type: 'group' // 'group' or 'subject'
+        report_type: 'group' // 'group' или 'subject'
     });
 
-    // Set initial date filters to current month
+    // Установка начальных фильтров даты на текущий месяц
     useEffect(() => {
         const today = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -28,37 +28,37 @@ function AttendanceReport() {
         }));
     }, []);
 
-    // Fetch groups for filter dropdown
+    // Загрузка групп для выпадающего списка фильтров
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups,
         enabled: !isFree
     });
 
-    // Fetch subjects for filter dropdown
+    // Загрузка предметов для выпадающего списка фильтров
     const { data: subjectsData } = useQuery({
         queryKey: ['subjects'],
         queryFn: lessonService.getSubjects,
         enabled: !isFree
     });
 
-    // Fetch attendance data with filters
+    // Загрузка данных о посещаемости с фильтрами
     const { data: attendanceData, isLoading, error } = useQuery({
         queryKey: ['attendance', filters],
         queryFn: () => attendanceService.getAttendance(filters),
-        enabled: !isFree // Only fetch if user has subscription
+        enabled: !isFree // Загружать только если пользователь имеет подписку
     });
 
     const groups = groupsData?.data?.data || [];
     const subjects = subjectsData?.data?.data || [];
     const attendanceRecords = attendanceData?.data?.data || [];
 
-    // Process the attendance data into report format
+    // Обработка данных о посещаемости в формат отчета
     const processAttendanceData = React.useCallback(() => {
         if (!attendanceRecords.length) return null;
 
         if (filters.report_type === 'group') {
-            // Group by group name
+            // Группировка по имени группы
             const groupedData = {};
 
             attendanceRecords.forEach(record => {
@@ -83,38 +83,38 @@ function AttendanceReport() {
                 groupedData[record.group_name].total_sum += record.total_students;
             });
 
-            // Calculate averages and prepare the final format
+            // Расчет средних значений и подготовка финального формата
             const items = Object.values(groupedData).map(group => ({
                 name: group.name,
                 total_lessons: group.lessons.length,
                 average_attendance: group.total_sum > 0 ? (group.attended_sum / group.total_sum) * 100 : 0,
                 students: group.lessons.map((lesson, i) => ({
-                    name: `Lesson ${i + 1} (${formatDate(lesson.date)})`,
+                    name: `Занятие ${i + 1} (${formatDate(lesson.date)})`,
                     attended: lesson.attended,
                     total: lesson.total,
                     rate: lesson.rate
                 }))
             }));
 
-            // Prepare chart data - attendance over time
+            // Подготовка данных для диаграммы - посещаемость по времени
             const chartData = [];
             if (items.length > 0 && items[0].students.length > 0) {
                 chartData.push(...items[0].students.map(student => ({
-                    name: student.name.split(' ')[1], // Extract date part
+                    name: student.name.split(' ')[1], // Извлечение части с датой
                     present: student.rate,
                     absent: 100 - student.rate
                 })));
             }
 
             return {
-                report_type: 'Group',
-                report_title: filters.group || 'All Groups',
-                period: `${formatDate(filters.date_from)} to ${formatDate(filters.date_to)}`,
+                report_type: 'Группа',
+                report_title: filters.group || 'Все группы',
+                period: `${formatDate(filters.date_from)} - ${formatDate(filters.date_to)}`,
                 items,
                 chartData
             };
         } else {
-            // Group by subject
+            // Группировка по предмету
             const groupedData = {};
 
             attendanceRecords.forEach(record => {
@@ -145,7 +145,7 @@ function AttendanceReport() {
                 groupedData[record.subject].total_sum += record.total_students;
             });
 
-            // Calculate rates and prepare the final format
+            // Расчет показателей и подготовка финального формата
             const items = Object.values(groupedData).map(subject => ({
                 name: subject.name,
                 total_lessons: Math.max(...Object.values(subject.groups).map(g => g.lessons_count)),
@@ -158,7 +158,7 @@ function AttendanceReport() {
                 }))
             }));
 
-            // Prepare chart data - attendance by subject
+            // Подготовка данных для диаграммы - посещаемость по предметам
             const chartData = items.map(item => ({
                 name: item.name,
                 present: item.average_attendance,
@@ -166,9 +166,9 @@ function AttendanceReport() {
             }));
 
             return {
-                report_type: 'Subject',
-                report_title: filters.subject || 'All Subjects',
-                period: `${formatDate(filters.date_from)} to ${formatDate(filters.date_to)}`,
+                report_type: 'Предмет',
+                report_title: filters.subject || 'Все предметы',
+                period: `${formatDate(filters.date_from)} - ${formatDate(filters.date_to)}`,
                 items,
                 chartData
             };
@@ -201,42 +201,40 @@ function AttendanceReport() {
             const mode = filters.report_type;
             const response = await attendanceService.exportAttendance(mode);
 
-            // Create a blob from the response
+            // Создаем blob из ответа
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
             const url = window.URL.createObjectURL(blob);
 
-            // Create a temporary link and trigger download
+            // Создаем временную ссылку и запускаем скачивание
             const a = document.createElement('a');
             a.href = url;
-            a.download = `attendance_report_${mode}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            a.download = `отчет_посещаемости_${mode}_${new Date().toISOString().split('T')[0]}.xlsx`;
             document.body.appendChild(a);
             a.click();
 
-            // Clean up
+            // Очистка
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            console.error('Error exporting attendance report:', error);
-            alert('Failed to export attendance report');
+            alert('Не удалось экспортировать отчет о посещаемости');
         }
     };
 
-    // Helper function to format dates consistently
+    // Вспомогательная функция для форматирования даты
     function formatDate(dateString) {
-        if (!dateString) return 'N/A';
+        if (!dateString) return 'Н/Д';
 
         try {
-            // Check if the date is in DD.MM.YYYY format
+            // Проверка, если дата в формате ДД.ММ.ГГГГ
             if (dateString.includes('.')) {
                 const [day, month, year] = dateString.split('.');
                 return new Date(`${year}-${month}-${day}`).toLocaleDateString();
             }
 
-            // Otherwise assume it's ISO or another format that Date can handle
+            // Иначе предполагаем, что это ISO или другой формат, который Date может обработать
             return new Date(dateString).toLocaleDateString();
         } catch (error) {
-            console.error('Error formatting date:', error, dateString);
-            return dateString; // Return the original string if parsing fails
+            return dateString; // Возвращаем исходную строку, если анализ не удался
         }
     }
 
@@ -245,15 +243,15 @@ function AttendanceReport() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Attendance Reports</h1>
-                        <p className="text-secondary">Generate detailed attendance analytics</p>
+                        <h1 className="page-title">Отчеты о посещаемости</h1>
+                        <p className="text-secondary">Создание детальной аналитики посещаемости</p>
                     </div>
                     <Link to="/attendance" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
                 <RequireSubscription />
@@ -265,8 +263,8 @@ function AttendanceReport() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Attendance Reports</h1>
-                    <p className="text-secondary">Generate detailed attendance analytics</p>
+                    <h1 className="page-title">Отчеты о посещаемости</h1>
+                    <p className="text-secondary">Создание детальной аналитики посещаемости</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -278,25 +276,25 @@ function AttendanceReport() {
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        <span className="hidden sm:inline">Export</span>
+                        <span className="hidden sm:inline">Экспорт</span>
                     </button>
                     <Link to="/attendance" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
             </div>
 
-            {/* Report Filters */}
+            {/* Фильтры отчета */}
             <div className="card mb-6">
-                <h3 className="text-xl font-semibold mb-4">Report Settings</h3>
+                <h3 className="text-xl font-semibold mb-4">Настройки отчета</h3>
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="form-group">
-                            <label htmlFor="report_type" className="form-label">Report Type</label>
+                            <label htmlFor="report_type" className="form-label">Тип отчета</label>
                             <select
                                 id="report_type"
                                 name="report_type"
@@ -304,14 +302,14 @@ function AttendanceReport() {
                                 onChange={handleFilterChange}
                                 className="form-control"
                             >
-                                <option value="group">Group Report</option>
-                                <option value="subject">Subject Report</option>
+                                <option value="group">Отчет по группам</option>
+                                <option value="subject">Отчет по предметам</option>
                             </select>
                         </div>
 
                         {filters.report_type === 'group' ? (
                             <div className="form-group">
-                                <label htmlFor="group" className="form-label">Group</label>
+                                <label htmlFor="group" className="form-label">Группа</label>
                                 <select
                                     id="group"
                                     name="group"
@@ -319,7 +317,7 @@ function AttendanceReport() {
                                     onChange={handleFilterChange}
                                     className="form-control"
                                 >
-                                    <option value="">All Groups</option>
+                                    <option value="">Все группы</option>
                                     {groups.map(group => (
                                         <option key={group.name} value={group.name}>{group.name}</option>
                                     ))}
@@ -327,7 +325,7 @@ function AttendanceReport() {
                             </div>
                         ) : (
                             <div className="form-group">
-                                <label htmlFor="subject" className="form-label">Subject</label>
+                                <label htmlFor="subject" className="form-label">Предмет</label>
                                 <select
                                     id="subject"
                                     name="subject"
@@ -335,7 +333,7 @@ function AttendanceReport() {
                                     onChange={handleFilterChange}
                                     className="form-control"
                                 >
-                                    <option value="">All Subjects</option>
+                                    <option value="">Все предметы</option>
                                     {subjects.map(subject => (
                                         <option key={subject} value={subject}>{subject}</option>
                                     ))}
@@ -346,7 +344,7 @@ function AttendanceReport() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="form-group">
-                            <label htmlFor="date_from" className="form-label">From Date</label>
+                            <label htmlFor="date_from" className="form-label">Дата начала</label>
                             <input
                                 type="date"
                                 id="date_from"
@@ -357,7 +355,7 @@ function AttendanceReport() {
                             />
                         </div>
                         <div className="form-group">
-                            <label htmlFor="date_to" className="form-label">To Date</label>
+                            <label htmlFor="date_to" className="form-label">Дата окончания</label>
                             <input
                                 type="date"
                                 id="date_to"
@@ -375,14 +373,14 @@ function AttendanceReport() {
                                     <path d="M3 8h6"></path>
                                     <path d="M15 16h6"></path>
                                 </svg>
-                                Reset Filters
+                                Сбросить фильтры
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Report Display */}
+            {/* Отображение отчета */}
             {isLoading ? (
                 <div className="card flex items-center justify-center p-12">
                     <div className="spinner"></div>
@@ -395,7 +393,7 @@ function AttendanceReport() {
                             <line x1="12" y1="9" x2="12" y2="13"></line>
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
-                        <p>Error loading report data: {error.message}</p>
+                        <p>Ошибка загрузки данных отчета: {error.message}</p>
                     </div>
                 </div>
             ) : !reportData || !reportData.items || reportData.items.length === 0 ? (
@@ -409,22 +407,22 @@ function AttendanceReport() {
                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                             </svg>
                         </div>
-                        <h3 className="text-xl mb-2">No attendance data found</h3>
-                        <p className="text-tertiary mb-6">Try changing your filters or record attendance for your lessons.</p>
+                        <h3 className="text-xl mb-2">Данные о посещаемости не найдены</h3>
+                        <p className="text-tertiary mb-6">Попробуйте изменить фильтры или отметить посещаемость на занятиях.</p>
                     </div>
                 </div>
             ) : (
                 <div className="card mb-6">
                     <div className="mb-4">
-                        <h2 className="text-2xl font-bold">{reportData.report_type} Attendance Report</h2>
+                        <h2 className="text-2xl font-bold">Отчет о посещаемости: {reportData.report_type}</h2>
                         <h3 className="text-xl text-primary mb-2">{reportData.report_title}</h3>
-                        <p className="text-secondary"><strong>Period:</strong> {reportData.period}</p>
+                        <p className="text-secondary"><strong>Период:</strong> {reportData.period}</p>
                     </div>
 
-                    {/* Attendance Visualization */}
+                    {/* Визуализация посещаемости */}
                     {reportData.chartData && reportData.chartData.length > 0 && (
                         <div className="mb-6 pt-4 pb-6 border-t border-b border-border-color">
-                            <h3 className="text-lg font-medium mb-4">Attendance Overview</h3>
+                            <h3 className="text-lg font-medium mb-4">Обзор посещаемости</h3>
                             <div className="h-64 flex items-end gap-1">
                                 {reportData.chartData.map((item, index) => (
                                     <div key={index} className="flex-1 flex flex-col items-center gap-2">
@@ -444,11 +442,11 @@ function AttendanceReport() {
                             <div className="flex justify-center mt-4 gap-6">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 bg-success rounded-sm"></div>
-                                    <span className="text-sm">Present</span>
+                                    <span className="text-sm">Присутствовали</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 bg-danger rounded-sm"></div>
-                                    <span className="text-sm">Absent</span>
+                                    <span className="text-sm">Отсутствовали</span>
                                 </div>
                             </div>
                         </div>
@@ -461,8 +459,8 @@ function AttendanceReport() {
                                 <div>
                                     <h4 className="text-lg font-semibold">{item.name}</h4>
                                     <p className="text-secondary">
-                                        <strong>Total Lessons:</strong> {item.total_lessons} |
-                                        <strong> Average Attendance:</strong> <span className={getAttendanceColorClass(item.average_attendance)}>{item.average_attendance.toFixed(1)}%</span>
+                                        <strong>Всего занятий:</strong> {item.total_lessons} |
+                                        <strong> Средняя посещаемость:</strong> <span className={getAttendanceColorClass(item.average_attendance)}>{item.average_attendance.toFixed(1)}%</span>
                                     </p>
                                 </div>
                             </div>
@@ -471,11 +469,11 @@ function AttendanceReport() {
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th>{filters.report_type === 'group' ? 'Lesson' : 'Group'}</th>
-                                        <th>{filters.report_type === 'group' ? 'Students Present' : 'Students Present'}</th>
-                                        <th>{filters.report_type === 'group' ? 'Total Students' : 'Total Students'}</th>
-                                        <th>Attendance Rate</th>
-                                        <th>Status</th>
+                                        <th>{filters.report_type === 'group' ? 'Занятие' : 'Группа'}</th>
+                                        <th>{filters.report_type === 'group' ? 'Присутствующие студенты' : 'Присутствующие студенты'}</th>
+                                        <th>{filters.report_type === 'group' ? 'Всего студентов' : 'Всего студентов'}</th>
+                                        <th>Уровень посещаемости</th>
+                                        <th>Статус</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -582,22 +580,22 @@ function AttendanceReport() {
     );
 }
 
-// Helper function to get a color for an item based on index
+// Вспомогательная функция для получения цвета для элемента на основе индекса
 function getItemColor(index) {
     const colors = [
         'var(--primary)',
         'var(--success)',
         'var(--warning)',
         'var(--accent)',
-        '#9333ea', // purple
-        '#ec4899', // pink
-        '#14b8a6', // teal
+        '#9333ea', // фиолетовый
+        '#ec4899', // розовый
+        '#14b8a6', // бирюзовый
     ];
 
     return colors[index % colors.length];
 }
 
-// Helper functions for attendance colors
+// Вспомогательные функции для цветов посещаемости
 function getAttendanceColorClass(rate) {
     if (rate >= 85) return 'text-success';
     if (rate >= 70) return 'text-warning';

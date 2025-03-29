@@ -12,7 +12,7 @@ function LessonAttendance() {
     const queryClient = useQueryClient();
     const dataFetchedRef = useRef(false);
 
-    // State to track attendance
+    // Состояние для отслеживания посещаемости
     const [attendanceData, setAttendanceData] = useState({
         attended_student_ids: []
     });
@@ -21,16 +21,16 @@ function LessonAttendance() {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [rawAttendanceData, setRawAttendanceData] = useState(null);
 
-    // Debug Mode
+    // Режим отладки
     const [debugMode, setDebugMode] = useState(false);
 
-    // Fetch lesson details
+    // Загрузка информации о занятии
     const { data: lessonData, isLoading: lessonLoading, error: lessonError } = useQuery({
         queryKey: ['lesson', id],
         queryFn: () => lessonService.getLesson(id)
     });
 
-    // Fetch lesson attendance with minimal processing
+    // Загрузка данных о посещаемости занятия с минимальной обработкой
     const {
         data: attendanceDetails,
         isLoading: attendanceLoading,
@@ -40,26 +40,23 @@ function LessonAttendance() {
         queryKey: ['lesson-attendance', id],
         queryFn: () => attendanceService.getLessonAttendance(id),
         onSuccess: (response) => {
-            // Store the raw data for debugging
+            // Сохраняем необработанные данные для отладки
             setRawAttendanceData(response?.data);
-            console.log('Raw API Response:', response);
         }
     });
 
-    // Process attendance data separately from the query
+    // Обработка данных о посещаемости отдельно от запроса
     useEffect(() => {
         if (attendanceDetails && !dataFetchedRef.current) {
-            console.log('Processing attendance data from API response:', attendanceDetails);
-
             try {
-                // Get the raw response data
+                // Получаем необработанные данные ответа
                 const responseData = attendanceDetails.data;
 
-                // Extract student data and attendance information
+                // Извлекаем данные студентов и информацию о посещаемости
                 let studentsArray = [];
                 let attendedIds = [];
 
-                // Try to find the students array in various locations
+                // Пытаемся найти массив студентов в различных местах
                 if (responseData?.data?.students && Array.isArray(responseData.data.students)) {
                     studentsArray = responseData.data.students;
                 } else if (responseData?.students && Array.isArray(responseData.students)) {
@@ -70,17 +67,12 @@ function LessonAttendance() {
                     studentsArray = responseData.data;
                 }
 
-                console.log('Found students array:', studentsArray);
-
-                // If we found a students array, look for attended status
+                // Если нашли массив студентов, ищем информацию о присутствии
                 if (studentsArray && studentsArray.length > 0) {
-                    // Log the first student to see its structure
-                    console.log('Sample student object:', studentsArray[0]);
-
-                    // Try to extract attended student IDs from various possible formats
+                    // Пытаемся извлечь ID присутствующих студентов из различных возможных форматов
                     attendedIds = studentsArray
                         .filter(student => {
-                            // Check various properties for attendance status
+                            // Проверяем различные свойства для статуса посещаемости
                             const isAttended =
                                 student.attended === true ||
                                 student.attended === 1 ||
@@ -91,13 +83,12 @@ function LessonAttendance() {
                                 student.isPresent === true ||
                                 student.present === true;
 
-                            console.log(`Student ${student.id || student._id}: Attendance status determined as ${isAttended}`);
                             return isAttended;
                         })
                         .map(student => student.id || student._id || student.studentId);
                 }
 
-                // Direct extraction if available
+                // Прямое извлечение, если доступно
                 if (!attendedIds.length) {
                     if (responseData?.data?.attended_student_ids && Array.isArray(responseData.data.attended_student_ids)) {
                         attendedIds = responseData.data.attended_student_ids;
@@ -106,35 +97,31 @@ function LessonAttendance() {
                     }
                 }
 
-                console.log('Extracted attended student IDs:', attendedIds);
-
-                // Set the attendance data
+                // Устанавливаем данные о посещаемости
                 setAttendanceData({ attended_student_ids: attendedIds });
                 dataFetchedRef.current = true;
             } catch (err) {
-                console.error('Error processing attendance data:', err);
-                setError('Error processing attendance data');
+                setError('Ошибка обработки данных о посещаемости');
             }
         }
     }, [attendanceDetails]);
 
-    // Debug function to show data structures
+    // Функция отладки для отображения структур данных
     const toggleDebugMode = () => {
         setDebugMode(prevMode => !prevMode);
     };
 
-    // Manual Attendance Override Functions
+    // Функции ручного управления посещаемостью
     const manuallySetAttendance = (studentList) => {
-        console.log('Manually setting attendance for students:', studentList);
         setAttendanceData({ attended_student_ids: studentList });
     };
 
-    // Save attendance mutation
+    // Мутация сохранения посещаемости
     const saveMutation = useMutation({
         mutationFn: (data) => attendanceService.saveAttendance(id, data),
         onSuccess: () => {
-            setSuccess('Attendance saved successfully');
-            dataFetchedRef.current = false; // Reset so we can fetch new data
+            setSuccess('Посещаемость успешно сохранена');
+            dataFetchedRef.current = false; // Сбрасываем, чтобы мы могли загрузить новые данные
             queryClient.invalidateQueries({ queryKey: ['lesson-attendance', id] });
             queryClient.invalidateQueries({ queryKey: ['attendance'] });
             setTimeout(() => {
@@ -142,18 +129,18 @@ function LessonAttendance() {
             }, 3000);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to save attendance');
+            setError(err.response?.data?.error || 'Не удалось сохранить посещаемость');
         }
     });
 
-    // Delete attendance mutation
+    // Мутация удаления записи о посещаемости
     const deleteMutation = useMutation({
         mutationFn: () => attendanceService.deleteAttendance(id),
         onSuccess: () => {
-            setSuccess('Attendance record deleted');
+            setSuccess('Запись о посещаемости удалена');
             queryClient.invalidateQueries({ queryKey: ['lesson-attendance', id] });
             queryClient.invalidateQueries({ queryKey: ['attendance'] });
-            // Reset attendance data
+            // Сбрасываем данные о посещаемости
             setAttendanceData({ attended_student_ids: [] });
             setShowConfirmation(false);
             setTimeout(() => {
@@ -161,7 +148,7 @@ function LessonAttendance() {
             }, 3000);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to delete attendance record');
+            setError(err.response?.data?.error || 'Не удалось удалить запись о посещаемости');
         }
     });
 
@@ -170,13 +157,13 @@ function LessonAttendance() {
             const isPresent = prev.attended_student_ids.includes(studentId);
 
             if (isPresent) {
-                // Remove student from attended list
+                // Удаляем студента из списка присутствующих
                 return {
                     ...prev,
                     attended_student_ids: prev.attended_student_ids.filter(id => id !== studentId)
                 };
             } else {
-                // Add student to attended list
+                // Добавляем студента в список присутствующих
                 return {
                     ...prev,
                     attended_student_ids: [...prev.attended_student_ids, studentId]
@@ -198,10 +185,9 @@ function LessonAttendance() {
 
     const handleSave = async () => {
         try {
-            console.log('Saving attendance data:', attendanceData);
             await saveMutation.mutateAsync(attendanceData);
         } catch (error) {
-            // Error is handled in the mutation
+            // Ошибка обрабатывается в мутации
         }
     };
 
@@ -209,38 +195,38 @@ function LessonAttendance() {
         try {
             await deleteMutation.mutateAsync();
         } catch (error) {
-            // Error is handled in the mutation
+            // Ошибка обрабатывается в мутации
         }
     };
 
-    // Manual data refresh
+    // Ручное обновление данных
     const handleRefresh = () => {
         dataFetchedRef.current = false;
         refetchAttendance();
     };
 
-    // Get data from queries
+    // Получаем данные из запросов
     const lesson = lessonData?.data?.data;
     const attendance = attendanceDetails?.data?.data;
 
-    // For manual testing - shows structure of students
+    // Для ручного тестирования - показывает структуру студентов
     const studentsFromAttendance = attendance?.students || [];
 
-    // Check for subscription
+    // Проверка подписки
     if (isFree) {
         return (
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Lesson Attendance</h1>
-                        <p className="text-secondary">Manage student attendance for this lesson</p>
+                        <h1 className="page-title">Посещаемость занятия</h1>
+                        <p className="text-secondary">Управление посещаемостью студентов на этом занятии</p>
                     </div>
                     <Link to="/attendance" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
                 <RequireSubscription />
@@ -248,7 +234,7 @@ function LessonAttendance() {
         );
     }
 
-    // Loading state
+    // Состояние загрузки
     if (lessonLoading || attendanceLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -257,7 +243,7 @@ function LessonAttendance() {
         );
     }
 
-    // Error state
+    // Состояние ошибки
     if (lessonError || attendanceError) {
         return (
             <div className="alert alert-danger mb-6">
@@ -267,13 +253,13 @@ function LessonAttendance() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error: {lessonError?.message || attendanceError?.message}</p>
+                    <p>Ошибка: {lessonError?.message || attendanceError?.message}</p>
                 </div>
             </div>
         );
     }
 
-    // Missing data state
+    // Состояние отсутствия данных
     if (!lesson) {
         return (
             <div className="alert alert-warning mb-6">
@@ -283,7 +269,7 @@ function LessonAttendance() {
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <p>Lesson not found</p>
+                    <p>Занятие не найдено</p>
                 </div>
             </div>
         );
@@ -293,8 +279,8 @@ function LessonAttendance() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Lesson Attendance</h1>
-                    <p className="text-secondary">Manage student attendance for this lesson</p>
+                    <h1 className="page-title">Посещаемость занятия</h1>
+                    <p className="text-secondary">Управление посещаемостью студентов на этом занятии</p>
                 </div>
                 <div className="flex gap-2">
                     <Link to="/attendance" className="btn btn-secondary flex items-center gap-2">
@@ -302,7 +288,7 @@ function LessonAttendance() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                     <Link to={`/lessons/${id}`} className="btn btn-primary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -310,12 +296,12 @@ function LessonAttendance() {
                             <polyline points="2 17 12 22 22 17"></polyline>
                             <polyline points="2 12 12 17 22 12"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">View Lesson</span>
+                        <span className="hidden sm:inline">Просмотр занятия</span>
                     </Link>
                 </div>
             </div>
 
-            {/* Lesson Details */}
+            {/* Детали занятия */}
             <div className="card p-6 mb-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                     <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 bg-primary-lighter text-primary rounded-lg flex items-center justify-center">
@@ -336,7 +322,7 @@ function LessonAttendance() {
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
                                     <line x1="3" y1="10" x2="21" y2="10"></line>
                                 </svg>
-                                <span className="text-secondary">Date:</span>
+                                <span className="text-secondary">Дата:</span>
                                 <span>{new Date(lesson.date).toLocaleDateString()}</span>
                             </div>
 
@@ -345,7 +331,7 @@ function LessonAttendance() {
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                 </svg>
-                                <span className="text-secondary">Subject:</span>
+                                <span className="text-secondary">Предмет:</span>
                                 <span>{lesson.subject}</span>
                             </div>
 
@@ -356,7 +342,7 @@ function LessonAttendance() {
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
-                                <span className="text-secondary">Group:</span>
+                                <span className="text-secondary">Группа:</span>
                                 <span>{lesson.group_name}</span>
                             </div>
 
@@ -365,7 +351,7 @@ function LessonAttendance() {
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                <span className="text-secondary">Type:</span>
+                                <span className="text-secondary">Тип:</span>
                                 <span>{lesson.type}</span>
                             </div>
                         </div>
@@ -373,24 +359,24 @@ function LessonAttendance() {
                 </div>
             </div>
 
-            {/* Attendance Management */}
+            {/* Управление посещаемостью */}
             <div className="card mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold mb-2 sm:mb-0">Manage Attendance</h2>
+                    <h2 className="text-xl font-semibold mb-2 sm:mb-0">Управление посещаемостью</h2>
                     <div className="flex gap-2">
                         <button onClick={markAllPresent} className="btn btn-success flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="9 11 12 14 22 4"></polyline>
                                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                             </svg>
-                            <span className="hidden sm:inline">Mark All Present</span>
+                            <span className="hidden sm:inline">Отметить всех присутствующими</span>
                         </button>
                         <button onClick={markAllAbsent} className="btn btn-danger flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            <span className="hidden sm:inline">Mark All Absent</span>
+                            <span className="hidden sm:inline">Отметить всех отсутствующими</span>
                         </button>
                     </div>
                 </div>
@@ -428,34 +414,34 @@ function LessonAttendance() {
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
                             </svg>
-                            <p>No student data available for this lesson</p>
+                            <p>Нет данных о студентах для этого занятия</p>
                         </div>
                     </div>
                 ) : (
                     <>
-                        {/* Square Stats Cards */}
+                        {/* Квадратные карточки статистики */}
                         <div className="grid grid-cols-4 gap-4 mb-6">
-                            {/* Total Students */}
+                            {/* Всего студентов */}
                             <div className="stat-card bg-bg-dark-secondary p-4 rounded-lg flex flex-col items-center justify-center text-center border-t-4" style={{ borderTopColor: 'var(--primary)', height: '120px' }}>
-                                <div className="text-sm text-text-tertiary mb-2">Total Students</div>
+                                <div className="text-sm text-text-tertiary mb-2">Всего студентов</div>
                                 <div className="text-3xl font-bold">{attendance.total_students}</div>
                             </div>
 
-                            {/* Present */}
+                            {/* Присутствующие */}
                             <div className="stat-card bg-bg-dark-secondary p-4 rounded-lg flex flex-col items-center justify-center text-center border-t-4" style={{ borderTopColor: 'var(--success)', height: '120px' }}>
-                                <div className="text-sm text-text-tertiary mb-2">Present</div>
+                                <div className="text-sm text-text-tertiary mb-2">Присутствуют</div>
                                 <div className="text-3xl font-bold text-success">{attendanceData.attended_student_ids.length}</div>
                             </div>
 
-                            {/* Absent */}
+                            {/* Отсутствующие */}
                             <div className="stat-card bg-bg-dark-secondary p-4 rounded-lg flex flex-col items-center justify-center text-center border-t-4" style={{ borderTopColor: 'var(--danger)', height: '120px' }}>
-                                <div className="text-sm text-text-tertiary mb-2">Absent</div>
+                                <div className="text-sm text-text-tertiary mb-2">Отсутствуют</div>
                                 <div className="text-3xl font-bold text-danger">{attendance.total_students - attendanceData.attended_student_ids.length}</div>
                             </div>
 
-                            {/* Attendance Rate */}
+                            {/* Уровень посещаемости */}
                             <div className="stat-card bg-bg-dark-secondary p-4 rounded-lg flex flex-col items-center justify-center text-center border-t-4" style={{ borderTopColor: 'var(--accent)', height: '120px' }}>
-                                <div className="text-sm text-text-tertiary mb-2">Attendance Rate</div>
+                                <div className="text-sm text-text-tertiary mb-2">Уровень посещаемости</div>
                                 <div className="text-3xl font-bold">
                                     {attendance.total_students > 0
                                         ? ((attendanceData.attended_student_ids.length / attendance.total_students) * 100).toFixed(1)
@@ -477,10 +463,10 @@ function LessonAttendance() {
                             </div>
                         </div>
 
-                        {/* Student attendance cards */}
+                        {/* Карточки посещаемости студентов */}
                         <div className="attendance-grid mb-6">
                             {attendance.students.map(student => {
-                                // Check for presence by comparing to the state
+                                // Проверка присутствия путем сравнения с состоянием
                                 const isPresent = attendanceData.attended_student_ids.includes(student.id);
                                 return (
                                     <div
@@ -518,7 +504,7 @@ function LessonAttendance() {
                                 {saveMutation.isPending ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        Saving...
+                                        Сохранение...
                                     </>
                                 ) : (
                                     <>
@@ -527,7 +513,7 @@ function LessonAttendance() {
                                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                             <polyline points="7 3 7 8 15 8"></polyline>
                                         </svg>
-                                        Save Attendance
+                                        Сохранить посещаемость
                                     </>
                                 )}
                             </button>
@@ -541,7 +527,7 @@ function LessonAttendance() {
                                     {deleteMutation.isPending ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            Deleting...
+                                            Удаление...
                                         </>
                                     ) : (
                                         <>
@@ -549,7 +535,7 @@ function LessonAttendance() {
                                                 <polyline points="3 6 5 6 21 6"></polyline>
                                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                             </svg>
-                                            Delete Attendance Record
+                                            Удалить запись о посещаемости
                                         </>
                                     )}
                                 </button>
@@ -559,24 +545,24 @@ function LessonAttendance() {
                 )}
             </div>
 
-            {/* Confirmation dialog for delete action */}
+            {/* Диалоговое окно подтверждения для действия удаления */}
             {showConfirmation && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-bg-dark-secondary p-6 rounded-lg shadow-xl max-w-md w-full">
-                        <h3 className="text-xl font-bold mb-4">Confirm Deletion</h3>
-                        <p className="mb-6">Are you sure you want to delete this attendance record? This action cannot be undone.</p>
+                        <h3 className="text-xl font-bold mb-4">Подтвердите удаление</h3>
+                        <p className="mb-6">Вы уверены, что хотите удалить эту запись о посещаемости? Это действие нельзя отменить.</p>
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => setShowConfirmation(false)}
                                 className="btn btn-secondary"
                             >
-                                Cancel
+                                Отмена
                             </button>
                             <button
                                 onClick={() => handleDelete()}
                                 className="btn btn-danger"
                             >
-                                Delete Record
+                                Удалить запись
                             </button>
                         </div>
                     </div>
@@ -665,7 +651,6 @@ function LessonAttendance() {
                     animation: spin 1s linear infinite;
                 }
 
-                /* Responsive adjustments */
                 @media (max-width: 767px) {
                     .grid-cols-4 {
                         grid-template-columns: repeat(2, 1fr);

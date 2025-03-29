@@ -60,21 +60,16 @@ function LabGrades() {
         enabled: !isFree,
         onSuccess: (response) => {
             const labData = response.data.data;
-            console.log("Lab data received:", labData);
 
             // Set lab settings - check if total_labs is valid
             if (labData.total_labs !== undefined && labData.total_labs !== null) {
-                console.log("Setting total_labs from API:", labData.total_labs);
                 setLabSettings({
                     total_labs: parseInt(labData.total_labs) || 0
                 });
-            } else {
-                console.log("total_labs not found in API response, using default");
             }
 
             // Check if we have student data with grades
             if (labData.students && labData.students.length > 0) {
-                console.log("Setting grades from lab data");
                 setGrades(labData.students.map(student => {
                     const gradesArray = [...(student.grades || Array(labData.total_labs || 0).fill(0))];
                     // Recalculate average ignoring zeros
@@ -102,7 +97,6 @@ function LabGrades() {
 
                 // Update only if different from current value
                 if (totalLabs !== labSettings.total_labs) {
-                    console.log("Updating total_labs from API in useEffect:", totalLabs);
                     setLabSettings(prev => ({
                         ...prev,
                         total_labs: totalLabs
@@ -117,12 +111,9 @@ function LabGrades() {
         queryKey: ['lab-grades-debug', decodedSubject, decodedGroup],
         queryFn: async () => {
             try {
-                // Custom direct API call to see what the server returns
                 const response = await labService.getLabGrades(decodedSubject, decodedGroup);
-                console.log("DEBUG - Raw API response:", response.data);
                 return response.data;
             } catch (error) {
-                console.error("DEBUG - API error:", error);
                 return null;
             }
         },
@@ -149,12 +140,8 @@ function LabGrades() {
 
         // Only update if we have students but no grades
         if (students.length > 0 && grades.length === 0) {
-            console.log("Initializing grades from students data in useEffect");
-
             // If we have lab grades in the API response, try to match them with students
             if (labData.students && labData.students.length > 0) {
-                console.log("Using lab data to initialize grades");
-
                 // Create a map of student_id to grades from lab data
                 const studentGradesMap = {};
                 labData.students.forEach(student => {
@@ -184,7 +171,6 @@ function LabGrades() {
                 }));
             } else {
                 // If no lab data, just initialize with zeros
-                console.log("No lab data, initializing with zeros");
                 setGrades(students.map(student => ({
                     student_id: student.id,
                     student_fio: student.fio,
@@ -199,8 +185,6 @@ function LabGrades() {
             );
 
             if (allZeros && labData.students && labData.students.length > 0) {
-                console.log("Grades exist but all zeros - trying to update from lab data");
-
                 // Create a map of student_id to grades from lab data
                 const studentGradesMap = {};
                 labData.students.forEach(student => {
@@ -242,13 +226,10 @@ function LabGrades() {
     const updateSettingsMutation = useMutation({
         mutationFn: (data) => labService.updateLabSettings(decodedSubject, decodedGroup, data),
         onSuccess: (response) => {
-            console.log('Settings update response:', response);
-
             // Save the current total_labs value locally
             const savedTotalLabs = labSettings.total_labs;
-            console.log("Saved total_labs value:", savedTotalLabs);
 
-            setSuccess('Lab settings updated successfully');
+            setSuccess('Настройки лабораторных работ обновлены');
 
             // Invalidate caches
             queryClient.invalidateQueries({ queryKey: ['lab-grades', decodedSubject, decodedGroup] });
@@ -308,8 +289,7 @@ function LabGrades() {
             }, 3000);
         },
         onError: (err) => {
-            console.error('Error updating settings:', err);
-            setError(err.response?.data?.error || 'Failed to update lab settings');
+            setError(err.response?.data?.error || 'Не удалось обновить настройки лабораторных работ');
         }
     });
 
@@ -317,8 +297,7 @@ function LabGrades() {
     const updateGradesMutation = useMutation({
         mutationFn: (data) => labService.updateLabGrades(decodedSubject, decodedGroup, data),
         onSuccess: (response) => {
-            console.log('Grades update response:', response);
-            setSuccess('Lab grades updated successfully');
+            setSuccess('Оценки лабораторных работ обновлены');
 
             // Invalidate all relevant queries to force refresh
             queryClient.invalidateQueries({ queryKey: ['lab-grades', decodedSubject, decodedGroup] });
@@ -335,8 +314,7 @@ function LabGrades() {
             }, 3000);
         },
         onError: (err) => {
-            console.error('Error updating grades:', err);
-            setError(err.response?.data?.error || 'Failed to update lab grades');
+            setError(err.response?.data?.error || 'Не удалось обновить оценки лабораторных работ');
         }
     });
 
@@ -357,23 +335,14 @@ function LabGrades() {
 
             navigator.clipboard.writeText(shareUrl)
                 .then(() => {
-                    console.log('Link copied to clipboard');
+                    // Копирование ссылки в буфер обмена выполнено успешно
                 })
                 .catch((err) => {
-                    console.error('Failed to copy link:', err);
+                    // Ошибка копирования ссылки
                 });
-
-            console.log('Share link created:', {
-                token,
-                shareUrl,
-                subject: decodedSubject,
-                group: decodedGroup,
-                expires: shareData.expires_after
-            });
         },
         onError: (err) => {
-            console.error('Share error:', err);
-            setError(err.response?.data?.error || 'Failed to share lab grades');
+            setError(err.response?.data?.error || 'Не удалось поделиться оценками лабораторных работ');
         }
     });
 
@@ -419,7 +388,6 @@ function LabGrades() {
 
         // Set new timeout for saving with 800ms delay
         const timeoutId = setTimeout(() => {
-            console.log("Auto-saving lab settings with total_labs:", newCount);
             updateSettingsMutation.mutate({ total_labs: newCount });
         }, 800);
 
@@ -469,7 +437,6 @@ function LabGrades() {
             }
         });
 
-        console.log('Saving grades:', gradesData); // Debug log
         updateGradesMutation.mutate(gradesData);
     };
 
@@ -481,7 +448,7 @@ function LabGrades() {
 
         // Validate that we have the correct data
         if (!decodedSubject || !decodedGroup) {
-            setError('Missing subject or group information');
+            setError('Отсутствует информация о предмете или группе');
             return;
         }
 
@@ -510,8 +477,7 @@ function LabGrades() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            console.error('Error exporting lab grades:', error);
-            setError('Failed to export lab grades');
+            setError('Не удалось экспортировать оценки лабораторных работ');
         }
     };
 
@@ -530,14 +496,13 @@ function LabGrades() {
     const copyShareLink = () => {
         navigator.clipboard.writeText(shareLink)
             .then(() => {
-                setSuccess('Link copied to clipboard');
+                setSuccess('Ссылка скопирована в буфер обмена');
                 setTimeout(() => {
                     setSuccess('');
                 }, 3000);
             })
             .catch((err) => {
-                console.error('Failed to copy link:', err);
-                setError('Failed to copy link to clipboard');
+                setError('Не удалось скопировать ссылку в буфер обмена');
             });
     };
 
@@ -607,8 +572,8 @@ function LabGrades() {
             <div>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Lab Grades</h1>
-                        <p className="text-secondary">Premium feature</p>
+                        <h1 className="page-title">Оценки лабораторных работ</h1>
+                        <p className="text-secondary">Премиум-функция</p>
                     </div>
                 </div>
                 <RequireSubscription />
@@ -633,7 +598,7 @@ function LabGrades() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading lab grades: {fetchError.message}</p>
+                    <p>Ошибка загрузки оценок лабораторных работ: {fetchError.message}</p>
                 </div>
             </div>
         );
@@ -643,8 +608,8 @@ function LabGrades() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Lab Grades: {decodedSubject}</h1>
-                    <p className="text-secondary">Group: {decodedGroup}</p>
+                    <h1 className="page-title">Оценки лабораторных работ: {decodedSubject}</h1>
+                    <p className="text-secondary">Группа: {decodedGroup}</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -656,14 +621,14 @@ function LabGrades() {
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        <span className="hidden sm:inline">Export</span>
+                        <span className="hidden sm:inline">Экспорт</span>
                     </button>
                     <Link to="/labs" className="btn btn-secondary flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                 </div>
             </div>
@@ -697,10 +662,10 @@ function LabGrades() {
             <div className="card p-6 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold mb-2">Lab Settings</h2>
+                        <h2 className="text-xl font-semibold mb-2">Настройки лабораторных работ</h2>
                         <div className="flex items-center gap-4">
                             <div>
-                                <label htmlFor="total_labs" className="form-label">Number of Labs</label>
+                                <label htmlFor="total_labs" className="form-label">Количество лабораторных</label>
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="number"
@@ -715,7 +680,7 @@ function LabGrades() {
                                     {updateSettingsMutation.isPending && (
                                         <div className="text-tertiary text-sm flex items-center gap-1">
                                             <div className="w-3 h-3 border-2 border-tertiary border-t-transparent rounded-full animate-spin"></div>
-                                            Saving...
+                                            Сохранение...
                                         </div>
                                     )}
                                 </div>
@@ -733,7 +698,7 @@ function LabGrades() {
                                         <line x1="16" y1="17" x2="8" y2="17"></line>
                                         <polyline points="10 9 9 9 8 9"></polyline>
                                     </svg>
-                                    Grades
+                                    Оценки
                                 </div>
 
                                 <div
@@ -745,7 +710,7 @@ function LabGrades() {
                                         <line x1="12" y1="20" x2="12" y2="4"></line>
                                         <line x1="6" y1="20" x2="6" y2="14"></line>
                                     </svg>
-                                    Statistics
+                                    Статистика
                                 </div>
                             </div>
                         </div>
@@ -759,7 +724,7 @@ function LabGrades() {
                         {shareGradesMutation.isPending ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>Sharing...</span>
+                                <span>Отправка...</span>
                             </>
                         ) : (
                             <>
@@ -770,7 +735,7 @@ function LabGrades() {
                                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                                 </svg>
-                                <span>Share Grades</span>
+                                <span>Поделиться оценками</span>
                             </>
                         )}
                     </button>
@@ -780,22 +745,22 @@ function LabGrades() {
             {/* Summary box - always visible - FULL WIDTH */}
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="stats-card-square" style={{ borderTopColor: 'var(--primary)' }}>
-                    <div className="stats-card-title">Students</div>
+                    <div className="stats-card-title">Студенты</div>
                     <div className="stats-card-value">{grades.length}</div>
                 </div>
 
                 <div className="stats-card-square" style={{ borderTopColor: getAverageColor(groupAverage) }}>
-                    <div className="stats-card-title">Group Average</div>
+                    <div className="stats-card-title">Средний балл группы</div>
                     <div className="stats-card-value">{groupAverage.toFixed(1)}</div>
                 </div>
 
                 <div className="stats-card-square" style={{ borderTopColor: 'var(--success)' }}>
-                    <div className="stats-card-title">Labs Completed</div>
+                    <div className="stats-card-title">Выполнено лабораторных</div>
                     <div className="stats-card-value">{completionStats.completed} <span className="text-tertiary text-sm">/ {completionStats.total}</span></div>
                 </div>
 
                 <div className="stats-card-square" style={{ borderTopColor: 'var(--accent)' }}>
-                    <div className="stats-card-title">Completion Rate</div>
+                    <div className="stats-card-title">Показатель выполнения</div>
                     <div className="stats-card-value">{completionStats.rate.toFixed(1)}%</div>
                 </div>
             </div>
@@ -804,7 +769,7 @@ function LabGrades() {
             {activeTab === 'grades' && (
                 <div className="card">
                     <div className="p-6 border-b border-border-color">
-                        <h3 className="text-xl font-semibold">Lab Grades</h3>
+                        <h3 className="text-xl font-semibold">Оценки лабораторных работ</h3>
                     </div>
 
                     {grades.length === 0 ? (
@@ -817,10 +782,10 @@ function LabGrades() {
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">No students found</h3>
-                            <p className="text-secondary mb-6">No students found for this group</p>
+                            <h3 className="text-xl font-semibold mb-2">Студенты не найдены</h3>
+                            <p className="text-secondary mb-6">Студенты для этой группы не найдены</p>
                             <Link to={`/groups/${encodeURIComponent(decodedGroup)}`} className="btn btn-primary">
-                                View Group
+                                Просмотр группы
                             </Link>
                         </div>
                     ) : (
@@ -829,11 +794,11 @@ function LabGrades() {
                                 <table className="table">
                                     <thead>
                                     <tr>
-                                        <th className="sticky left-0 bg-bg-card z-10">Student</th>
+                                        <th className="sticky left-0 bg-bg-card z-10">Студент</th>
                                         {Array.from({ length: labSettings.total_labs }, (_, i) => (
-                                            <th key={i} className="text-center">Lab {i + 1}</th>
+                                            <th key={i} className="text-center">Лаб. {i + 1}</th>
                                         ))}
-                                        <th className="text-center">Average</th>
+                                        <th className="text-center">Среднее</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -872,7 +837,7 @@ function LabGrades() {
                                     {updateGradesMutation.isPending ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            <span>Saving...</span>
+                                            <span>Сохранение...</span>
                                         </>
                                     ) : (
                                         <>
@@ -881,7 +846,7 @@ function LabGrades() {
                                                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                                 <polyline points="7 3 7 8 15 8"></polyline>
                                             </svg>
-                                            <span>Save Grades</span>
+                                            <span>Сохранить оценки</span>
                                         </>
                                     )}
                                 </button>
@@ -894,16 +859,16 @@ function LabGrades() {
             {activeTab === 'stats' && (
                 <div className="card">
                     <div className="p-6 border-b border-border-color">
-                        <h3 className="text-xl font-semibold">Lab Statistics</h3>
+                        <h3 className="text-xl font-semibold">Статистика лабораторных работ</h3>
                     </div>
 
                     {grades.length === 0 ? (
                         <div className="p-8 text-center">
-                            <p className="text-secondary">No data available for statistics</p>
+                            <p className="text-secondary">Нет данных для статистики</p>
                         </div>
                     ) : (
                         <div className="p-6">
-                            <h4 className="text-lg font-medium mb-4">Completion by Lab</h4>
+                            <h4 className="text-lg font-medium mb-4">Выполнение по лабораторным</h4>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Bar chart for lab completion */}
                                 <div className="h-64 bg-bg-dark-tertiary rounded-md p-4 flex items-end gap-1">
@@ -918,7 +883,7 @@ function LabGrades() {
                                                     margin: '0 auto'
                                                 }}
                                             ></div>
-                                            <div className="text-xs text-tertiary">Lab {lab.lab}</div>
+                                            <div className="text-xs text-tertiary">Лаб. {lab.lab}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -929,15 +894,15 @@ function LabGrades() {
                                         <table className="table w-full">
                                             <thead>
                                             <tr>
-                                                <th>Lab</th>
-                                                <th>Completed</th>
-                                                <th>Rate</th>
+                                                <th>Лабораторная</th>
+                                                <th>Выполнено</th>
+                                                <th>Процент</th>
                                             </tr>
                                             </thead>
                                             <tbody>
                                             {gradedLabsCount.map((lab, index) => (
                                                 <tr key={index}>
-                                                    <td>Lab {lab.lab}</td>
+                                                    <td>Лаб. {lab.lab}</td>
                                                     <td>{lab.count} / {grades.length}</td>
                                                     <td className={getCompletionTextClass(lab.rate)}>
                                                         {lab.rate.toFixed(1)}%
@@ -951,18 +916,18 @@ function LabGrades() {
                             </div>
 
                             {/* Student performance */}
-                            <h4 className="text-lg font-medium mt-8 mb-4">Student Performance</h4>
+                            <h4 className="text-lg font-medium mt-8 mb-4">Успеваемость студентов</h4>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Students sorted by average grade */}
                                 <div>
-                                    <h5 className="text-base font-medium mb-2">Top Students</h5>
+                                    <h5 className="text-base font-medium mb-2">Лучшие студенты</h5>
                                     <div className="overflow-y-auto max-h-64">
                                         <table className="table w-full">
                                             <thead>
                                             <tr>
-                                                <th>Student</th>
-                                                <th>Average</th>
-                                                <th>Completed</th>
+                                                <th>Студент</th>
+                                                <th>Средний балл</th>
+                                                <th>Выполнено</th>
                                             </tr>
                                             </thead>
                                             <tbody>
@@ -992,7 +957,7 @@ function LabGrades() {
 
                                 {/* Grade distribution */}
                                 <div>
-                                    <h5 className="text-base font-medium mb-2">Grade Distribution</h5>
+                                    <h5 className="text-base font-medium mb-2">Распределение оценок</h5>
                                     <div className="grid grid-cols-6 gap-2 mb-4">
                                         {[0, 1, 2, 3, 4, 5].map(grade => {
                                             // Count occurrences of this grade
@@ -1040,7 +1005,7 @@ function LabGrades() {
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-bg-dark-secondary p-6 rounded-lg shadow-xl max-w-lg w-full">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold">Share Lab Grades</h3>
+                            <h3 className="text-xl font-bold">Поделиться оценками лабораторных работ</h3>
                             <button
                                 onClick={closeShareDialog}
                                 className="text-tertiary hover:text-primary"
@@ -1059,14 +1024,14 @@ function LabGrades() {
                                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                 </svg>
                                 <div>
-                                    <p className="font-medium mb-1">Share link created successfully!</p>
-                                    <p>Link will expire after {shareSettings.expiration_days} days.</p>
+                                    <p className="font-medium mb-1">Ссылка для общего доступа успешно создана!</p>
+                                    <p>Ссылка будет действительна в течение {shareSettings.expiration_days} дней.</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="form-group mb-4">
-                            <label className="form-label">Share Link</label>
+                            <label className="form-label">Ссылка для общего доступа</label>
                             <div className="flex">
                                 <input
                                     type="text"
@@ -1091,13 +1056,13 @@ function LabGrades() {
                                 onClick={() => { window.open(shareLink, '_blank') }}
                                 className="btn btn-primary mr-2"
                             >
-                                View Link
+                                Просмотреть ссылку
                             </button>
                             <button
                                 onClick={closeShareDialog}
                                 className="btn btn-secondary"
                             >
-                                Close
+                                Закрыть
                             </button>
                         </div>
                     </div>

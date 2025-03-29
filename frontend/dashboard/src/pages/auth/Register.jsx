@@ -21,54 +21,54 @@ function Register() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
-        // Password strength check
+        // Проверка надежности пароля
         if (name === 'password') {
             checkPasswordStrength(value);
         }
     };
 
     const checkPasswordStrength = (password) => {
-        // Reset
+        // Сброс
         let strength = 0;
         let feedback = '';
 
-        // Length check
+        // Проверка длины
         if (password.length >= 8) {
             strength += 1;
         } else {
-            feedback = 'Password should be at least 8 characters';
+            feedback = 'Пароль должен быть не менее 8 символов';
             setPasswordStrength(strength);
             setPasswordFeedback(feedback);
             return;
         }
 
-        // Contains number
+        // Содержит цифру
         if (/\d/.test(password)) {
             strength += 1;
         }
 
-        // Contains lowercase
+        // Содержит строчную букву
         if (/[a-z]/.test(password)) {
             strength += 1;
         }
 
-        // Contains uppercase
+        // Содержит заглавную букву
         if (/[A-Z]/.test(password)) {
             strength += 1;
         }
 
-        // Contains special char
+        // Содержит специальный символ
         if (/[^A-Za-z0-9]/.test(password)) {
             strength += 1;
         }
 
-        // Feedback based on strength
+        // Обратная связь на основе надежности
         if (strength <= 2) {
-            feedback = 'Weak password';
+            feedback = 'Слабый пароль';
         } else if (strength <= 4) {
-            feedback = 'Good password';
+            feedback = 'Хороший пароль';
         } else {
-            feedback = 'Strong password';
+            feedback = 'Надежный пароль';
         }
 
         setPasswordStrength(strength);
@@ -77,12 +77,12 @@ function Register() {
 
     const validateForm = () => {
         if (!formData.fio || !formData.email || !formData.password) {
-            setError('All fields are required');
+            setError('Все поля обязательны для заполнения');
             return false;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            setError('Пароли не совпадают');
             return false;
         }
 
@@ -99,9 +99,9 @@ function Register() {
 
         try {
             await authService.register(formData.fio, formData.email, formData.password);
-            navigate('/login', { state: { message: 'Registration successful! You can now login.' } });
+            navigate('/login', { state: { message: 'Регистрация успешна! Теперь вы можете войти.' } });
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to register');
+            setError(err.response?.data?.error || 'Не удалось зарегистрироваться');
         } finally {
             setLoading(false);
         }
@@ -135,7 +135,7 @@ function Register() {
                     </div>
                     <h1 className="logo-text">Teacher Journal</h1>
                 </div>
-                <p className="auth-subtitle">Create a new account</p>
+                <p className="auth-subtitle">Создать новую учетную запись</p>
             </div>
 
             {error && (
@@ -153,7 +153,7 @@ function Register() {
 
             <form onSubmit={handleSubmit} className="auth-form">
                 <div className="form-group">
-                    <label htmlFor="fio" className="form-label">Full Name</label>
+                    <label htmlFor="fio" className="form-label">ФИО</label>
                     <div className="input-with-icon">
                         <input
                             type="text"
@@ -163,7 +163,7 @@ function Register() {
                             onChange={handleChange}
                             disabled={loading}
                             className="form-control pl-10"
-                            placeholder="John Doe"
+                            placeholder="Иванов Иван Иванович"
                         />
                         <div className="input-icon left">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,7 +175,7 @@ function Register() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="email" className="form-label">Email Address</label>
+                    <label htmlFor="email" className="form-label">Электронная почта</label>
                     <div className="input-with-icon">
                         <input
                             type="email"
@@ -197,7 +197,7 @@ function Register() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="password" className="form-label">Password</label>
+                    <label htmlFor="password" className="form-label">Пароль</label>
                     <div className="input-with-icon">
                         <input
                             type={showPassword ? "text" : "password"}
@@ -255,7 +255,7 @@ function Register() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                    <label htmlFor="confirmPassword" className="form-label">Подтвердите пароль</label>
                     <div className="input-with-icon">
                         <input
                             type={showPassword ? "text" : "password"}
@@ -277,9 +277,9 @@ function Register() {
                     {formData.password && formData.confirmPassword && (
                         <div className="password-match text-xs mt-1">
                             {formData.password === formData.confirmPassword ? (
-                                <span className="text-success">Passwords match</span>
+                                <span className="text-success">Пароли совпадают</span>
                             ) : (
-                                <span className="text-danger">Passwords do not match</span>
+                                <span className="text-danger">Пароли не совпадают</span>
                             )}
                         </div>
                     )}
@@ -293,7 +293,7 @@ function Register() {
                     {loading ? (
                         <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Creating account...</span>
+                            <span>Создание учетной записи...</span>
                         </>
                     ) : (
                         <>
@@ -303,18 +303,18 @@ function Register() {
                                 <line x1="20" y1="8" x2="20" y2="14"></line>
                                 <line x1="23" y1="11" x2="17" y2="11"></line>
                             </svg>
-                            <span>Create Account</span>
+                            <span>Создать учетную запись</span>
                         </>
                     )}
                 </button>
 
                 <div className="mt-6 text-sm text-center text-tertiary">
-                    By registering, you agree to our <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
+                    Регистрируясь, вы соглашаетесь с нашими <a href="#" className="text-primary hover:underline">Условиями обслуживания</a> и <a href="#" className="text-primary hover:underline">Политикой конфиденциальности</a>.
                 </div>
             </form>
 
             <div className="auth-footer">
-                <p>Already have an account? <Link to="/login" className="text-primary hover:underline">Sign in</Link></p>
+                <p>Уже есть учетная запись? <Link to="/login" className="text-primary hover:underline">Войти</Link></p>
             </div>
 
             <style jsx="true">{`

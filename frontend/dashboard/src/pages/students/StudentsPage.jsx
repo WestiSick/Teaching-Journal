@@ -13,7 +13,7 @@ function StudentsPage() {
         search: ''
     });
 
-    // Check if there's a preselected group filter from another page
+    // Проверка, есть ли предварительно выбранный фильтр группы из другой страницы
     useEffect(() => {
         const preselectedGroup = localStorage.getItem('preselectedGroupFilter');
         if (preselectedGroup) {
@@ -22,13 +22,13 @@ function StudentsPage() {
         }
     }, []);
 
-    // Fetch students with filters
+    // Загрузка студентов с фильтрами
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['students', filters],
         queryFn: () => studentService.getStudents(filters)
     });
 
-    // Fetch groups for filter dropdown
+    // Загрузка групп для выпадающего списка фильтров
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
@@ -47,18 +47,17 @@ function StudentsPage() {
     };
 
     const handleDelete = async (id, studentName) => {
-        if (window.confirm(`Are you sure you want to delete student "${studentName}"?`)) {
+        if (window.confirm(`Вы уверены, что хотите удалить студента "${studentName}"?`)) {
             try {
                 await studentService.deleteStudent(id);
-                refetch(); // Refresh the list after deletion
+                refetch(); // Обновляем список после удаления
             } catch (error) {
-                console.error('Error deleting student:', error);
-                alert('Failed to delete student');
+                alert('Не удалось удалить студента');
             }
         }
     };
 
-    // Filter students by search term if present
+    // Фильтрация студентов по поисковому запросу, если он присутствует
     const filteredStudents = students.filter(student => {
         if (!filters.search) return true;
         return student.fio.toLowerCase().includes(filters.search.toLowerCase());
@@ -81,7 +80,7 @@ function StudentsPage() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading students: {error.message}</p>
+                    <p>Ошибка загрузки студентов: {error.message}</p>
                 </div>
             </div>
         );
@@ -91,8 +90,8 @@ function StudentsPage() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Students</h1>
-                    <p className="text-secondary">Manage your student records</p>
+                    <h1 className="page-title">Студенты</h1>
+                    <p className="text-secondary">Управление записями студентов</p>
                 </div>
                 <RequireSubscription
                     fallback={
@@ -101,7 +100,7 @@ function StudentsPage() {
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            Add Student (Subscription)
+                            Добавить студента (Подписка)
                         </button>
                     }
                 >
@@ -110,16 +109,16 @@ function StudentsPage() {
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        Add Student
+                        Добавить студента
                     </Link>
                 </RequireSubscription>
             </div>
 
-            {/* Compact Filters */}
+            {/* Компактные фильтры */}
             <div className="bg-dark-secondary rounded-lg mb-6 p-3">
                 <div className="flex flex-wrap items-end gap-2">
                     <div className="flex-1 min-w-[180px]">
-                        <label htmlFor="group" className="form-label text-xs mb-1">Group</label>
+                        <label htmlFor="group" className="form-label text-xs mb-1">Группа</label>
                         <select
                             id="group"
                             name="group"
@@ -127,7 +126,7 @@ function StudentsPage() {
                             onChange={handleFilterChange}
                             className="form-control py-1 text-sm"
                         >
-                            <option value="">All Groups</option>
+                            <option value="">Все группы</option>
                             {groups.map(group => (
                                 <option key={group.name} value={group.name}>{group.name}</option>
                             ))}
@@ -135,7 +134,7 @@ function StudentsPage() {
                     </div>
 
                     <div className="flex-1 min-w-[220px]">
-                        <label htmlFor="search" className="form-label text-xs mb-1">Search</label>
+                        <label htmlFor="search" className="form-label text-xs mb-1">Поиск</label>
                         <div className="relative">
                             <input
                                 type="text"
@@ -143,7 +142,7 @@ function StudentsPage() {
                                 name="search"
                                 value={filters.search}
                                 onChange={handleFilterChange}
-                                placeholder="Search by name..."
+                                placeholder="Поиск по имени..."
                                 className="form-control pl-7 py-1 text-sm"
                             />
                             <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none text-text-tertiary">
@@ -158,7 +157,7 @@ function StudentsPage() {
                     <button
                         onClick={clearFilters}
                         className="btn btn-outline py-1 px-3 h-[34px] flex items-center gap-1 text-xs"
-                        title="Clear all filters"
+                        title="Очистить все фильтры"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 12a9 9 0 0 1-9 9c-2.39 0-4.68-.94-6.4-2.65L3 16"></path>
@@ -166,12 +165,12 @@ function StudentsPage() {
                             <path d="M3 8h6"></path>
                             <path d="M15 16h6"></path>
                         </svg>
-                        Clear
+                        Очистить
                     </button>
                 </div>
             </div>
 
-            {/* Students Table */}
+            {/* Таблица студентов */}
             {filteredStudents.length === 0 ? (
                 <div className="card p-8">
                     <div className="text-center">
@@ -183,17 +182,17 @@ function StudentsPage() {
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                         </div>
-                        <h3 className="text-xl mb-2">No students found</h3>
-                        <p className="text-tertiary mb-6">Try changing your filters or add a new student.</p>
+                        <h3 className="text-xl mb-2">Студенты не найдены</h3>
+                        <p className="text-tertiary mb-6">Попробуйте изменить фильтры или добавьте нового студента.</p>
                         <RequireSubscription
                             fallback={
                                 <button className="btn btn-primary opacity-70 cursor-not-allowed" disabled>
-                                    Add Student (Subscription Required)
+                                    Добавить студента (Требуется подписка)
                                 </button>
                             }
                         >
                             <Link to="/students/new" className="btn btn-primary">
-                                Add Your First Student
+                                Добавить первого студента
                             </Link>
                         </RequireSubscription>
                     </div>
@@ -204,9 +203,9 @@ function StudentsPage() {
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Group</th>
-                                <th className="text-right">Actions</th>
+                                <th>Имя</th>
+                                <th>Группа</th>
+                                <th className="text-right">Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -232,18 +231,18 @@ function StudentsPage() {
                                             <button
                                                 onClick={() => navigate(`/students/${student.id}`)}
                                                 className="btn btn-sm btn-secondary"
-                                                title="View Student"
+                                                title="Просмотр студента"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                     <circle cx="12" cy="12" r="3"></circle>
                                                 </svg>
-                                                <span className="hidden sm:inline ml-1">View</span>
+                                                <span className="hidden sm:inline ml-1">Просмотр</span>
                                             </button>
 
                                             <RequireSubscription
                                                 fallback={
-                                                    <button className="btn btn-sm btn-primary opacity-60 cursor-not-allowed" disabled title="Edit Student (Subscription Required)">
+                                                    <button className="btn btn-sm btn-primary opacity-60 cursor-not-allowed" disabled title="Редактировать студента (Требуется подписка)">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -254,19 +253,19 @@ function StudentsPage() {
                                                 <button
                                                     onClick={() => navigate(`/students/${student.id}/edit`)}
                                                     className="btn btn-sm btn-primary"
-                                                    title="Edit Student"
+                                                    title="Редактировать студента"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                                     </svg>
-                                                    <span className="hidden sm:inline ml-1">Edit</span>
+                                                    <span className="hidden sm:inline ml-1">Редактировать</span>
                                                 </button>
                                             </RequireSubscription>
 
                                             <RequireSubscription
                                                 fallback={
-                                                    <button className="btn btn-sm btn-danger opacity-60 cursor-not-allowed" disabled title="Delete Student (Subscription Required)">
+                                                    <button className="btn btn-sm btn-danger opacity-60 cursor-not-allowed" disabled title="Удалить студента (Требуется подписка)">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <polyline points="3 6 5 6 21 6"></polyline>
                                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -277,13 +276,13 @@ function StudentsPage() {
                                                 <button
                                                     onClick={() => handleDelete(student.id, student.fio)}
                                                     className="btn btn-sm btn-danger"
-                                                    title="Delete Student"
+                                                    title="Удалить студента"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                         <polyline points="3 6 5 6 21 6"></polyline>
                                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                                     </svg>
-                                                    <span className="hidden sm:inline ml-1">Delete</span>
+                                                    <span className="hidden sm:inline ml-1">Удалить</span>
                                                 </button>
                                             </RequireSubscription>
                                         </div>

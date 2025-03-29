@@ -17,7 +17,7 @@ function StudentDetail() {
     const [labError, setLabError] = useState(null);
     const [activeTab, setActiveTab] = useState('attendance');
 
-    // Fetch student details
+    // Загрузка данных о студенте
     const { data: studentData, isLoading: studentLoading, error: studentError } = useQuery({
         queryKey: ['student', id],
         queryFn: () => studentService.getStudent(id)
@@ -25,7 +25,7 @@ function StudentDetail() {
 
     const student = studentData?.data?.data;
 
-    // Fetch attendance data for this student when student data is loaded
+    // Загрузка данных о посещаемости для этого студента, когда данные о студенте загружены
     useEffect(() => {
         if (!student || isFree) return;
 
@@ -34,16 +34,16 @@ function StudentDetail() {
             setAttendanceError(null);
 
             try {
-                // Get lessons for the student's group
+                // Получаем занятия для группы студента
                 const lessonsResponse = await lessonService.getLessons({ group: student.group_name });
                 const lessons = lessonsResponse.data.data || [];
 
-                // Initialize counters
+                // Инициализируем счетчики
                 let totalLessons = 0;
                 let attendedLessons = 0;
                 const recentAttendance = [];
 
-                // For each lesson, check if the student attended
+                // Для каждого занятия проверяем, присутствовал ли студент
                 for (const lesson of lessons) {
                     try {
                         const attendanceResponse = await attendanceService.getLessonAttendance(lesson.id);
@@ -52,14 +52,14 @@ function StudentDetail() {
                         if (attendance && attendance.students) {
                             totalLessons++;
 
-                            // Find this student in the attendance records
+                            // Находим этого студента в записях о посещаемости
                             const studentAttendance = attendance.students.find(s => s.id === parseInt(id));
                             if (studentAttendance) {
                                 if (studentAttendance.attended) {
                                     attendedLessons++;
                                 }
 
-                                // Add to recent attendance (limited to last 5)
+                                // Добавляем в последние посещения (ограничено до 5)
                                 if (recentAttendance.length < 5) {
                                     recentAttendance.push({
                                         id: lesson.id,
@@ -72,14 +72,14 @@ function StudentDetail() {
                             }
                         }
                     } catch (err) {
-                        console.warn(`Could not fetch attendance for lesson ${lesson.id}:`, err);
+                        // Пропускаем ошибку для отдельного занятия
                     }
                 }
 
-                // Calculate attendance rate
+                // Вычисляем уровень посещаемости
                 const attendanceRate = totalLessons > 0 ? (attendedLessons / totalLessons) * 100 : 0;
 
-                // Set attendance summary
+                // Устанавливаем сводку посещаемости
                 setAttendanceSummary({
                     total_lessons: totalLessons,
                     lessons_attended: attendedLessons,
@@ -87,8 +87,7 @@ function StudentDetail() {
                     lessons: recentAttendance.sort((a, b) => new Date(b.date) - new Date(a.date))
                 });
             } catch (error) {
-                console.error('Error fetching attendance data:', error);
-                setAttendanceError('Failed to load attendance data');
+                setAttendanceError('Не удалось загрузить данные о посещаемости');
             } finally {
                 setLoadingAttendance(false);
             }
@@ -97,7 +96,7 @@ function StudentDetail() {
         fetchAttendanceData();
     }, [student, id, isFree]);
 
-    // Fetch lab grades for this student when student data is loaded
+    // Загрузка оценок за лабораторные для этого студента, когда данные о студенте загружены
     useEffect(() => {
         if (!student || isFree) return;
 
@@ -106,7 +105,7 @@ function StudentDetail() {
             setLabError(null);
 
             try {
-                // Get all lab subjects and groups
+                // Получаем все предметы с лабораторными и группы
                 const labsResponse = await labService.getLabs();
                 const subjects = labsResponse.data.data || [];
 
@@ -115,33 +114,33 @@ function StudentDetail() {
                 let completedLabs = 0;
                 let gradeSum = 0;
 
-                // For each subject that has this student's group
+                // Для каждого предмета, который имеет группу этого студента
                 for (const subject of subjects) {
                     const groupWithStudent = subject.groups.find(g => g.name === student.group_name);
 
                     if (groupWithStudent) {
                         try {
-                            // Get detailed lab grades for this subject and group
+                            // Получаем детальные оценки за лабораторные для этого предмета и группы
                             const gradesResponse = await labService.getLabGrades(subject.subject, student.group_name);
                             const gradesData = gradesResponse.data.data;
 
-                            // Find this student's grades
+                            // Находим оценки этого студента
                             const studentData = gradesData.students.find(s => s.student_id === parseInt(id));
 
                             if (studentData) {
-                                // Calculate statistics
+                                // Считаем статистику
                                 const numLabs = studentData.grades.length;
                                 totalLabs += numLabs;
 
-                                // Count non-zero grades as completed labs
+                                // Считаем ненулевые оценки как выполненные лабораторные
                                 const completed = studentData.grades.filter(g => g > 0).length;
                                 completedLabs += completed;
 
-                                // Sum grades for average calculation
+                                // Суммируем оценки для вычисления среднего
                                 const sum = studentData.grades.reduce((acc, grade) => acc + grade, 0);
                                 gradeSum += sum;
 
-                                // Add subject data to the collection
+                                // Добавляем данные о предмете в коллекцию
                                 studentGrades.push({
                                     subject: subject.subject,
                                     grades: studentData.grades,
@@ -151,15 +150,15 @@ function StudentDetail() {
                                 });
                             }
                         } catch (err) {
-                            console.warn(`Could not fetch lab grades for ${subject.subject} - ${student.group_name}:`, err);
+                            // Пропускаем ошибку для отдельного предмета
                         }
                     }
                 }
 
-                // Calculate overall average
+                // Вычисляем общее среднее
                 const overallAverage = completedLabs > 0 ? gradeSum / completedLabs : 0;
 
-                // Set lab summary
+                // Устанавливаем сводку по лабораторным
                 setLabSummary({
                     subjects: studentGrades,
                     total_labs: totalLabs,
@@ -168,8 +167,7 @@ function StudentDetail() {
                     overall_average: overallAverage
                 });
             } catch (error) {
-                console.error('Error fetching lab data:', error);
-                setLabError('Failed to load lab data');
+                setLabError('Не удалось загрузить данные по лабораторным');
             } finally {
                 setLoadingLabs(false);
             }
@@ -179,13 +177,12 @@ function StudentDetail() {
     }, [student, id, isFree]);
 
     const handleDelete = async () => {
-        if (window.confirm(`Are you sure you want to delete student "${student.fio}"?`)) {
+        if (window.confirm(`Вы уверены, что хотите удалить студента "${student.fio}"?`)) {
             try {
                 await studentService.deleteStudent(id);
                 navigate('/students');
             } catch (error) {
-                console.error('Error deleting student:', error);
-                alert('Failed to delete student');
+                alert('Не удалось удалить студента');
             }
         }
     };
@@ -207,7 +204,7 @@ function StudentDetail() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading student: {studentError.message}</p>
+                    <p>Ошибка загрузки студента: {studentError.message}</p>
                 </div>
             </div>
         );
@@ -222,7 +219,7 @@ function StudentDetail() {
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <p>Student not found</p>
+                    <p>Студент не найден</p>
                 </div>
             </div>
         );
@@ -233,7 +230,7 @@ function StudentDetail() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">{student.fio}</h1>
-                    <p className="text-secondary">Student profile and progress</p>
+                    <p className="text-secondary">Профиль и прогресс студента</p>
                 </div>
                 <div className="flex gap-2">
                     <Link to="/students" className="btn btn-secondary flex items-center gap-2">
@@ -241,7 +238,7 @@ function StudentDetail() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                     <RequireSubscription>
                         <Link to={`/students/${id}/edit`} className="btn btn-primary flex items-center gap-2">
@@ -249,7 +246,7 @@ function StudentDetail() {
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                            <span className="hidden sm:inline">Edit</span>
+                            <span className="hidden sm:inline">Редактировать</span>
                         </Link>
                         <button
                             onClick={handleDelete}
@@ -259,13 +256,13 @@ function StudentDetail() {
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
-                            <span className="hidden sm:inline">Delete</span>
+                            <span className="hidden sm:inline">Удалить</span>
                         </button>
                     </RequireSubscription>
                 </div>
             </div>
 
-            {/* Student Profile Card */}
+            {/* Карточка профиля студента */}
             <div className="card p-6 mb-6">
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                     <div className="w-24 h-24 bg-primary-lighter text-primary rounded-full flex items-center justify-center text-4xl font-bold">
@@ -281,7 +278,7 @@ function StudentDetail() {
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
-                                <span>Group: </span>
+                                <span>Группа: </span>
                                 <Link to={`/groups/${encodeURIComponent(student.group_name)}`} className="text-primary hover:text-primary-light hover:underline">
                                     {student.group_name}
                                 </Link>
@@ -295,7 +292,7 @@ function StudentDetail() {
                                         <line x1="8" y1="2" x2="8" y2="6"></line>
                                         <line x1="3" y1="10" x2="21" y2="10"></line>
                                     </svg>
-                                    <span>Attendance: </span>
+                                    <span>Посещаемость: </span>
                                     <span className={`font-medium ${attendanceSummary.attendance_rate >= 85 ? 'text-success' : attendanceSummary.attendance_rate >= 70 ? 'text-warning' : 'text-danger'}`}>
                                         {attendanceSummary.attendance_rate.toFixed(1)}%
                                     </span>
@@ -310,7 +307,7 @@ function StudentDetail() {
                                         <path d="M8.5 2h7"></path>
                                         <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
                                     </svg>
-                                    <span>Lab Average: </span>
+                                    <span>Средняя оценка: </span>
                                     <span className={`font-medium ${labSummary.overall_average >= 4 ? 'text-success' : labSummary.overall_average >= 3 ? 'text-warning' : 'text-danger'}`}>
                                         {labSummary.overall_average.toFixed(1)}
                                     </span>
@@ -320,32 +317,32 @@ function StudentDetail() {
 
                         <div className="mt-4">
                             <Link to={`/groups/${encodeURIComponent(student.group_name)}`} className="btn btn-secondary btn-sm">
-                                View Group
+                                Просмотр группы
                             </Link>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Tab Navigation */}
+            {/* Навигация по вкладкам */}
             <div className="mb-6 border-b border-border-color">
                 <div className="flex gap-4">
                     <button
                         className={`py-3 px-4 font-medium border-b-2 transition-colors ${activeTab === 'attendance' ? 'border-primary text-primary' : 'border-transparent hover:border-border-color-light'}`}
                         onClick={() => setActiveTab('attendance')}
                     >
-                        Attendance
+                        Посещаемость
                     </button>
                     <button
                         className={`py-3 px-4 font-medium border-b-2 transition-colors ${activeTab === 'labs' ? 'border-primary text-primary' : 'border-transparent hover:border-border-color-light'}`}
                         onClick={() => setActiveTab('labs')}
                     >
-                        Lab Results
+                        Лабораторные работы
                     </button>
                 </div>
             </div>
 
-            {/* Tab Content */}
+            {/* Содержимое вкладок */}
             {activeTab === 'attendance' && (
                 <div>
                     <RequireSubscription
@@ -357,9 +354,9 @@ function StudentDetail() {
                                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                         </svg>
                                     </div>
-                                    <h3 className="text-xl font-semibold mb-2">Premium Feature</h3>
-                                    <p className="text-secondary mb-6">Attendance tracking requires a paid subscription</p>
-                                    <button className="btn btn-primary">Upgrade Now</button>
+                                    <h3 className="text-xl font-semibold mb-2">Премиум-функция</h3>
+                                    <p className="text-secondary mb-6">Отслеживание посещаемости требует оплаченной подписки</p>
+                                    <button className="btn btn-primary">Обновить сейчас</button>
                                 </div>
                             </div>
                         }
@@ -381,18 +378,18 @@ function StudentDetail() {
                             </div>
                         ) : attendanceSummary ? (
                             <div>
-                                {/* Attendance stats */}
+                                {/* Статистика посещаемости */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                     <div className="stats-card" style={{ borderLeftColor: 'var(--primary)' }}>
-                                        <div className="stats-card-title">Total Lessons</div>
+                                        <div className="stats-card-title">Всего занятий</div>
                                         <div className="stats-card-value">{attendanceSummary.total_lessons}</div>
                                     </div>
                                     <div className="stats-card" style={{ borderLeftColor: 'var(--success)' }}>
-                                        <div className="stats-card-title">Lessons Attended</div>
+                                        <div className="stats-card-title">Посещено занятий</div>
                                         <div className="stats-card-value">{attendanceSummary.lessons_attended}</div>
                                     </div>
                                     <div className="stats-card" style={{ borderLeftColor: `${attendanceSummary.attendance_rate >= 85 ? 'var(--success)' : attendanceSummary.attendance_rate >= 70 ? 'var(--warning)' : 'var(--danger)'}` }}>
-                                        <div className="stats-card-title">Attendance Rate</div>
+                                        <div className="stats-card-title">Уровень посещаемости</div>
                                         <div className="stats-card-value">{attendanceSummary.attendance_rate.toFixed(1)}%</div>
                                         <div className="stats-card-description">
                                             <div className="w-full h-2 bg-bg-dark-tertiary rounded-full mt-2">
@@ -408,16 +405,16 @@ function StudentDetail() {
                                     </div>
                                 </div>
 
-                                {/* Recent attendance */}
+                                {/* Недавняя посещаемость */}
                                 <div className="card">
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-xl font-semibold">Recent Attendance</h3>
+                                        <h3 className="text-xl font-semibold">Недавняя посещаемость</h3>
                                         <Link to={`/attendance`} className="btn btn-sm btn-outline flex items-center gap-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <circle cx="12" cy="12" r="10"></circle>
                                                 <polyline points="12 6 12 12 16 14"></polyline>
                                             </svg>
-                                            View All
+                                            Смотреть все
                                         </Link>
                                     </div>
 
@@ -426,11 +423,11 @@ function StudentDetail() {
                                             <table className="table">
                                                 <thead>
                                                 <tr>
-                                                    <th>Date</th>
-                                                    <th>Subject</th>
-                                                    <th>Topic</th>
-                                                    <th>Status</th>
-                                                    <th className="text-right">Actions</th>
+                                                    <th>Дата</th>
+                                                    <th>Предмет</th>
+                                                    <th>Тема</th>
+                                                    <th>Статус</th>
+                                                    <th className="text-right">Действия</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody>
@@ -441,9 +438,9 @@ function StudentDetail() {
                                                         <td>{lesson.topic}</td>
                                                         <td>
                                                             {lesson.status === 'present' ? (
-                                                                <span className="badge bg-success-lighter text-success">Present</span>
+                                                                <span className="badge bg-success-lighter text-success">Присутствует</span>
                                                             ) : (
-                                                                <span className="badge bg-danger-lighter text-danger">Absent</span>
+                                                                <span className="badge bg-danger-lighter text-danger">Отсутствует</span>
                                                             )}
                                                         </td>
                                                         <td>
@@ -453,7 +450,7 @@ function StudentDetail() {
                                                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                                         <circle cx="12" cy="12" r="3"></circle>
                                                                     </svg>
-                                                                    View
+                                                                    Просмотр
                                                                 </Link>
                                                             </div>
                                                         </td>
@@ -469,7 +466,7 @@ function StudentDetail() {
                                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                             </svg>
-                                            No attendance records found for this student.
+                                            Записи о посещаемости для этого студента не найдены.
                                         </div>
                                     )}
                                 </div>
@@ -481,7 +478,7 @@ function StudentDetail() {
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
-                                No attendance records found for this student.
+                                Записи о посещаемости для этого студента не найдены.
                             </div>
                         )}
                     </RequireSubscription>
@@ -499,9 +496,9 @@ function StudentDetail() {
                                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                         </svg>
                                     </div>
-                                    <h3 className="text-xl font-semibold mb-2">Premium Feature</h3>
-                                    <p className="text-secondary mb-6">Lab results tracking requires a paid subscription</p>
-                                    <button className="btn btn-primary">Upgrade Now</button>
+                                    <h3 className="text-xl font-semibold mb-2">Премиум-функция</h3>
+                                    <p className="text-secondary mb-6">Отслеживание лабораторных работ требует оплаченной подписки</p>
+                                    <button className="btn btn-primary">Обновить сейчас</button>
                                 </div>
                             </div>
                         }
@@ -523,18 +520,18 @@ function StudentDetail() {
                             </div>
                         ) : labSummary ? (
                             <div>
-                                {/* Lab stats */}
+                                {/* Статистика лабораторных */}
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                                     <div className="stats-card" style={{ borderLeftColor: 'var(--primary)' }}>
-                                        <div className="stats-card-title">Total Labs</div>
+                                        <div className="stats-card-title">Всего лабораторных</div>
                                         <div className="stats-card-value">{labSummary.total_labs}</div>
                                     </div>
                                     <div className="stats-card" style={{ borderLeftColor: 'var(--success)' }}>
-                                        <div className="stats-card-title">Completed Labs</div>
+                                        <div className="stats-card-title">Выполнено лабораторных</div>
                                         <div className="stats-card-value">{labSummary.completed_labs}</div>
                                     </div>
                                     <div className="stats-card" style={{ borderLeftColor: `${labSummary.completion_rate >= 80 ? 'var(--success)' : labSummary.completion_rate >= 50 ? 'var(--warning)' : 'var(--danger)'}` }}>
-                                        <div className="stats-card-title">Completion Rate</div>
+                                        <div className="stats-card-title">Уровень выполнения</div>
                                         <div className="stats-card-value">{labSummary.completion_rate.toFixed(1)}%</div>
                                         <div className="stats-card-description">
                                             <div className="w-full h-2 bg-bg-dark-tertiary rounded-full mt-2">
@@ -549,12 +546,12 @@ function StudentDetail() {
                                         </div>
                                     </div>
                                     <div className="stats-card" style={{ borderLeftColor: `${labSummary.overall_average >= 4 ? 'var(--success)' : labSummary.overall_average >= 3 ? 'var(--warning)' : 'var(--danger)'}` }}>
-                                        <div className="stats-card-title">Overall Average</div>
+                                        <div className="stats-card-title">Общая средняя оценка</div>
                                         <div className="stats-card-value">{labSummary.overall_average.toFixed(1)}</div>
                                     </div>
                                 </div>
 
-                                {/* Labs by subject */}
+                                {/* Лабораторные по предметам */}
                                 {labSummary.subjects && labSummary.subjects.length > 0 ? (
                                     <div>
                                         {labSummary.subjects.map((subject, index) => (
@@ -566,8 +563,8 @@ function StudentDetail() {
                                                             {subject.subject}
                                                         </h3>
                                                         <p className="text-secondary">
-                                                            Completed: {subject.completed} of {subject.total} |
-                                                            Average: <span className={`font-medium ${subject.average >= 4 ? 'text-success' : subject.average >= 3 ? 'text-warning' : 'text-danger'}`}>
+                                                            Выполнено: {subject.completed} из {subject.total} |
+                                                            Средний балл: <span className={`font-medium ${subject.average >= 4 ? 'text-success' : subject.average >= 3 ? 'text-warning' : 'text-danger'}`}>
                                                                 {subject.average.toFixed(1)}
                                                             </span>
                                                         </p>
@@ -579,7 +576,7 @@ function StudentDetail() {
                                                             <path d="M8.5 2h7"></path>
                                                             <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
                                                         </svg>
-                                                        View Lab Details
+                                                        Подробности лабораторных
                                                     </Link>
                                                 </div>
                                                 <div className="overflow-x-auto">
@@ -587,7 +584,7 @@ function StudentDetail() {
                                                         <thead>
                                                         <tr>
                                                             {subject.grades.map((_, i) => (
-                                                                <th key={i} className="text-center px-2 py-2 text-sm">Lab {i+1}</th>
+                                                                <th key={i} className="text-center px-2 py-2 text-sm">Лаб. {i+1}</th>
                                                             ))}
                                                         </tr>
                                                         </thead>
@@ -614,7 +611,7 @@ function StudentDetail() {
                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                         </svg>
-                                        No lab results found for this student.
+                                        Результаты лабораторных для этого студента не найдены.
                                     </div>
                                 )}
                             </div>
@@ -625,14 +622,14 @@ function StudentDetail() {
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
-                                No lab results found for this student.
+                                Результаты лабораторных для этого студента не найдены.
                             </div>
                         )}
                     </RequireSubscription>
                 </div>
             )}
 
-            {/* Custom styles */}
+            {/* Пользовательские стили */}
             <style jsx="true">{`
                 .lab-grade {
                     display: inline-flex;
@@ -673,22 +670,22 @@ function StudentDetail() {
     );
 }
 
-// Helper function to get a consistent color for a subject
+// Вспомогательная функция для получения последовательного цвета для предмета
 function getSubjectColor(index) {
     const colors = [
         'var(--primary)',
         'var(--accent)',
         'var(--success)',
         'var(--warning)',
-        '#9333ea', // purple
-        '#ec4899', // pink
-        '#14b8a6', // teal
+        '#9333ea', // фиолетовый
+        '#ec4899', // розовый
+        '#14b8a6', // бирюзовый
     ];
 
     return colors[index % colors.length];
 }
 
-// Helper function to get class name for grade
+// Вспомогательная функция для получения класса оценки
 function getGradeClass(grade) {
     if (grade <= 2) return 'grade-1';
     if (grade === 3) return 'grade-3';

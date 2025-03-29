@@ -33,11 +33,9 @@ function TestForm() {
     const [errors, setErrors] = useState({});
     const [activeTab, setActiveTab] = useState('basic');
 
-    // Добавляем состояние для групп
     const [availableGroups, setAvailableGroups] = useState([]);
     const [selectedGroups, setSelectedGroups] = useState([]);
 
-    // Fetch test data if in edit mode
     const { data: testData, isLoading } = useQuery({
         queryKey: ['test', id],
         queryFn: () => adminTestsService.getTestDetails(id),
@@ -45,7 +43,6 @@ function TestForm() {
         retry: 1
     });
 
-    // Create test mutation
     const createTestMutation = useMutation({
         mutationFn: (data) => adminTestsService.createTest(data),
         onSuccess: (response) => {
@@ -54,15 +51,13 @@ function TestForm() {
             navigate(`/tests/${newTestId}`);
         },
         onError: (error) => {
-            console.error("Error creating test:", error);
             setErrors(prev => ({
                 ...prev,
-                form: error.response?.data?.error || "Failed to create test. Please check your input and try again."
+                form: error.response?.data?.error || "Не удалось создать тест. Проверьте введенные данные и попробуйте снова."
             }));
         }
     });
 
-    // Update test mutation
     const updateTestMutation = useMutation({
         mutationFn: ({ id, data }) => adminTestsService.updateTest(id, data),
         onSuccess: () => {
@@ -71,15 +66,13 @@ function TestForm() {
             navigate(`/tests/${id}`);
         },
         onError: (error) => {
-            console.error("Error updating test:", error);
             setErrors(prev => ({
                 ...prev,
-                form: error.response?.data?.error || "Failed to update test. Please check your input and try again."
+                form: error.response?.data?.error || "Не удалось обновить тест. Проверьте введенные данные и попробуйте снова."
             }));
         }
     });
 
-    // Add question mutation
     const addQuestionMutation = useMutation({
         mutationFn: ({ testId, data }) => adminTestsService.addQuestion(testId, data),
         onSuccess: () => {
@@ -95,15 +88,13 @@ function TestForm() {
             });
         },
         onError: (error) => {
-            console.error("Error adding question:", error);
             setErrors(prev => ({
                 ...prev,
-                question: error.response?.data?.error || "Failed to add question. Please check your input and try again."
+                question: error.response?.data?.error || "Не удалось добавить вопрос. Проверьте введенные данные и попробуйте снова."
             }));
         }
     });
 
-    // Получаем список всех доступных групп при загрузке страницы
     useEffect(() => {
         const fetchGroups = async () => {
             try {
@@ -112,21 +103,18 @@ function TestForm() {
                     const groups = response.data.data.map(group => group.name || group);
                     setAvailableGroups(groups);
 
-                    // Если редактируем тест, загружаем выбранные группы
                     if (isEditMode && testData && testData.data && testData.data.data) {
                         const testGroups = testData.data.data.groups || [];
                         setSelectedGroups(testGroups);
                     }
                 }
             } catch (error) {
-                console.error('Error fetching groups:', error);
             }
         };
 
         fetchGroups();
     }, [isEditMode, testData]);
 
-    // Set test data when fetched
     useEffect(() => {
         if (testData && isEditMode) {
             const fetchedTest = testData.data?.data;
@@ -141,13 +129,11 @@ function TestForm() {
                     questions: Array.isArray(fetchedTest.questions) ? fetchedTest.questions : []
                 });
 
-                // Set position for new question
                 setCurrentQuestion(prev => ({
                     ...prev,
                     position: (Array.isArray(fetchedTest.questions) ? fetchedTest.questions.length : 0) + 1
                 }));
 
-                // Set selected groups if available
                 if (Array.isArray(fetchedTest.groups)) {
                     setSelectedGroups(fetchedTest.groups);
                 }
@@ -194,7 +180,7 @@ function TestForm() {
 
     const removeAnswerOption = (index) => {
         if (currentQuestion.answers.length <= 2) {
-            return; // Keep at least 2 options
+            return;
         }
 
         setCurrentQuestion(prev => ({
@@ -203,7 +189,6 @@ function TestForm() {
         }));
     };
 
-    // Функция для обработки выбора группы
     const handleGroupChange = (e) => {
         const value = e.target.value;
         setSelectedGroups(prev => {
@@ -219,10 +204,10 @@ function TestForm() {
     const validateTest = () => {
         const newErrors = {};
 
-        if (!test.title.trim()) newErrors.title = 'Title is required';
-        if (!test.subject.trim()) newErrors.subject = 'Subject is required';
-        if (test.time_per_question <= 0) newErrors.time_per_question = 'Time must be greater than 0';
-        if (test.max_attempts <= 0) newErrors.max_attempts = 'Max attempts must be greater than 0';
+        if (!test.title.trim()) newErrors.title = 'Название обязательно';
+        if (!test.subject.trim()) newErrors.subject = 'Предмет обязателен';
+        if (test.time_per_question <= 0) newErrors.time_per_question = 'Время должно быть больше 0';
+        if (test.max_attempts <= 0) newErrors.max_attempts = 'Максимальное количество попыток должно быть больше 0';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -231,17 +216,15 @@ function TestForm() {
     const validateQuestion = () => {
         const newErrors = {};
 
-        if (!currentQuestion.question_text.trim()) newErrors.question_text = 'Question text is required';
+        if (!currentQuestion.question_text.trim()) newErrors.question_text = 'Текст вопроса обязателен';
 
-        // Check if at least one answer is marked as correct
         const hasCorrectAnswer = currentQuestion.answers.some(answer => answer.is_correct);
-        if (!hasCorrectAnswer) newErrors.answers = 'At least one answer must be marked as correct';
+        if (!hasCorrectAnswer) newErrors.answers = 'Хотя бы один ответ должен быть отмечен как правильный';
 
-        // Check if all answers have text
         currentQuestion.answers.forEach((answer, index) => {
             if (!answer.answer_text.trim()) {
                 if (!newErrors.answerTexts) newErrors.answerTexts = {};
-                newErrors.answerTexts[index] = 'Answer text is required';
+                newErrors.answerTexts[index] = 'Текст ответа обязателен';
             }
         });
 
@@ -264,11 +247,11 @@ function TestForm() {
                 time_per_question: parseInt(test.time_per_question),
                 max_attempts: parseInt(test.max_attempts),
                 is_active: test.is_active,
-                groups: selectedGroups // Добавляем список выбранных групп
+                groups: selectedGroups
             };
             updateTestMutation.mutate({ id, data: updateData });
         } else {
-            // Format data for API request
+            // Форматируем данные для API запроса
             const createData = {
                 title: test.title,
                 description: test.description,
@@ -276,10 +259,9 @@ function TestForm() {
                 time_per_question: parseInt(test.time_per_question),
                 max_attempts: parseInt(test.max_attempts),
                 is_active: test.is_active,
-                groups: selectedGroups, // Добавляем список выбранных групп
+                groups: selectedGroups,
             };
 
-            // Only include questions if there are any
             if (test.questions && test.questions.length > 0) {
                 createData.questions = test.questions.map(q => ({
                     question_text: q.question_text,
@@ -294,10 +276,6 @@ function TestForm() {
                 createData.questions = [];
             }
 
-            // Log the data being sent
-            console.log("Submitting test data:", createData);
-
-            // Send the mutation
             createTestMutation.mutate(createData);
         }
     };
@@ -315,13 +293,11 @@ function TestForm() {
                 data: currentQuestion
             });
         } else {
-            // For new tests, just add to the local state
             setTest(prev => ({
                 ...prev,
                 questions: [...prev.questions, currentQuestion]
             }));
 
-            // Reset current question form
             setCurrentQuestion({
                 question_text: '',
                 question_type: 'multiple_choice',
@@ -349,7 +325,7 @@ function TestForm() {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">{isEditMode ? 'Edit Test' : 'Create New Test'}</h1>
+                <h1 className="page-title">{isEditMode ? 'Редактирование теста' : 'Создание нового теста'}</h1>
             </div>
 
             <div className="card">
@@ -358,13 +334,13 @@ function TestForm() {
                         className={`tab-button ${activeTab === 'basic' ? 'tab-active' : ''}`}
                         onClick={() => setActiveTab('basic')}
                     >
-                        Basic Information
+                        Основная информация
                     </button>
                     <button
                         className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`}
                         onClick={() => setActiveTab('questions')}
                     >
-                        Questions
+                        Вопросы
                     </button>
                 </div>
 
@@ -378,7 +354,7 @@ function TestForm() {
                     <div className="test-basic-info">
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label htmlFor="title">Test Title <span className="text-danger">*</span></label>
+                                <label htmlFor="title">Название теста <span className="text-danger">*</span></label>
                                 <input
                                     type="text"
                                     id="title"
@@ -391,7 +367,7 @@ function TestForm() {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="subject">Subject <span className="text-danger">*</span></label>
+                                <label htmlFor="subject">Предмет <span className="text-danger">*</span></label>
                                 <input
                                     type="text"
                                     id="subject"
@@ -404,7 +380,7 @@ function TestForm() {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="description">Description</label>
+                                <label htmlFor="description">Описание</label>
                                 <textarea
                                     id="description"
                                     name="description"
@@ -417,7 +393,7 @@ function TestForm() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="form-group">
-                                    <label htmlFor="time_per_question">Time Per Question (seconds) <span className="text-danger">*</span></label>
+                                    <label htmlFor="time_per_question">Время на вопрос (секунды) <span className="text-danger">*</span></label>
                                     <input
                                         type="number"
                                         id="time_per_question"
@@ -431,7 +407,7 @@ function TestForm() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="max_attempts">Maximum Attempts <span className="text-danger">*</span></label>
+                                    <label htmlFor="max_attempts">Максимум попыток <span className="text-danger">*</span></label>
                                     <input
                                         type="number"
                                         id="max_attempts"
@@ -454,7 +430,7 @@ function TestForm() {
                                     checked={test.is_active}
                                     onChange={handleTestChange}
                                 />
-                                <label className="form-check-label" htmlFor="is_active">Active (visible to students)</label>
+                                <label className="form-check-label" htmlFor="is_active">Активен (виден для студентов)</label>
                             </div>
 
                             <div className="form-group">
@@ -487,14 +463,14 @@ function TestForm() {
                                     className="btn btn-secondary"
                                     onClick={handleCancel}
                                 >
-                                    Cancel
+                                    Отмена
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn btn-primary ml-2"
                                     disabled={createTestMutation.isPending || updateTestMutation.isPending}
                                 >
-                                    {(createTestMutation.isPending || updateTestMutation.isPending) ? 'Saving...' : 'Save Test'}
+                                    {(createTestMutation.isPending || updateTestMutation.isPending) ? 'Сохранение...' : 'Сохранить тест'}
                                 </button>
                             </div>
                         </form>
@@ -505,18 +481,18 @@ function TestForm() {
                     <div className="test-questions">
                         {isEditMode && (
                             <div className="existing-questions mb-4">
-                                <h3 className="text-lg font-semibold mb-3">Existing Questions</h3>
+                                <h3 className="text-lg font-semibold mb-3">Существующие вопросы</h3>
 
                                 {!test.questions || test.questions.length === 0 ? (
-                                    <p className="text-tertiary">No questions added yet. Use the form below to add questions.</p>
+                                    <p className="text-tertiary">Пока нет добавленных вопросов. Используйте форму ниже для добавления вопросов.</p>
                                 ) : (
                                     <div className="questions-list">
                                         {test.questions.map((question, index) => (
                                             <div key={question.id || index} className="question-item">
                                                 <div className="question-header">
-                                                    <div className="question-number">Q{index + 1}</div>
+                                                    <div className="question-number">В{index + 1}</div>
                                                     <div className="question-text">{question.question_text}</div>
-                                                    <div className="question-type">{(question.question_type || '').replace('_', ' ')}</div>
+                                                    <div className="question-type">{formatQuestionType(question.question_type || '')}</div>
                                                 </div>
                                                 <div className="question-answers">
                                                     {(Array.isArray(question.answers) ? question.answers : []).map((answer, ansIndex) => (
@@ -524,7 +500,7 @@ function TestForm() {
                                                             <span className="answer-indicator">{String.fromCharCode(65 + ansIndex)}.</span>
                                                             <span className="answer-text">{answer.answer_text}</span>
                                                             {answer.is_correct && (
-                                                                <span className="answer-correct-badge">Correct</span>
+                                                                <span className="answer-correct-badge">Верно</span>
                                                             )}
                                                         </div>
                                                     ))}
@@ -537,7 +513,7 @@ function TestForm() {
                         )}
 
                         <div className="add-question-form">
-                            <h3 className="text-lg font-semibold mb-3">Add New Question</h3>
+                            <h3 className="text-lg font-semibold mb-3">Добавить новый вопрос</h3>
 
                             {errors.question && (
                                 <div className="alert alert-danger mb-4">
@@ -547,7 +523,7 @@ function TestForm() {
 
                             <form onSubmit={handleAddQuestion}>
                                 <div className="form-group">
-                                    <label htmlFor="question_text">Question Text <span className="text-danger">*</span></label>
+                                    <label htmlFor="question_text">Текст вопроса <span className="text-danger">*</span></label>
                                     <textarea
                                         id="question_text"
                                         name="question_text"
@@ -561,7 +537,7 @@ function TestForm() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="form-group">
-                                        <label htmlFor="question_type">Question Type</label>
+                                        <label htmlFor="question_type">Тип вопроса</label>
                                         <select
                                             id="question_type"
                                             name="question_type"
@@ -569,14 +545,14 @@ function TestForm() {
                                             value={currentQuestion.question_type}
                                             onChange={handleQuestionChange}
                                         >
-                                            <option value="multiple_choice">Multiple Choice</option>
-                                            <option value="single_choice">Single Choice</option>
-                                            <option value="text">Text Answer</option>
+                                            <option value="multiple_choice">Множественный выбор</option>
+                                            <option value="single_choice">Одиночный выбор</option>
+                                            <option value="text">Текстовый ответ</option>
                                         </select>
                                     </div>
 
                                     <div className="form-group">
-                                        <label htmlFor="position">Position</label>
+                                        <label htmlFor="position">Позиция</label>
                                         <input
                                             type="number"
                                             id="position"
@@ -591,13 +567,13 @@ function TestForm() {
 
                                 <div className="answer-options mt-4">
                                     <div className="d-flex justify-content-between align-items-center mb-2">
-                                        <label className="font-semibold">Answer Options <span className="text-danger">*</span></label>
+                                        <label className="font-semibold">Варианты ответов <span className="text-danger">*</span></label>
                                         <button
                                             type="button"
                                             className="btn btn-sm btn-outline"
                                             onClick={addAnswerOption}
                                         >
-                                            Add Option
+                                            Добавить вариант
                                         </button>
                                     </div>
 
@@ -617,7 +593,7 @@ function TestForm() {
                                                         className={`form-control ${errors.answerTexts?.[index] ? 'is-invalid' : ''}`}
                                                         value={answer.answer_text}
                                                         onChange={(e) => handleAnswerChange(index, 'answer_text', e.target.value)}
-                                                        placeholder="Answer text"
+                                                        placeholder="Текст ответа"
                                                     />
                                                     <div className="answer-actions d-flex gap-2">
                                                         <div className="form-check">
@@ -629,7 +605,7 @@ function TestForm() {
                                                                 onChange={(e) => handleAnswerChange(index, 'is_correct', e.target.checked)}
                                                             />
                                                             <label className="form-check-label" htmlFor={`is_correct_${index}`}>
-                                                                Correct
+                                                                Верно
                                                             </label>
                                                         </div>
                                                         <button
@@ -656,7 +632,7 @@ function TestForm() {
                                         className="btn btn-primary"
                                         disabled={addQuestionMutation.isPending}
                                     >
-                                        {addQuestionMutation.isPending ? 'Adding...' : 'Add Question'}
+                                        {addQuestionMutation.isPending ? 'Добавление...' : 'Добавить вопрос'}
                                     </button>
                                 </div>
                             </form>
@@ -664,15 +640,15 @@ function TestForm() {
 
                         {!isEditMode && test.questions.length > 0 && (
                             <div className="preview-questions mt-4">
-                                <h3 className="text-lg font-semibold mb-3">Preview Questions</h3>
+                                <h3 className="text-lg font-semibold mb-3">Предпросмотр вопросов</h3>
 
                                 <div className="questions-list">
                                     {test.questions.map((question, index) => (
                                         <div key={index} className="question-item">
                                             <div className="question-header">
-                                                <div className="question-number">Q{index + 1}</div>
+                                                <div className="question-number">В{index + 1}</div>
                                                 <div className="question-text">{question.question_text}</div>
-                                                <div className="question-type">{(question.question_type || '').replace('_', ' ')}</div>
+                                                <div className="question-type">{formatQuestionType(question.question_type || '')}</div>
                                             </div>
                                             <div className="question-answers">
                                                 {(Array.isArray(question.answers) ? question.answers : []).map((answer, ansIndex) => (
@@ -680,7 +656,7 @@ function TestForm() {
                                                         <span className="answer-indicator">{String.fromCharCode(65 + ansIndex)}.</span>
                                                         <span className="answer-text">{answer.answer_text}</span>
                                                         {answer.is_correct && (
-                                                            <span className="answer-correct-badge">Correct</span>
+                                                            <span className="answer-correct-badge">Верно</span>
                                                         )}
                                                     </div>
                                                 ))}
@@ -694,7 +670,7 @@ function TestForm() {
                         {!isEditMode && (
                             <div className="save-test-actions mt-5">
                                 <div className="alert alert-info mb-3">
-                                    <p>Don't forget to save your test after adding questions.</p>
+                                    <p>Не забудьте сохранить тест после добавления вопросов.</p>
                                 </div>
                                 <button
                                     type="button"
@@ -702,7 +678,7 @@ function TestForm() {
                                     onClick={handleSubmit}
                                     disabled={createTestMutation.isPending}
                                 >
-                                    {createTestMutation.isPending ? 'Saving...' : 'Save Test'}
+                                    {createTestMutation.isPending ? 'Сохранение...' : 'Сохранить тест'}
                                 </button>
                             </div>
                         )}
@@ -886,6 +862,16 @@ function TestForm() {
             `}</style>
         </div>
     );
+}
+
+function formatQuestionType(type) {
+    const typeMap = {
+        'multiple_choice': 'Множественный выбор',
+        'single_choice': 'Одиночный выбор',
+        'text': 'Текстовый ответ'
+    };
+
+    return typeMap[type] || type.replace('_', ' ');
 }
 
 export default TestForm;

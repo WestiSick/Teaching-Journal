@@ -19,19 +19,19 @@ function LessonsPage() {
     const dropdownRef = useRef(null);
     const [expandedLesson, setExpandedLesson] = useState(null);
 
-    // Fetch lessons with filters
+    // Получаем занятия с фильтрами
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['lessons', filters],
         queryFn: () => lessonService.getLessons(filters)
     });
 
-    // Fetch subjects for filter dropdown
+    // Получаем предметы для выпадающего списка фильтров
     const { data: subjectsData } = useQuery({
         queryKey: ['subjects'],
         queryFn: lessonService.getSubjects
     });
 
-    // Fetch groups for filter dropdown
+    // Получаем группы для выпадающего списка фильтров
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
@@ -41,7 +41,7 @@ function LessonsPage() {
     const subjects = subjectsData?.data?.data || [];
     const groups = groupsData?.data?.data || [];
 
-    // Set initial date filters to current month
+    // Устанавливаем начальные фильтры даты на текущий месяц
     useEffect(() => {
         const today = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -75,10 +75,10 @@ function LessonsPage() {
 
     const handleExport = async (filterType = null) => {
         try {
-            // Prepare export parameters
+            // Подготавливаем параметры экспорта
             const exportParams = {};
 
-            // If filterType is 'current', use current filters
+            // Если filterType - 'current', используем текущие фильтры
             if (filterType === 'current') {
                 if (filters.group) exportParams.group = filters.group;
                 if (filters.subject) exportParams.subject = filters.subject;
@@ -89,11 +89,11 @@ function LessonsPage() {
 
             const response = await lessonService.exportLessons(exportParams);
 
-            // Create a blob from the response
+            // Создаем blob из ответа
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
             const url = window.URL.createObjectURL(blob);
 
-            // Create a descriptive filename
+            // Создаем описательное имя файла
             let filename = 'lessons_export';
             if (filterType === 'current' && filters.group) {
                 filename += `_${filters.group}`;
@@ -103,40 +103,38 @@ function LessonsPage() {
             }
             filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-            // Create a temporary link and trigger download
+            // Создаем временную ссылку и запускаем скачивание
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
 
-            // Clean up
+            // Очищаем
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            console.error('Error exporting lessons:', error);
-            alert('Failed to export lessons data. Please make sure you have a paid subscription.');
+            alert('Не удалось экспортировать данные занятий. Убедитесь, что у вас есть платная подписка.');
         }
     };
 
     const handleDelete = async (id, topic) => {
-        if (window.confirm(`Are you sure you want to delete lesson "${topic}"?`)) {
+        if (window.confirm(`Вы уверены, что хотите удалить занятие "${topic}"?`)) {
             try {
                 await lessonService.deleteLesson(id);
-                refetch(); // Refresh the list after deletion
+                refetch(); // Обновляем список после удаления
             } catch (error) {
-                console.error('Error deleting lesson:', error);
-                alert('Failed to delete lesson');
+                alert('Не удалось удалить занятие');
             }
         }
     };
 
-    // Toggle dropdown
+    // Переключение выпадающего списка
     const toggleDropdown = () => {
         setDropdownOpen(!dropdownOpen);
     };
 
-    // Close dropdown when clicking outside
+    // Закрытие выпадающего списка при клике вне его
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -150,7 +148,7 @@ function LessonsPage() {
         };
     }, []);
 
-    // Filter lessons by search term
+    // Фильтрация занятий по поисковому запросу
     const filteredLessons = lessons.filter(lesson => {
         if (!filters.search) return true;
         const searchTerm = filters.search.toLowerCase();
@@ -219,7 +217,7 @@ function LessonsPage() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading lessons: {error.message}</p>
+                    <p>Ошибка загрузки занятий: {error.message}</p>
                 </div>
             </div>
         );
@@ -229,8 +227,8 @@ function LessonsPage() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Lessons</h1>
-                    <p className="text-secondary">Manage your course lessons and lectures</p>
+                    <h1 className="page-title">Занятия</h1>
+                    <p className="text-secondary">Управление занятиями и лекциями</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <RequireSubscription
@@ -240,7 +238,7 @@ function LessonsPage() {
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
-                                <span className="hidden sm:inline">Add</span>
+                                <span className="hidden sm:inline">Добавить</span>
                             </button>
                         }
                     >
@@ -249,7 +247,7 @@ function LessonsPage() {
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            <span className="hidden sm:inline">Add Lesson</span>
+                            <span className="hidden sm:inline">Добавить занятие</span>
                         </Link>
                     </RequireSubscription>
 
@@ -261,7 +259,7 @@ function LessonsPage() {
                                     <polyline points="7 10 12 15 17 10"></polyline>
                                     <line x1="12" y1="15" x2="12" y2="3"></line>
                                 </svg>
-                                <span className="hidden sm:inline">Export</span>
+                                <span className="hidden sm:inline">Экспорт</span>
                             </button>
                         }
                     >
@@ -278,7 +276,7 @@ function LessonsPage() {
                                     <polyline points="7 10 12 15 17 10"></polyline>
                                     <line x1="12" y1="15" x2="12" y2="3"></line>
                                 </svg>
-                                <span className="hidden sm:inline">Export</span>
+                                <span className="hidden sm:inline">Экспорт</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
                                     <polyline points="6 9 12 15 18 9"></polyline>
                                 </svg>
@@ -288,13 +286,13 @@ function LessonsPage() {
                                     className="dropdown-item"
                                     onClick={() => { handleExport(); setDropdownOpen(false); }}
                                 >
-                                    Export All Lessons
+                                    Экспортировать все занятия
                                 </button>
                                 <button
                                     className="dropdown-item"
                                     onClick={() => { handleExport('current'); setDropdownOpen(false); }}
                                 >
-                                    Export with Current Filters
+                                    Экспортировать с текущими фильтрами
                                 </button>
                             </div>
                         </div>
@@ -302,11 +300,11 @@ function LessonsPage() {
                 </div>
             </div>
 
-            {/* Compact Filters */}
+            {/* Компактные фильтры */}
             <div className="bg-dark-secondary rounded-lg mb-6 p-3">
                 <div className="flex flex-wrap items-end gap-2">
                     <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="subject" className="form-label text-xs mb-1">Subject</label>
+                        <label htmlFor="subject" className="form-label text-xs mb-1">Предмет</label>
                         <select
                             id="subject"
                             name="subject"
@@ -314,7 +312,7 @@ function LessonsPage() {
                             onChange={handleFilterChange}
                             className="form-control py-1 text-sm"
                         >
-                            <option value="">All Subjects</option>
+                            <option value="">Все предметы</option>
                             {subjects.map(subject => (
                                 <option key={subject} value={subject}>{subject}</option>
                             ))}
@@ -322,7 +320,7 @@ function LessonsPage() {
                     </div>
 
                     <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="group" className="form-label text-xs mb-1">Group</label>
+                        <label htmlFor="group" className="form-label text-xs mb-1">Группа</label>
                         <select
                             id="group"
                             name="group"
@@ -330,7 +328,7 @@ function LessonsPage() {
                             onChange={handleFilterChange}
                             className="form-control py-1 text-sm"
                         >
-                            <option value="">All Groups</option>
+                            <option value="">Все группы</option>
                             {groups.map(group => (
                                 <option key={group.name} value={group.name}>{group.name}</option>
                             ))}
@@ -338,7 +336,7 @@ function LessonsPage() {
                     </div>
 
                     <div className="flex-1 min-w-[110px]">
-                        <label htmlFor="from_date" className="form-label text-xs mb-1">From</label>
+                        <label htmlFor="from_date" className="form-label text-xs mb-1">От</label>
                         <input
                             type="date"
                             id="from_date"
@@ -350,7 +348,7 @@ function LessonsPage() {
                     </div>
 
                     <div className="flex-1 min-w-[110px]">
-                        <label htmlFor="to_date" className="form-label text-xs mb-1">To</label>
+                        <label htmlFor="to_date" className="form-label text-xs mb-1">До</label>
                         <input
                             type="date"
                             id="to_date"
@@ -362,7 +360,7 @@ function LessonsPage() {
                     </div>
 
                     <div className="flex-1 min-w-[180px]">
-                        <label htmlFor="search" className="form-label text-xs mb-1">Search</label>
+                        <label htmlFor="search" className="form-label text-xs mb-1">Поиск</label>
                         <div className="relative">
                             <input
                                 type="text"
@@ -370,7 +368,7 @@ function LessonsPage() {
                                 name="search"
                                 value={filters.search}
                                 onChange={handleFilterChange}
-                                placeholder="Search..."
+                                placeholder="Поиск..."
                                 className="form-control pl-7 py-1 text-sm"
                             />
                             <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none text-text-tertiary">
@@ -385,7 +383,7 @@ function LessonsPage() {
                     <button
                         onClick={clearFilters}
                         className="btn btn-outline py-1 px-3 h-[34px] flex items-center gap-1 text-xs"
-                        title="Clear all filters"
+                        title="Очистить все фильтры"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 12a9 9 0 0 1-9 9c-2.39 0-4.68-.94-6.4-2.65L3 16"></path>
@@ -393,12 +391,12 @@ function LessonsPage() {
                             <path d="M3 8h6"></path>
                             <path d="M15 16h6"></path>
                         </svg>
-                        Clear
+                        Очистить
                     </button>
                 </div>
             </div>
 
-            {/* Lessons Table */}
+            {/* Таблица занятий */}
             {filteredLessons.length === 0 ? (
                 <div className="card p-8">
                     <div className="text-center">
@@ -408,17 +406,17 @@ function LessonsPage() {
                                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                             </svg>
                         </div>
-                        <h3 className="text-xl mb-2">No lessons found</h3>
-                        <p className="text-secondary mb-6">Try changing your filters or create a new lesson.</p>
+                        <h3 className="text-xl mb-2">Занятия не найдены</h3>
+                        <p className="text-secondary mb-6">Попробуйте изменить фильтры или создайте новое занятие.</p>
                         <RequireSubscription
                             fallback={
                                 <button className="btn btn-primary opacity-70 cursor-not-allowed" disabled>
-                                    Add Lesson (Subscription Required)
+                                    Добавить занятие (требуется подписка)
                                 </button>
                             }
                         >
                             <Link to="/lessons/new" className="btn btn-primary">
-                                Add Your First Lesson
+                                Добавить ваше первое занятие
                             </Link>
                         </RequireSubscription>
                     </div>
@@ -451,17 +449,17 @@ function LessonsPage() {
                             <div className="lesson-card-content">
                                 <div className="lesson-details">
                                     <div className="lesson-detail-item">
-                                        <span className="lesson-detail-label">Type:</span>
+                                        <span className="lesson-detail-label">Тип:</span>
                                         <span className="lesson-detail-value">{lesson.type}</span>
                                     </div>
                                     <div className="lesson-detail-item">
-                                        <span className="lesson-detail-label">Hours:</span>
+                                        <span className="lesson-detail-label">Часов:</span>
                                         <span className="lesson-detail-value">{lesson.hours}</span>
                                     </div>
                                     <div className="lesson-detail-item">
-                                        <span className="lesson-detail-label">Created:</span>
+                                        <span className="lesson-detail-label">Создано:</span>
                                         <span className="lesson-detail-value">
-                                            {lesson.created_at ? new Date(lesson.created_at).toLocaleDateString() : 'N/A'}
+                                            {lesson.created_at ? new Date(lesson.created_at).toLocaleDateString() : 'Н/Д'}
                                         </span>
                                     </div>
                                 </div>
@@ -472,7 +470,7 @@ function LessonsPage() {
                                             navigate(`/lessons/${lesson.id}`);
                                         }}
                                         className="lesson-action-btn view-btn"
-                                        title="View Lesson"
+                                        title="Просмотр занятия"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -482,7 +480,7 @@ function LessonsPage() {
 
                                     <RequireSubscription
                                         fallback={
-                                            <button className="lesson-action-btn edit-btn opacity-50 cursor-not-allowed" disabled title="Subscription Required">
+                                            <button className="lesson-action-btn edit-btn opacity-50 cursor-not-allowed" disabled title="Требуется подписка">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -496,7 +494,7 @@ function LessonsPage() {
                                                 navigate(`/lessons/${lesson.id}/edit`);
                                             }}
                                             className="lesson-action-btn edit-btn"
-                                            title="Edit Lesson"
+                                            title="Редактировать занятие"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -507,7 +505,7 @@ function LessonsPage() {
 
                                     <RequireSubscription
                                         fallback={
-                                            <button className="lesson-action-btn delete-btn opacity-50 cursor-not-allowed" disabled title="Subscription Required">
+                                            <button className="lesson-action-btn delete-btn opacity-50 cursor-not-allowed" disabled title="Требуется подписка">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <polyline points="3 6 5 6 21 6"></polyline>
                                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -521,7 +519,7 @@ function LessonsPage() {
                                                 handleDelete(lesson.id, lesson.topic);
                                             }}
                                             className="lesson-action-btn delete-btn"
-                                            title="Delete Lesson"
+                                            title="Удалить занятие"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -536,7 +534,7 @@ function LessonsPage() {
                 </div>
             )}
 
-            {/* Custom Styles */}
+            {/* Пользовательские стили */}
             <style jsx="true">{`
                 .dropdown-menu {
                     position: absolute;

@@ -10,7 +10,7 @@ function StudentForm() {
     const isEditMode = !!id;
     const fileInputRef = useRef(null);
 
-    // Form state
+    // Состояние формы
     const [formData, setFormData] = useState({
         fio: '',
         group_name: ''
@@ -21,34 +21,34 @@ function StudentForm() {
     const [batchStudents, setBatchStudents] = useState([]);
     const [isBatchMode, setIsBatchMode] = useState(false);
 
-    // Fetch groups for dropdown
+    // Загрузка групп для выпадающего списка
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
     });
 
-    // Fetch student data if in edit mode
+    // Загрузка данных о студенте в режиме редактирования
     const { data: studentData, isLoading: studentLoading } = useQuery({
         queryKey: ['student', id],
         queryFn: () => studentService.getStudent(id),
         enabled: isEditMode
     });
 
-    // Create mutation
+    // Мутация создания
     const createMutation = useMutation({
         mutationFn: (data) => studentService.createStudent(data),
         onSuccess: () => {
-            setSuccess('Student created successfully');
+            setSuccess('Студент успешно создан');
             queryClient.invalidateQueries({ queryKey: ['students'] });
             queryClient.invalidateQueries({ queryKey: ['groups'] });
             setTimeout(() => navigate('/students'), 1500);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to create student');
+            setError(err.response?.data?.error || 'Не удалось создать студента');
         }
     });
 
-    // Batch create mutation
+    // Мутация пакетного создания
     const batchCreateMutation = useMutation({
         mutationFn: async (students) => {
             const results = [];
@@ -57,7 +57,7 @@ function StudentForm() {
                     const result = await studentService.createStudent(student);
                     results.push({ success: true, data: result.data });
                 } catch (err) {
-                    results.push({ success: false, error: err.response?.data?.error || 'Creation failed' });
+                    results.push({ success: false, error: err.response?.data?.error || 'Создание не удалось' });
                 }
             }
             return results;
@@ -67,41 +67,41 @@ function StudentForm() {
             const failCount = results.length - successCount;
 
             if (failCount === 0) {
-                setSuccess(`Successfully created all ${successCount} students`);
+                setSuccess(`Успешно создано всех ${successCount} студентов`);
             } else {
-                setSuccess(`Created ${successCount} students. ${failCount} failed.`);
+                setSuccess(`Создано ${successCount} студентов. ${failCount} не удалось создать.`);
             }
 
             queryClient.invalidateQueries({ queryKey: ['students'] });
             queryClient.invalidateQueries({ queryKey: ['groups'] });
 
-            // Reset batch mode and list
+            // Сбросить пакетный режим и список
             setIsBatchMode(false);
             setBatchStudents([]);
 
             setTimeout(() => navigate('/students'), 2000);
         },
         onError: (err) => {
-            setError('Failed to create students: ' + (err.message || 'Unknown error'));
+            setError('Не удалось создать студентов: ' + (err.message || 'Неизвестная ошибка'));
         }
     });
 
-    // Update mutation
+    // Мутация обновления
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => studentService.updateStudent(id, data),
         onSuccess: () => {
-            setSuccess('Student updated successfully');
+            setSuccess('Студент успешно обновлен');
             queryClient.invalidateQueries({ queryKey: ['students'] });
             queryClient.invalidateQueries({ queryKey: ['student', id] });
             queryClient.invalidateQueries({ queryKey: ['groups'] });
             setTimeout(() => navigate(`/students/${id}`), 1500);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to update student');
+            setError(err.response?.data?.error || 'Не удалось обновить студента');
         }
     });
 
-    // Check if there's a preselected group from group details page
+    // Проверка, есть ли предварительно выбранная группа со страницы деталей группы
     useEffect(() => {
         const preselectedGroup = localStorage.getItem('preselectedGroup');
         if (preselectedGroup && !isEditMode) {
@@ -110,7 +110,7 @@ function StudentForm() {
         }
     }, [isEditMode]);
 
-    // Populate form with student data if in edit mode
+    // Заполнение формы данными о студенте в режиме редактирования
     useEffect(() => {
         if (isEditMode && studentData?.data?.data) {
             const student = studentData.data.data;
@@ -126,36 +126,36 @@ function StudentForm() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handle file upload for student list
+    // Обработка загрузки файла со списком студентов
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Reset status and errors
+        // Сбросить статус и ошибки
         setUploadStatus('');
         setError('');
         setBatchStudents([]);
 
-        // Check if it's a text file
+        // Проверить, является ли файл текстовым
         if (file.type !== 'text/plain') {
-            setError('Please upload a text (.txt) file');
-            // Reset file input
+            setError('Пожалуйста, загрузите текстовый файл (.txt)');
+            // Сбросить поле ввода файла
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
             return;
         }
 
-        // Check if a group is selected
+        // Проверить, выбрана ли группа
         if (!formData.group_name) {
-            setError('Please select a group before uploading student names');
+            setError('Пожалуйста, выберите группу перед загрузкой имен студентов');
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
             return;
         }
 
-        setUploadStatus('Reading file...');
+        setUploadStatus('Чтение файла...');
 
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -163,18 +163,18 @@ function StudentForm() {
                 const content = event.target.result;
                 const lines = content.split('\n');
 
-                // Filter out empty lines and trim whitespace
+                // Отфильтровать пустые строки и удалить лишние пробелы
                 const validNames = lines
                     .map(line => line.trim())
                     .filter(line => line.length > 0);
 
                 if (validNames.length === 0) {
-                    setError('No valid student names found in the file');
+                    setError('В файле не найдено действительных имен студентов');
                     setUploadStatus('');
                     return;
                 }
 
-                // Create batch student objects
+                // Создать объекты пакетных студентов
                 const newStudents = validNames.map(name => ({
                     fio: name,
                     group_name: formData.group_name
@@ -182,21 +182,20 @@ function StudentForm() {
 
                 setBatchStudents(newStudents);
                 setIsBatchMode(true);
-                setUploadStatus(`Ready to create ${validNames.length} students in group "${formData.group_name}"`);
+                setUploadStatus(`Готово к созданию ${validNames.length} студентов в группе "${formData.group_name}"`);
 
-                // Reset file input
+                // Сбросить поле ввода файла
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
             } catch (err) {
-                console.error('Error processing file:', err);
-                setError('Error processing file. Please check the format and try again.');
+                setError('Ошибка обработки файла. Пожалуйста, проверьте формат и попробуйте снова.');
                 setUploadStatus('');
             }
         };
 
         reader.onerror = () => {
-            setError('Failed to read the file. Please try again.');
+            setError('Не удалось прочитать файл. Пожалуйста, попробуйте снова.');
             setUploadStatus('');
         };
 
@@ -214,12 +213,12 @@ function StudentForm() {
         setSuccess('');
 
         if (!formData.fio.trim() && !isBatchMode) {
-            setError('Student name is required');
+            setError('Имя студента обязательно');
             return false;
         }
 
         if (!formData.group_name) {
-            setError('Group is required');
+            setError('Группа обязательна');
             return false;
         }
 
@@ -234,15 +233,15 @@ function StudentForm() {
         if (isEditMode) {
             updateMutation.mutate({ id, data: formData });
         } else if (isBatchMode && batchStudents.length > 0) {
-            // Batch create mode
+            // Режим пакетного создания
             batchCreateMutation.mutate(batchStudents);
         } else {
-            // Single student create mode
+            // Режим создания одного студента
             createMutation.mutate(formData);
         }
     };
 
-    // Loading state for edit mode
+    // Состояние загрузки для режима редактирования
     if (isEditMode && studentLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -258,14 +257,14 @@ function StudentForm() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">
-                        {isEditMode ? 'Edit Student' : isBatchMode ? 'Add Multiple Students' : 'Add New Student'}
+                        {isEditMode ? 'Редактировать студента' : isBatchMode ? 'Добавить несколько студентов' : 'Добавить нового студента'}
                     </h1>
                     <p className="text-secondary">
                         {isEditMode
-                            ? 'Update student information'
+                            ? 'Обновить информацию о студенте'
                             : isBatchMode
-                                ? `Creating ${batchStudents.length} students`
-                                : 'Create a new student record'}
+                                ? `Создание ${batchStudents.length} студентов`
+                                : 'Создать новую запись о студенте'}
                     </p>
                 </div>
                 <Link to="/students" className="btn btn-secondary flex items-center gap-2">
@@ -273,7 +272,7 @@ function StudentForm() {
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    <span className="hidden sm:inline">Back</span>
+                    <span className="hidden sm:inline">Назад</span>
                 </Link>
             </div>
 
@@ -318,7 +317,7 @@ function StudentForm() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="form-group">
-                        <label htmlFor="group_name" className="form-label">Group <span className="text-danger">*</span></label>
+                        <label htmlFor="group_name" className="form-label">Группа <span className="text-danger">*</span></label>
                         <select
                             id="group_name"
                             name="group_name"
@@ -328,7 +327,7 @@ function StudentForm() {
                             className="form-control"
                             disabled={isEditMode || isBatchMode}
                         >
-                            <option value="">Select Group</option>
+                            <option value="">Выберите группу</option>
                             {groups.map(group => (
                                 <option key={group.name} value={group.name}>
                                     {group.name}
@@ -337,15 +336,15 @@ function StudentForm() {
                         </select>
                         <small className="text-tertiary mt-1 block">
                             {isEditMode
-                                ? "Group can't be changed. Create a new student record if needed."
-                                : "Select the group this student belongs to"}
+                                ? "Группу нельзя изменить. Создайте новую запись студента, если это необходимо."
+                                : "Выберите группу, к которой принадлежит этот студент"}
                         </small>
                     </div>
 
                     {!isEditMode && !isBatchMode && (
                         <>
                             <div className="form-group">
-                                <label htmlFor="fio" className="form-label">Student Name <span className="text-danger">*</span></label>
+                                <label htmlFor="fio" className="form-label">Имя студента <span className="text-danger">*</span></label>
                                 <input
                                     type="text"
                                     id="fio"
@@ -354,11 +353,11 @@ function StudentForm() {
                                     onChange={handleChange}
                                     required
                                     className="form-control"
-                                    placeholder="Enter student's full name"
+                                    placeholder="Введите полное имя студента"
                                 />
                             </div>
 
-                            {/* File upload for batch student creation */}
+                            {/* Загрузка файла для пакетного создания студентов */}
                             <div className="bg-bg-dark-tertiary border border-border-color border-dashed rounded-lg p-6 mt-8">
                                 <div className="flex flex-col items-center text-center">
                                     <div className="mb-4">
@@ -369,8 +368,8 @@ function StudentForm() {
                                             <line x1="9" y1="15" x2="15" y2="15"></line>
                                         </svg>
                                     </div>
-                                    <h4 className="text-lg font-medium mb-2">Or Add Multiple Students at Once</h4>
-                                    <p className="text-secondary mb-4">Upload a text file with one student name per line to create multiple students at once</p>
+                                    <h4 className="text-lg font-medium mb-2">Или добавьте несколько студентов сразу</h4>
+                                    <p className="text-secondary mb-4">Загрузите текстовый файл с одним именем студента на строку для создания нескольких студентов одновременно</p>
 
                                     <div className="relative w-full max-w-md">
                                         <input
@@ -382,7 +381,7 @@ function StudentForm() {
                                             disabled={!formData.group_name}
                                         />
                                         <small className="text-tertiary mt-2 block">
-                                            The file should be a .txt file with each student's name on a separate line. All students will be added to the selected group.
+                                            Файл должен быть в формате .txt, с именем каждого студента на отдельной строке. Все студенты будут добавлены в выбранную группу.
                                         </small>
                                     </div>
                                 </div>
@@ -392,7 +391,7 @@ function StudentForm() {
 
                     {isEditMode && (
                         <div className="form-group">
-                            <label htmlFor="fio" className="form-label">Student Name <span className="text-danger">*</span></label>
+                            <label htmlFor="fio" className="form-label">Имя студента <span className="text-danger">*</span></label>
                             <input
                                 type="text"
                                 id="fio"
@@ -401,7 +400,7 @@ function StudentForm() {
                                 onChange={handleChange}
                                 required
                                 className="form-control"
-                                placeholder="Enter student's full name"
+                                placeholder="Введите полное имя студента"
                             />
                         </div>
                     )}
@@ -409,8 +408,8 @@ function StudentForm() {
                     {isBatchMode && (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-medium">Students to Create ({batchStudents.length})</h3>
-                                <div className="badge bg-primary-lighter text-primary">Group: {formData.group_name}</div>
+                                <h3 className="text-lg font-medium">Студенты для создания ({batchStudents.length})</h3>
+                                <div className="badge bg-primary-lighter text-primary">Группа: {formData.group_name}</div>
                             </div>
 
                             <div className="bg-bg-dark-secondary border border-border-color rounded-lg p-4 max-h-60 overflow-y-auto">
@@ -433,7 +432,7 @@ function StudentForm() {
                                     <line x1="15" y1="9" x2="9" y2="15"></line>
                                     <line x1="9" y1="9" x2="15" y2="15"></line>
                                 </svg>
-                                Cancel Batch Creation
+                                Отменить пакетное создание
                             </button>
                         </div>
                     )}
@@ -447,7 +446,7 @@ function StudentForm() {
                             {createMutation.isPending || updateMutation.isPending || batchCreateMutation.isPending ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Saving...
+                                    Сохранение...
                                 </>
                             ) : isEditMode ? (
                                 <>
@@ -456,7 +455,7 @@ function StudentForm() {
                                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                         <polyline points="7 3 7 8 15 8"></polyline>
                                     </svg>
-                                    Update Student
+                                    Обновить студента
                                 </>
                             ) : isBatchMode ? (
                                 <>
@@ -466,7 +465,7 @@ function StudentForm() {
                                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                     </svg>
-                                    Create {batchStudents.length} Students
+                                    Создать {batchStudents.length} студентов
                                 </>
                             ) : (
                                 <>
@@ -475,7 +474,7 @@ function StudentForm() {
                                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                         <polyline points="7 3 7 8 15 8"></polyline>
                                     </svg>
-                                    Create Student
+                                    Создать студента
                                 </>
                             )}
                         </button>
@@ -484,13 +483,13 @@ function StudentForm() {
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            Cancel
+                            Отмена
                         </Link>
                     </div>
                 </form>
             </div>
 
-            {/* Custom Styles */}
+            {/* Пользовательские стили */}
             <style jsx="true">{`
                 .file-input {
                     color: var(--text-secondary);

@@ -73,15 +73,15 @@ function TeacherGroups() {
     }
 
     if (!teacher) {
-        return <div className="alert alert-danger">Teacher not found</div>;
+        return <div className="alert alert-danger">Преподаватель не найден</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Teacher Groups</h1>
+                <h1 className="page-title">Группы преподавателя</h1>
                 <div>
-                    <Link to={`/admin/teachers/${id}`} className="btn btn-secondary">Back to Teacher</Link>
+                    <Link to={`/admin/teachers/${id}`} className="btn btn-secondary">Назад к преподавателю</Link>
                 </div>
             </div>
 
@@ -111,25 +111,25 @@ function TeacherGroups() {
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}`)}
                         >
-                            Overview
+                            Обзор
                         </button>
                         <button
                             className="tab-button tab-button-active"
                             onClick={() => navigate(`/admin/teachers/${id}/groups`)}
                         >
-                            Groups
+                            Группы
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/attendance`)}
                         >
-                            Attendance
+                            Посещаемость
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/labs`)}
                         >
-                            Labs
+                            Лабораторные
                         </button>
                     </div>
                 </div>
@@ -138,12 +138,12 @@ function TeacherGroups() {
             {/* Groups List */}
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2 className="text-xl font-semibold">Groups</h2>
+                    <h2 className="text-xl font-semibold">Группы</h2>
                     <button
                         className="btn btn-primary"
                         onClick={() => setShowAddGroupModal(true)}
                     >
-                        Add Group
+                        Добавить группу
                     </button>
                 </div>
 
@@ -155,13 +155,13 @@ function TeacherGroups() {
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
-                        <h3>No Groups Found</h3>
-                        <p>This teacher doesn't have any groups yet.</p>
+                        <h3>Группы не найдены</h3>
+                        <p>У этого преподавателя еще нет групп.</p>
                         <button
                             className="btn btn-primary mt-3"
                             onClick={() => setShowAddGroupModal(true)}
                         >
-                            Add Group
+                            Добавить группу
                         </button>
                     </div>
                 ) : (
@@ -170,7 +170,7 @@ function TeacherGroups() {
                             <div key={index} className="group-card">
                                 <div className="group-header">
                                     <h3 className="group-name">{group.name}</h3>
-                                    <span className="student-count">{group.student_count} students</span>
+                                    <span className="student-count">{group.student_count} студентов</span>
                                 </div>
 
                                 <div className="group-students">
@@ -183,11 +183,11 @@ function TeacherGroups() {
                                                 </li>
                                             ))}
                                             {group.students.length > 5 && (
-                                                <li className="more-students">+{group.students.length - 5} more</li>
+                                                <li className="more-students">+{group.students.length - 5} еще</li>
                                             )}
                                         </ul>
                                     ) : (
-                                        <p className="no-students">No students in this group</p>
+                                        <p className="no-students">В этой группе нет студентов</p>
                                     )}
                                 </div>
                             </div>
@@ -202,7 +202,7 @@ function TeacherGroups() {
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h3 className="modal-title">Add Group for {teacher.fio}</h3>
+                                <h3 className="modal-title">Добавить группу для {teacher.fio}</h3>
                                 <button
                                     type="button"
                                     className="btn-close"
@@ -214,7 +214,7 @@ function TeacherGroups() {
                             <form onSubmit={handleAddGroup}>
                                 <div className="modal-body">
                                     <div className="form-group">
-                                        <label htmlFor="group_name">Group Name</label>
+                                        <label htmlFor="group_name">Название группы</label>
                                         <input
                                             type="text"
                                             id="group_name"
@@ -226,8 +226,8 @@ function TeacherGroups() {
                                         />
                                     </div>
                                     <div className="form-group mt-3">
-                                        <label htmlFor="students">Students (Optional)</label>
-                                        <p className="text-tertiary text-sm mb-2">One student name per line</p>
+                                        <label htmlFor="students">Студенты (опционально)</label>
+                                        <p className="text-tertiary text-sm mb-2">По одному имени студента на строку</p>
                                         <textarea
                                             id="students"
                                             name="students"
@@ -235,7 +235,7 @@ function TeacherGroups() {
                                             rows="5"
                                             value={newGroupData.students}
                                             onChange={handleInputChange}
-                                            placeholder="John Smith&#10;Jane Doe"
+                                            placeholder="Иван Иванов&#10;Петр Петров"
                                         ></textarea>
                                     </div>
                                 </div>
@@ -245,14 +245,14 @@ function TeacherGroups() {
                                         className="btn btn-secondary"
                                         onClick={() => setShowAddGroupModal(false)}
                                     >
-                                        Cancel
+                                        Отмена
                                     </button>
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
                                         disabled={addGroupMutation.isPending || !newGroupData.group_name}
                                     >
-                                        {addGroupMutation.isPending ? 'Adding...' : 'Add Group'}
+                                        {addGroupMutation.isPending ? 'Добавление...' : 'Добавить группу'}
                                     </button>
                                 </div>
                             </form>

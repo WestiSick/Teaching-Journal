@@ -9,7 +9,7 @@ function GroupsPage() {
     const { isFree } = useAuth();
     const navigate = useNavigate();
 
-    // Fetch all groups
+    // Получаем все группы
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
@@ -18,47 +18,46 @@ function GroupsPage() {
     const groups = data?.data?.data || [];
 
     const handleDelete = async (name) => {
-        if (window.confirm(`Are you sure you want to delete the group "${name}"? This will remove all associated data.`)) {
+        if (window.confirm(`Вы уверены, что хотите удалить группу "${name}"? Это действие удалит все связанные данные.`)) {
             try {
                 await groupService.deleteGroup(name);
-                refetch(); // Refresh the list after deletion
+                refetch(); // Обновляем список после удаления
             } catch (error) {
-                console.error('Error deleting group:', error);
-                alert('Failed to delete group');
+                alert('Не удалось удалить группу');
             }
         }
     };
 
     if (isLoading) {
-        return <div className="loader">Loading...</div>;
+        return <div className="loader">Загрузка...</div>;
     }
 
     if (error) {
-        return <div className="alert alert-danger">Error loading groups: {error.message}</div>;
+        return <div className="alert alert-danger">Ошибка загрузки групп: {error.message}</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1>Groups</h1>
+                <h1>Группы</h1>
                 <RequireSubscription
                     fallback={
                         <button className="btn btn-primary" disabled>
-                            Add Group (Subscription Required)
+                            Добавить группу (требуется подписка)
                         </button>
                     }
                 >
-                    <Link to="/groups/new" className="btn btn-primary">Add Group</Link>
+                    <Link to="/groups/new" className="btn btn-primary">Добавить группу</Link>
                 </RequireSubscription>
             </div>
 
-            {/* Groups List */}
+            {/* Список групп */}
             {groups.length === 0 ? (
                 <div className="card">
-                    <h3>No groups found</h3>
-                    <p>Create your first group to start managing students and lessons.</p>
+                    <h3>Группы не найдены</h3>
+                    <p>Создайте свою первую группу, чтобы начать управление студентами и занятиями.</p>
                     <RequireSubscription>
-                        <Link to="/groups/new" className="btn btn-primary">Create Group</Link>
+                        <Link to="/groups/new" className="btn btn-primary">Создать группу</Link>
                     </RequireSubscription>
                 </div>
             ) : (
@@ -67,9 +66,9 @@ function GroupsPage() {
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Group Name</th>
-                                <th>Students</th>
-                                <th>Actions</th>
+                                <th>Название группы</th>
+                                <th>Студентов</th>
+                                <th>Действия</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -83,13 +82,13 @@ function GroupsPage() {
                                                 onClick={() => navigate(`/groups/${encodeURIComponent(group.name)}`)}
                                                 className="btn btn-sm btn-secondary"
                                             >
-                                                View
+                                                Просмотр
                                             </button>
 
                                             <RequireSubscription
                                                 fallback={
                                                     <button className="btn btn-sm btn-primary" disabled>
-                                                        Edit
+                                                        Редактировать
                                                     </button>
                                                 }
                                             >
@@ -97,14 +96,14 @@ function GroupsPage() {
                                                     onClick={() => navigate(`/groups/${encodeURIComponent(group.name)}/edit`)}
                                                     className="btn btn-sm btn-primary"
                                                 >
-                                                    Edit
+                                                    Редактировать
                                                 </button>
                                             </RequireSubscription>
 
                                             <RequireSubscription
                                                 fallback={
                                                     <button className="btn btn-sm btn-danger" disabled>
-                                                        Delete
+                                                        Удалить
                                                     </button>
                                                 }
                                             >
@@ -112,7 +111,7 @@ function GroupsPage() {
                                                     onClick={() => handleDelete(group.name)}
                                                     className="btn btn-sm btn-danger"
                                                 >
-                                                    Delete
+                                                    Удалить
                                                 </button>
                                             </RequireSubscription>
                                         </div>

@@ -11,54 +11,54 @@ function GroupForm() {
     const decodedName = isEditMode ? decodeURIComponent(name) : '';
     const fileInputRef = useRef(null);
 
-    // Form state
+    // Состояние формы
     const [groupName, setGroupName] = useState('');
     const [students, setStudents] = useState([{ id: Date.now(), fio: '' }]);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [uploadStatus, setUploadStatus] = useState('');
 
-    // Fetch group data if in edit mode
+    // Загрузка данных группы в режиме редактирования
     const { data: groupData, isLoading: groupLoading } = useQuery({
         queryKey: ['group', decodedName],
         queryFn: () => groupService.getGroup(decodedName),
         enabled: isEditMode
     });
 
-    // Fetch students in the group if in edit mode
+    // Загрузка студентов в группе в режиме редактирования
     const { data: studentsData, isLoading: studentsLoading } = useQuery({
         queryKey: ['group-students', decodedName],
         queryFn: () => groupService.getStudentsInGroup(decodedName),
         enabled: isEditMode
     });
 
-    // Create mutation
+    // Мутация для создания
     const createMutation = useMutation({
         mutationFn: (data) => groupService.createGroup(data),
         onSuccess: () => {
-            setSuccess('Group created successfully');
+            setSuccess('Группа успешно создана');
             queryClient.invalidateQueries({ queryKey: ['groups'] });
             setTimeout(() => navigate('/groups'), 1500);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to create group');
+            setError(err.response?.data?.error || 'Не удалось создать группу');
         }
     });
 
-    // Update mutation
+    // Мутация для обновления
     const updateMutation = useMutation({
         mutationFn: ({ oldName, newName }) => groupService.updateGroup(oldName, { new_name: newName }),
         onSuccess: () => {
-            setSuccess('Group updated successfully');
+            setSuccess('Группа успешно обновлена');
             queryClient.invalidateQueries({ queryKey: ['groups'] });
             setTimeout(() => navigate('/groups'), 1500);
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to update group');
+            setError(err.response?.data?.error || 'Не удалось обновить группу');
         }
     });
 
-    // Add student mutation
+    // Мутация для добавления студента
     const addStudentMutation = useMutation({
         mutationFn: (data) => studentService.createStudent(data),
         onSuccess: () => {
@@ -66,24 +66,24 @@ function GroupForm() {
             queryClient.invalidateQueries({ queryKey: ['group-students', decodedName] });
         },
         onError: (err) => {
-            setError(err.response?.data?.error || 'Failed to add student');
+            setError(err.response?.data?.error || 'Не удалось добавить студента');
         }
     });
 
-    // Populate form with group data if in edit mode
+    // Заполнение формы данными группы в режиме редактирования
     useEffect(() => {
         if (isEditMode && groupData?.data?.data) {
             setGroupName(decodedName);
         }
     }, [isEditMode, groupData, decodedName]);
 
-    // Populate students if in edit mode
+    // Заполнение студентов в режиме редактирования
     useEffect(() => {
         if (isEditMode && studentsData?.data?.data) {
             const existingStudents = studentsData.data.data;
             if (existingStudents && existingStudents.length > 0) {
-                // We don't modify existing students in edit mode
-                // They are displayed in read-only mode in GroupDetail
+                // Мы не изменяем существующих студентов в режиме редактирования
+                // Они отображаются в режиме только для чтения в GroupDetail
             }
         }
     }, [isEditMode, studentsData]);
@@ -104,73 +104,72 @@ function GroupForm() {
         ));
     };
 
-    // Handle file upload for student list
+    // Обработка загрузки файла со списком студентов
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Reset status and errors
+        // Сброс статуса и ошибок
         setUploadStatus('');
         setError('');
 
-        // Check if it's a text file
+        // Проверка, является ли это текстовым файлом
         if (file.type !== 'text/plain') {
-            setError('Please upload a text (.txt) file');
-            // Reset file input
+            setError('Пожалуйста, загрузите текстовый файл (.txt)');
+            // Сброс поля ввода файла
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
             return;
         }
 
-        setUploadStatus('Reading file...');
+        setUploadStatus('Чтение файла...');
 
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const content = event.target.result;
-                const lines = content.split('\n');
+                const lines = content.split('\\n');
 
-                // Filter out empty lines and trim whitespace
+                // Фильтрация пустых строк и удаление пробелов
                 const validNames = lines
                     .map(line => line.trim())
                     .filter(line => line.length > 0);
 
                 if (validNames.length === 0) {
-                    setError('No valid student names found in the file');
+                    setError('В файле не найдены корректные имена студентов');
                     setUploadStatus('');
                     return;
                 }
 
-                // Create new student objects for each valid name
+                // Создание объектов студентов для каждого допустимого имени
                 const newStudents = validNames.map(name => ({
-                    id: Date.now() + Math.random(), // Ensure unique IDs
+                    id: Date.now() + Math.random(), // Обеспечение уникальных ID
                     fio: name
                 }));
 
-                // Replace the current student list if it only has one empty student
-                // Otherwise append to the existing list
+                // Замена текущего списка студентов, если он содержит только одного пустого студента
+                // В противном случае добавление к существующему списку
                 if (students.length === 1 && !students[0].fio) {
                     setStudents(newStudents);
                 } else {
                     setStudents([...students, ...newStudents]);
                 }
 
-                setUploadStatus(`Successfully added ${validNames.length} students from file`);
+                setUploadStatus(`Успешно добавлено ${validNames.length} студентов из файла`);
 
-                // Reset file input
+                // Сброс поля ввода файла
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
             } catch (err) {
-                console.error('Error processing file:', err);
-                setError('Error processing file. Please check the format and try again.');
+                setError('Ошибка обработки файла. Пожалуйста, проверьте формат и попробуйте снова.');
                 setUploadStatus('');
             }
         };
 
         reader.onerror = () => {
-            setError('Failed to read the file. Please try again.');
+            setError('Не удалось прочитать файл. Пожалуйста, попробуйте снова.');
             setUploadStatus('');
         };
 
@@ -182,15 +181,15 @@ function GroupForm() {
         setSuccess('');
 
         if (!groupName.trim()) {
-            setError('Group name is required');
+            setError('Название группы обязательно');
             return false;
         }
 
         if (!isEditMode) {
-            // In create mode, validate students
+            // В режиме создания проверяем студентов
             const emptyStudents = students.filter(student => !student.fio.trim());
             if (emptyStudents.length > 0) {
-                setError('All student names must be filled or removed');
+                setError('Все имена студентов должны быть заполнены или удалены');
                 return false;
             }
         }
@@ -204,14 +203,14 @@ function GroupForm() {
         if (!validateForm()) return;
 
         if (isEditMode) {
-            // Update group name
+            // Обновление имени группы
             if (groupName !== decodedName) {
                 updateMutation.mutate({ oldName: decodedName, newName: groupName });
             } else {
                 navigate(`/groups/${encodeURIComponent(groupName)}`);
             }
         } else {
-            // Create group
+            // Создание группы
             try {
                 const response = await createMutation.mutateAsync({
                     name: groupName,
@@ -219,25 +218,25 @@ function GroupForm() {
                 });
 
                 if (response.data.success) {
-                    setSuccess('Group created successfully');
+                    setSuccess('Группа успешно создана');
                     setTimeout(() => navigate('/groups'), 1500);
                 }
             } catch (err) {
-                setError(err.response?.data?.error || 'Failed to create group');
+                setError(err.response?.data?.error || 'Не удалось создать группу');
             }
         }
     };
 
-    // Loading state for edit mode
+    // Состояние загрузки в режиме редактирования
     if (isEditMode && (groupLoading || studentsLoading)) {
-        return <div className="loader">Loading...</div>;
+        return <div className="loader">Загрузка...</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1>{isEditMode ? 'Edit Group' : 'Create Group'}</h1>
-                <Link to="/groups" className="btn btn-secondary">Back to Groups</Link>
+                <h1>{isEditMode ? 'Редактировать группу' : 'Создать группу'}</h1>
+                <Link to="/groups" className="btn btn-secondary">Назад к группам</Link>
             </div>
 
             <div className="card">
@@ -247,7 +246,7 @@ function GroupForm() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="groupName">Group Name</label>
+                        <label htmlFor="groupName">Название группы</label>
                         <input
                             type="text"
                             id="groupName"
@@ -260,12 +259,12 @@ function GroupForm() {
 
                     {!isEditMode && (
                         <div className="form-group">
-                            <label>Students (Optional)</label>
+                            <label>Студенты (опционально)</label>
 
-                            {/* File upload for student list */}
+                            {/* Загрузка файла со списком студентов */}
                             <div style={{ marginBottom: '15px', border: '1px dashed #ccc', padding: '15px', borderRadius: '5px' }}>
-                                <h4>Upload Student List</h4>
-                                <p className="text-muted">Upload a text file with one student name per line</p>
+                                <h4>Загрузить список студентов</h4>
+                                <p className="text-muted">Загрузите текстовый файл с одним именем студента на строку</p>
                                 <input
                                     type="file"
                                     accept=".txt"
@@ -274,18 +273,18 @@ function GroupForm() {
                                     className="form-control"
                                 />
                                 <small className="form-text text-muted">
-                                    The file should be a .txt file with each student's name on a separate line
+                                    Файл должен быть в формате .txt с именем каждого студента на отдельной строке
                                 </small>
                             </div>
 
-                            <h4>Manually Add Students</h4>
+                            <h4>Ручное добавление студентов</h4>
                             {students.map((student, index) => (
                                 <div key={student.id} style={{ display: 'flex', marginBottom: '10px' }}>
                                     <input
                                         type="text"
                                         value={student.fio}
                                         onChange={(e) => handleStudentChange(student.id, e.target.value)}
-                                        placeholder={`Student ${index + 1} name`}
+                                        placeholder={`Имя студента ${index + 1}`}
                                         className="form-control"
                                     />
                                     <button
@@ -294,7 +293,7 @@ function GroupForm() {
                                         className="btn btn-danger"
                                         style={{ marginLeft: '10px' }}
                                     >
-                                        Remove
+                                        Удалить
                                     </button>
                                 </div>
                             ))}
@@ -303,10 +302,10 @@ function GroupForm() {
                                 onClick={handleAddStudent}
                                 className="btn btn-secondary"
                             >
-                                Add Student
+                                Добавить студента
                             </button>
                             <small className="form-text text-muted">
-                                You can also add students later from the group details page.
+                                Вы также можете добавить студентов позже со страницы деталей группы.
                             </small>
                         </div>
                     )}
@@ -318,11 +317,11 @@ function GroupForm() {
                             disabled={createMutation.isPending || updateMutation.isPending}
                         >
                             {(createMutation.isPending || updateMutation.isPending)
-                                ? 'Saving...'
-                                : isEditMode ? 'Update Group' : 'Create Group'}
+                                ? 'Сохранение...'
+                                : isEditMode ? 'Обновить группу' : 'Создать группу'}
                         </button>
                         <Link to="/groups" className="btn btn-secondary" style={{ marginLeft: '10px' }}>
-                            Cancel
+                            Отмена
                         </Link>
                     </div>
                 </form>

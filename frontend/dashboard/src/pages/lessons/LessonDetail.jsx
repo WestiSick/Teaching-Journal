@@ -11,13 +11,13 @@ function LessonDetail() {
     const navigate = useNavigate();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    // Fetch lesson details
+    // Получаем данные занятия
     const { data: lessonData, isLoading: lessonLoading, error: lessonError } = useQuery({
         queryKey: ['lesson', id],
         queryFn: () => lessonService.getLesson(id)
     });
 
-    // Fetch lesson attendance
+    // Получаем данные посещаемости занятия
     const { data: attendanceData, isLoading: attendanceLoading, error: attendanceError } = useQuery({
         queryKey: ['lesson-attendance', id],
         queryFn: () => attendanceService.getLessonAttendance(id),
@@ -32,25 +32,24 @@ function LessonDetail() {
             await lessonService.deleteLesson(id);
             navigate('/lessons');
         } catch (error) {
-            console.error('Error deleting lesson:', error);
-            alert('Failed to delete lesson');
+            alert('Не удалось удалить занятие');
         }
     };
 
-    // Helper function to get attendance status color
+    // Вспомогательная функция для получения цвета статуса посещаемости
     const getAttendanceStatusColor = (rate) => {
         if (rate >= 85) return 'var(--success)';
         if (rate >= 70) return 'var(--warning)';
         return 'var(--danger)';
     };
 
-    // Helper function to format date nicely
+    // Вспомогательная функция для форматирования даты
     const formatDate = (dateString) => {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString(undefined, options);
+        return new Date(dateString).toLocaleDateString('ru-RU', options);
     };
 
-    // Loading states
+    // Состояния загрузки
     if (lessonLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -59,7 +58,7 @@ function LessonDetail() {
         );
     }
 
-    // Error states
+    // Состояния ошибок
     if (lessonError) {
         return (
             <div className="alert alert-danger mb-6">
@@ -69,13 +68,13 @@ function LessonDetail() {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <p>Error loading lesson: {lessonError.message}</p>
+                    <p>Ошибка загрузки занятия: {lessonError.message}</p>
                 </div>
             </div>
         );
     }
 
-    // Missing data state
+    // Отсутствие данных
     if (!lesson) {
         return (
             <div className="alert alert-warning mb-6">
@@ -85,7 +84,7 @@ function LessonDetail() {
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <p>Lesson not found</p>
+                    <p>Занятие не найдено</p>
                 </div>
             </div>
         );
@@ -95,8 +94,8 @@ function LessonDetail() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Lesson Details</h1>
-                    <p className="text-secondary">View and manage lesson information</p>
+                    <h1 className="page-title">Детали занятия</h1>
+                    <p className="text-secondary">Просмотр и управление информацией о занятии</p>
                 </div>
                 <div className="flex gap-2">
                     <Link to="/lessons" className="btn btn-secondary flex items-center gap-2">
@@ -104,7 +103,7 @@ function LessonDetail() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline">Назад</span>
                     </Link>
                     <RequireSubscription>
                         <Link to={`/lessons/${id}/edit`} className="btn btn-primary flex items-center gap-2">
@@ -112,7 +111,7 @@ function LessonDetail() {
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                            <span className="hidden sm:inline">Edit</span>
+                            <span className="hidden sm:inline">Редактировать</span>
                         </Link>
                         <button
                             onClick={() => setShowDeleteConfirm(true)}
@@ -122,13 +121,13 @@ function LessonDetail() {
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
-                            <span className="hidden sm:inline">Delete</span>
+                            <span className="hidden sm:inline">Удалить</span>
                         </button>
                     </RequireSubscription>
                 </div>
             </div>
 
-            {/* Lesson Detail Card */}
+            {/* Карточка деталей занятия */}
             <div className="card p-0 overflow-hidden mb-6">
                 <div className="p-6 pb-0">
                     <div className="lesson-header">
@@ -151,7 +150,7 @@ function LessonDetail() {
                             </svg>
                         </div>
                         <div>
-                            <div className="detail-label">Date</div>
+                            <div className="detail-label">Дата</div>
                             <div className="detail-value">{formatDate(lesson.date)}</div>
                         </div>
                     </div>
@@ -163,7 +162,7 @@ function LessonDetail() {
                             </svg>
                         </div>
                         <div>
-                            <div className="detail-label">Subject</div>
+                            <div className="detail-label">Предмет</div>
                             <div className="detail-value">{lesson.subject}</div>
                         </div>
                     </div>
@@ -177,7 +176,7 @@ function LessonDetail() {
                             </svg>
                         </div>
                         <div>
-                            <div className="detail-label">Group</div>
+                            <div className="detail-label">Группа</div>
                             <div className="detail-value">
                                 <Link to={`/groups/${encodeURIComponent(lesson.group_name)}`} className="group">
                                     <span className="text-primary group-hover:underline transition-colors">
@@ -195,24 +194,26 @@ function LessonDetail() {
                             </svg>
                         </div>
                         <div>
-                            <div className="detail-label">Hours</div>
-                            <div className="detail-value">{lesson.hours} {lesson.hours === 1 ? 'hour' : 'hours'}</div>
+                            <div className="detail-label">Часов</div>
+                            <div className="detail-value">
+                                {lesson.hours} {lesson.hours === 1 ? 'час' : (lesson.hours >= 2 && lesson.hours <= 4) ? 'часа' : 'часов'}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Attendance Summary Card */}
+            {/* Карточка сводки посещаемости */}
             <div className="card mb-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold">Attendance</h3>
+                    <h3 className="text-xl font-semibold">Посещаемость</h3>
                     <RequireSubscription
                         fallback={
                             <div className="badge badge-premium">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                 </svg>
-                                <span>Premium Feature</span>
+                                <span>Премиум функция</span>
                             </div>
                         }
                     >
@@ -221,7 +222,7 @@ function LessonDetail() {
                                 <path d="M12 20h9"></path>
                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                             </svg>
-                            <span>Manage Attendance</span>
+                            <span>Управление посещаемостью</span>
                         </Link>
                     </RequireSubscription>
                 </div>
@@ -234,9 +235,9 @@ function LessonDetail() {
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                 </svg>
                             </div>
-                            <h4 className="text-lg font-semibold mb-2">Attendance Tracking</h4>
-                            <p className="text-secondary mb-4">Upgrade to a paid subscription to track and manage student attendance.</p>
-                            <button className="btn btn-primary">Upgrade Now</button>
+                            <h4 className="text-lg font-semibold mb-2">Отслеживание посещаемости</h4>
+                            <p className="text-secondary mb-4">Перейдите на платную подписку для отслеживания и управления посещаемостью студентов.</p>
+                            <button className="btn btn-primary">Обновить сейчас</button>
                         </div>
                     }
                 >
@@ -252,7 +253,7 @@ function LessonDetail() {
                                     <line x1="12" y1="8" x2="12" y2="12"></line>
                                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                 </svg>
-                                <p>Error loading attendance data. {attendanceError.message}</p>
+                                <p>Ошибка загрузки данных посещаемости. {attendanceError.message}</p>
                             </div>
                         </div>
                     ) : !attendance ? (
@@ -265,14 +266,15 @@ function LessonDetail() {
                                     <line x1="3" y1="10" x2="21" y2="10"></line>
                                 </svg>
                             </div>
-                            <h4 className="text-lg font-semibold mb-2">No attendance recorded yet</h4>
-                            <p className="text-secondary mb-4">Start tracking attendance for this lesson to see student participation data.</p>
+                            <h4 className="text-lg font-semibold mb-2">Отметки посещаемости еще не внесены</h4>
+                            <p className="text-secondary mb-4">Начните отслеживать посещаемость для этого занятия, чтобы увидеть данные об участии студентов.</p>
                             <Link to={`/attendance/${id}`} className="btn btn-primary">
-                                Record Attendance
+                                Отметить посещаемость
                             </Link>
                         </div>
                     ) : (
                         <div>
+                            {/* Статистика посещаемости */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="attendance-stat-card">
                                     <div className="attendance-stat-icon">
@@ -283,7 +285,7 @@ function LessonDetail() {
                                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                         </svg>
                                     </div>
-                                    <div className="attendance-stat-label">Total Students</div>
+                                    <div className="attendance-stat-label">Всего студентов</div>
                                     <div className="attendance-stat-value">{attendance.total_students}</div>
                                 </div>
 
@@ -294,7 +296,7 @@ function LessonDetail() {
                                             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                                         </svg>
                                     </div>
-                                    <div className="attendance-stat-label">Present</div>
+                                    <div className="attendance-stat-label">Присутствуют</div>
                                     <div className="attendance-stat-value">{attendance.attended_students}</div>
                                 </div>
 
@@ -306,14 +308,14 @@ function LessonDetail() {
                                             <line x1="9" y1="9" x2="15" y2="15"></line>
                                         </svg>
                                     </div>
-                                    <div className="attendance-stat-label">Absent</div>
+                                    <div className="attendance-stat-label">Отсутствуют</div>
                                     <div className="attendance-stat-value">{attendance.total_students - attendance.attended_students}</div>
                                 </div>
                             </div>
 
                             <div className="attendance-rate-container mb-6">
                                 <div className="flex justify-between mb-2">
-                                    <span className="font-medium">Attendance Rate</span>
+                                    <span className="font-medium">Уровень посещаемости</span>
                                     <span className="font-semibold" style={{ color: getAttendanceStatusColor(attendance.attendance_rate) }}>
                                         {attendance.attendance_rate.toFixed(1)}%
                                     </span>
@@ -329,19 +331,19 @@ function LessonDetail() {
                                 </div>
                             </div>
 
-                            {/* Student Attendance List */}
+                            {/* Список посещаемости студентов */}
                             {attendance.students && attendance.students.length > 0 && (
                                 <div>
-                                    <h4 className="text-lg font-semibold mb-3">Student Attendance</h4>
+                                    <h4 className="text-lg font-semibold mb-3">Посещаемость студентов</h4>
                                     <div className="overflow-hidden rounded-lg border border-border-color">
                                         <table className="min-w-full divide-y divide-border-color">
                                             <thead className="bg-bg-dark-tertiary">
                                             <tr>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">
-                                                    Student
+                                                    Студент
                                                 </th>
                                                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wider">
-                                                    Status
+                                                    Статус
                                                 </th>
                                             </tr>
                                             </thead>
@@ -359,7 +361,7 @@ function LessonDetail() {
                                                                     to={`/students/${student.id}`}
                                                                     className="text-xs text-primary hover:underline"
                                                                 >
-                                                                    View profile
+                                                                    Просмотреть профиль
                                                                 </Link>
                                                             </div>
                                                         </div>
@@ -367,11 +369,11 @@ function LessonDetail() {
                                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                                         {student.attended ? (
                                                             <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-success-lighter text-success">
-                                                                    Present
+                                                                    Присутствует
                                                                 </span>
                                                         ) : (
                                                             <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-danger-lighter text-danger">
-                                                                    Absent
+                                                                    Отсутствует
                                                                 </span>
                                                         )}
                                                     </td>
@@ -387,24 +389,24 @@ function LessonDetail() {
                 </RequireSubscription>
             </div>
 
-            {/* Delete Confirmation Modal */}
+            {/* Модальное окно подтверждения удаления */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-bg-dark-secondary p-6 rounded-lg shadow-xl max-w-md w-full">
-                        <h3 className="text-xl font-bold mb-4">Confirm Deletion</h3>
-                        <p className="mb-6">Are you sure you want to delete this lesson? This action cannot be undone.</p>
+                        <h3 className="text-xl font-bold mb-4">Подтвердите удаление</h3>
+                        <p className="mb-6">Вы уверены, что хотите удалить это занятие? Это действие нельзя отменить.</p>
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
                                 className="btn btn-secondary"
                             >
-                                Cancel
+                                Отмена
                             </button>
                             <button
                                 onClick={handleDelete}
                                 className="btn btn-danger"
                             >
-                                Delete Lesson
+                                Удалить занятие
                             </button>
                         </div>
                     </div>
@@ -562,7 +564,7 @@ function LessonDetail() {
     );
 }
 
-// Helper functions for lesson type visual elements
+// Вспомогательные функции для визуальных элементов типа занятия
 function getLessonTypeColor(type) {
     switch (type) {
         case 'Лекция':

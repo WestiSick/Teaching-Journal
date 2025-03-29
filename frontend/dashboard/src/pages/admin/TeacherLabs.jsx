@@ -93,15 +93,15 @@ function TeacherLabs() {
     }
 
     if (!teacher) {
-        return <div className="alert alert-danger">Teacher not found</div>;
+        return <div className="alert alert-danger">Преподаватель не найден</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Teacher Labs</h1>
+                <h1 className="page-title">Лабораторные работы преподавателя</h1>
                 <div>
-                    <Link to={`/admin/teachers/${id}`} className="btn btn-secondary">Back to Teacher</Link>
+                    <Link to={`/admin/teachers/${id}`} className="btn btn-secondary">Назад к преподавателю</Link>
                 </div>
             </div>
 
@@ -131,25 +131,25 @@ function TeacherLabs() {
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}`)}
                         >
-                            Overview
+                            Обзор
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/groups`)}
                         >
-                            Groups
+                            Группы
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/attendance`)}
                         >
-                            Attendance
+                            Посещаемость
                         </button>
                         <button
                             className="tab-button tab-button-active"
                             onClick={() => navigate(`/admin/teachers/${id}/labs`)}
                         >
-                            Labs
+                            Лабораторные
                         </button>
                     </div>
                 </div>
@@ -157,26 +157,26 @@ function TeacherLabs() {
 
             {/* Labs Summary */}
             <div className="card mb-6">
-                <h2 className="text-xl font-semibold mb-4">Labs Summary</h2>
+                <h2 className="text-xl font-semibold mb-4">Сводка по лабораторным</h2>
 
                 <div className="summary-stats">
                     <div className="summary-stat">
-                        <div className="stat-label">Total Subjects</div>
+                        <div className="stat-label">Всего предметов</div>
                         <div className="stat-value">{subjects.length}</div>
                     </div>
 
                     <div className="summary-stat">
-                        <div className="stat-label">Total Groups</div>
+                        <div className="stat-label">Всего групп</div>
                         <div className="stat-value">{groupsCount}</div>
                     </div>
 
                     <div className="summary-stat">
-                        <div className="stat-label">Total Lab Assignments</div>
+                        <div className="stat-label">Всего лабораторных</div>
                         <div className="stat-value">{totalLabsCount}</div>
                     </div>
 
                     <div className="summary-stat">
-                        <div className="stat-label">Average Grade</div>
+                        <div className="stat-label">Средняя оценка</div>
                         <div className="stat-value">
                             {overallAverage.toFixed(1)}
                         </div>
@@ -194,8 +194,8 @@ function TeacherLabs() {
                             <path d="M8.5 2h7"></path>
                             <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
                         </svg>
-                        <h3>No Lab Data</h3>
-                        <p>This teacher doesn't have any lab assignments yet.</p>
+                        <h3>Нет данных по лабораторным</h3>
+                        <p>У этого преподавателя пока нет лабораторных работ.</p>
                     </div>
                 </div>
             ) : (
@@ -203,7 +203,7 @@ function TeacherLabs() {
                     {/* Subjects List - Left Column */}
                     <div className="col-span-3">
                         <div className="card h-full">
-                            <h3 className="text-lg font-semibold mb-4">Subjects</h3>
+                            <h3 className="text-lg font-semibold mb-4">Предметы</h3>
 
                             <div className="subjects-list">
                                 {subjects.map((subject, index) => (
@@ -216,7 +216,7 @@ function TeacherLabs() {
                                         <div className="subject-details">
                                             <div className="subject-name">{subject.subject}</div>
                                             <div className="subject-group-count">
-                                                {subject.groups.length} {subject.groups.length === 1 ? 'group' : 'groups'}
+                                                {subject.groups.length} {subject.groups.length === 1 ? 'группа' : subject.groups.length >= 2 && subject.groups.length <= 4 ? 'группы' : 'групп'}
                                             </div>
                                         </div>
                                     </button>
@@ -234,8 +234,8 @@ function TeacherLabs() {
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <path d="M12 8l4 4-4 4M8 12h8"></path>
                                     </svg>
-                                    <h3>Select a Subject</h3>
-                                    <p>Select a subject from the list to view group and lab details.</p>
+                                    <h3>Выберите предмет</h3>
+                                    <p>Выберите предмет из списка, чтобы увидеть детали по группам и лабораторным.</p>
                                 </div>
                             </div>
                         ) : (
@@ -243,7 +243,7 @@ function TeacherLabs() {
                                 <div className="d-flex justify-content-between align-items-center mb-4">
                                     <h3 className="text-lg font-semibold">
                                         {selectedSubject.subject}
-                                        <span className="subject-subtitle"> - {selectedSubject.groups.length} groups</span>
+                                        <span className="subject-subtitle"> - {selectedSubject.groups.length} групп</span>
                                     </h3>
                                 </div>
 
@@ -266,16 +266,16 @@ function TeacherLabs() {
                                 {/* Group Details / Lab Details */}
                                 {!selectedGroup ? (
                                     <div className="groups-overview">
-                                        <h4 className="text-md font-semibold mb-3">Groups Overview</h4>
+                                        <h4 className="text-md font-semibold mb-3">Обзор групп</h4>
 
                                         <div className="table-container">
                                             <table className="table">
                                                 <thead>
                                                 <tr>
-                                                    <th>Group</th>
-                                                    <th>Students</th>
-                                                    <th>Total Labs</th>
-                                                    <th>Average Grade</th>
+                                                    <th>Группа</th>
+                                                    <th>Студенты</th>
+                                                    <th>Всего лабораторных</th>
+                                                    <th>Средняя оценка</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody>
@@ -307,22 +307,22 @@ function TeacherLabs() {
                                             <h4 className="text-md font-semibold">{selectedGroup.name}</h4>
                                             <div className="group-meta">
                                                 <div className="meta-item">
-                                                    <span className="meta-label">Students:</span>
+                                                    <span className="meta-label">Студенты:</span>
                                                     <span className="meta-value">{selectedGroup.student_count}</span>
                                                 </div>
                                                 <div className="meta-item">
-                                                    <span className="meta-label">Labs:</span>
+                                                    <span className="meta-label">Лабораторные:</span>
                                                     <span className="meta-value">{selectedGroup.total_labs}</span>
                                                 </div>
                                                 <div className="meta-item">
-                                                    <span className="meta-label">Average:</span>
+                                                    <span className="meta-label">Среднее:</span>
                                                     <span className="meta-value">{selectedGroup.group_average.toFixed(1)}</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="grade-visualization">
-                                            <h5 className="text-sm font-semibold mb-2">Average Grade Distribution</h5>
+                                            <h5 className="text-sm font-semibold mb-2">Распределение средних оценок</h5>
                                             <div className="grade-meter">
                                                 <div className="grade-scale">
                                                     <div className="grade-marker grade-marker-1">1</div>
@@ -340,9 +340,9 @@ function TeacherLabs() {
                                         <div className="labs-grid">
                                             {Array.from({ length: selectedGroup.total_labs }, (_, i) => (
                                                 <div key={i} className="lab-card">
-                                                    <div className="lab-number">Lab {i + 1}</div>
+                                                    <div className="lab-number">Лаб. {i + 1}</div>
                                                     <div className="lab-placeholder">
-                                                        <span>Details not available in admin view</span>
+                                                        <span>Подробности недоступны в режиме администратора</span>
                                                     </div>
                                                 </div>
                                             ))}

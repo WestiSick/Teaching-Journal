@@ -12,7 +12,6 @@ function TicketForm() {
 
     const isEditMode = !!id;
 
-    // Initialize form state
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -27,7 +26,6 @@ function TicketForm() {
     const [submitError, setSubmitError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Fetch ticket details if in edit mode
     const { data: ticketData, isLoading: ticketLoading } = useQuery({
         queryKey: ['ticket', id],
         queryFn: () => ticketService.getTicket(id),
@@ -45,13 +43,11 @@ function TicketForm() {
         }
     });
 
-    // Create ticket mutation
     const createTicketMutation = useMutation({
         mutationFn: (data) => ticketService.createTicket(data),
         onSuccess: (response) => {
             const newTicketId = response.data.data.id;
 
-            // Upload files if any are selected
             if (selectedFiles.length > 0) {
                 uploadFiles(newTicketId);
             } else {
@@ -59,17 +55,14 @@ function TicketForm() {
             }
         },
         onError: (error) => {
-            console.error('Error creating ticket:', error);
-            setSubmitError('Failed to create ticket. Please try again.');
+            setSubmitError('Не удалось создать тикет. Пожалуйста, попробуйте снова.');
             setIsSubmitting(false);
         }
     });
 
-    // Update ticket mutation
     const updateTicketMutation = useMutation({
         mutationFn: (data) => ticketService.updateTicket(id, data),
         onSuccess: () => {
-            // Upload files if any are selected
             if (selectedFiles.length > 0) {
                 uploadFiles(id);
             } else {
@@ -77,13 +70,11 @@ function TicketForm() {
             }
         },
         onError: (error) => {
-            console.error('Error updating ticket:', error);
-            setSubmitError('Failed to update ticket. Please try again.');
+            setSubmitError('Не удалось обновить тикет. Пожалуйста, попробуйте снова.');
             setIsSubmitting(false);
         }
     });
 
-    // Handle form input changes
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -100,7 +91,6 @@ function TicketForm() {
             }));
         }
 
-        // Clear error for this field if it exists
         if (formErrors[name]) {
             setFormErrors(prev => {
                 const newErrors = { ...prev };
@@ -110,12 +100,10 @@ function TicketForm() {
         }
     };
 
-    // Handle file selection
     const handleFileSelect = (e) => {
         setSelectedFiles([...e.target.files]);
     };
 
-    // Function to upload files
     const uploadFiles = async (ticketId) => {
         try {
             for (const file of selectedFiles) {
@@ -128,33 +116,30 @@ function TicketForm() {
             // Navigate to ticket detail page after uploads complete
             navigate(`/tickets/${ticketId}`);
         } catch (error) {
-            console.error('Error uploading files:', error);
             // Still navigate to the ticket page even if file upload fails
             navigate(`/tickets/${ticketId}`);
         }
     };
 
-    // Validate form
     const validateForm = () => {
         const errors = {};
 
         if (!formData.title.trim()) {
-            errors.title = 'Title is required';
+            errors.title = 'Заголовок обязателен';
         }
 
         if (!formData.description.trim()) {
-            errors.description = 'Description is required';
+            errors.description = 'Описание обязательно';
         }
 
         if (!formData.category) {
-            errors.category = 'Category is required';
+            errors.category = 'Категория обязательна';
         }
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
-    // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
         setSubmitError('');
@@ -184,15 +169,15 @@ function TicketForm() {
         <div>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">{isEditMode ? 'Edit Ticket' : 'Create New Ticket'}</h1>
+                    <h1 className="page-title">{isEditMode ? 'Редактировать тикет' : 'Создать новый тикет'}</h1>
                     <p className="text-secondary">
                         {isEditMode
-                            ? `Editing Ticket #${id}`
-                            : 'Submit a new support ticket'}
+                            ? `Редактирование тикета #${id}`
+                            : 'Отправить новый тикет в службу поддержки'}
                     </p>
                 </div>
                 <Link to={isEditMode ? `/tickets/${id}` : "/tickets"} className="btn btn-secondary">
-                    Cancel
+                    Отмена
                 </Link>
             </div>
 
@@ -200,7 +185,7 @@ function TicketForm() {
                 <form onSubmit={handleSubmit}>
                     {/* Title */}
                     <div className="form-group">
-                        <label htmlFor="title" className="form-label">Title *</label>
+                        <label htmlFor="title" className="form-label">Заголовок *</label>
                         <input
                             type="text"
                             id="title"
@@ -208,21 +193,21 @@ function TicketForm() {
                             value={formData.title}
                             onChange={handleChange}
                             className={`form-control ${formErrors.title ? 'border-danger' : ''}`}
-                            placeholder="Enter a descriptive title"
+                            placeholder="Введите описательный заголовок"
                         />
                         {formErrors.title && <p className="text-danger mt-1 text-sm">{formErrors.title}</p>}
                     </div>
 
                     {/* Description */}
                     <div className="form-group">
-                        <label htmlFor="description" className="form-label">Description *</label>
+                        <label htmlFor="description" className="form-label">Описание *</label>
                         <textarea
                             id="description"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
                             className={`form-control ${formErrors.description ? 'border-danger' : ''}`}
-                            placeholder="Describe your issue in detail"
+                            placeholder="Подробно опишите вашу проблему"
                             rows="6"
                         ></textarea>
                         {formErrors.description && <p className="text-danger mt-1 text-sm">{formErrors.description}</p>}
@@ -231,7 +216,7 @@ function TicketForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Category */}
                         <div className="form-group">
-                            <label htmlFor="category" className="form-label">Category *</label>
+                            <label htmlFor="category" className="form-label">Категория *</label>
                             <select
                                 id="category"
                                 name="category"
@@ -239,20 +224,20 @@ function TicketForm() {
                                 onChange={handleChange}
                                 className={`form-control ${formErrors.category ? 'border-danger' : ''}`}
                             >
-                                <option value="">Select a category</option>
-                                <option value="Technical">Technical</option>
-                                <option value="Administrative">Administrative</option>
-                                <option value="Account">Account</option>
-                                <option value="Feature">Feature Request</option>
-                                <option value="Bug">Bug Report</option>
-                                <option value="Other">Other</option>
+                                <option value="">Выберите категорию</option>
+                                <option value="Technical">Техническая</option>
+                                <option value="Administrative">Административная</option>
+                                <option value="Account">Аккаунт</option>
+                                <option value="Feature">Запрос функции</option>
+                                <option value="Bug">Сообщение об ошибке</option>
+                                <option value="Other">Другое</option>
                             </select>
                             {formErrors.category && <p className="text-danger mt-1 text-sm">{formErrors.category}</p>}
                         </div>
 
                         {/* Priority */}
                         <div className="form-group">
-                            <label htmlFor="priority" className="form-label">Priority</label>
+                            <label htmlFor="priority" className="form-label">Приоритет</label>
                             <select
                                 id="priority"
                                 name="priority"
@@ -260,10 +245,10 @@ function TicketForm() {
                                 onChange={handleChange}
                                 className="form-control"
                             >
-                                <option value="Low">Low</option>
-                                <option value="Medium">Medium</option>
-                                <option value="High">High</option>
-                                <option value="Critical">Critical</option>
+                                <option value="Low">Низкий</option>
+                                <option value="Medium">Средний</option>
+                                <option value="High">Высокий</option>
+                                <option value="Critical">Критический</option>
                             </select>
                         </div>
                     </div>
@@ -273,7 +258,7 @@ function TicketForm() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Status */}
                             <div className="form-group">
-                                <label htmlFor="status" className="form-label">Status</label>
+                                <label htmlFor="status" className="form-label">Статус</label>
                                 <select
                                     id="status"
                                     name="status"
@@ -281,17 +266,17 @@ function TicketForm() {
                                     onChange={handleChange}
                                     className="form-control"
                                 >
-                                    <option value="New">New</option>
-                                    <option value="Open">Open</option>
-                                    <option value="InProgress">In Progress</option>
-                                    <option value="Resolved">Resolved</option>
-                                    <option value="Closed">Closed</option>
+                                    <option value="New">Новый</option>
+                                    <option value="Open">Открыт</option>
+                                    <option value="InProgress">В работе</option>
+                                    <option value="Resolved">Решен</option>
+                                    <option value="Closed">Закрыт</option>
                                 </select>
                             </div>
 
                             {/* Assigned To */}
                             <div className="form-group">
-                                <label htmlFor="assigned_to" className="form-label">Assigned To</label>
+                                <label htmlFor="assigned_to" className="form-label">Назначен</label>
                                 <input
                                     type="number"
                                     id="assigned_to"
@@ -299,16 +284,16 @@ function TicketForm() {
                                     value={formData.assigned_to || ''}
                                     onChange={handleChange}
                                     className="form-control"
-                                    placeholder="User ID (leave empty for unassigned)"
+                                    placeholder="ID пользователя (оставьте пустым для неназначенных)"
                                 />
-                                <p className="text-text-tertiary mt-1 text-sm">Enter admin user ID to assign</p>
+                                <p className="text-text-tertiary mt-1 text-sm">Введите ID администратора для назначения</p>
                             </div>
                         </div>
                     )}
 
                     {/* File Attachments */}
                     <div className="form-group">
-                        <label className="form-label">Attachments</label>
+                        <label className="form-label">Вложения</label>
                         <div className="flex items-center gap-3">
                             <input
                                 type="file"
@@ -324,19 +309,19 @@ function TicketForm() {
                                     <polyline points="17 8 12 3 7 8"></polyline>
                                     <line x1="12" y1="3" x2="12" y2="15"></line>
                                 </svg>
-                                Select Files
+                                Выбрать файлы
                             </label>
                             {selectedFiles.length > 0 && (
-                                <span>{selectedFiles.length} file(s) selected</span>
+                                <span>{selectedFiles.length} файл(ов) выбрано</span>
                             )}
                         </div>
                         {selectedFiles.length > 0 && (
                             <div className="mt-3">
-                                <p className="text-sm font-medium mb-2">Selected Files:</p>
+                                <p className="text-sm font-medium mb-2">Выбранные файлы:</p>
                                 <ul className="bg-bg-dark-tertiary p-3 rounded-lg">
                                     {Array.from(selectedFiles).map((file, index) => (
                                         <li key={index} className="mb-1 last:mb-0 text-sm">
-                                            {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                                            {file.name} ({(file.size / 1024).toFixed(1)} КБ)
                                         </li>
                                     ))}
                                 </ul>
@@ -359,7 +344,7 @@ function TicketForm() {
                     {/* Submit Button */}
                     <div className="flex justify-end gap-2 mt-4">
                         <Link to={isEditMode ? `/tickets/${id}` : "/tickets"} className="btn btn-secondary">
-                            Cancel
+                            Отмена
                         </Link>
                         <button
                             type="submit"
@@ -369,10 +354,10 @@ function TicketForm() {
                             {isSubmitting ? (
                                 <>
                                     <div className="spinner spinner-sm mr-2"></div>
-                                    {isEditMode ? 'Updating...' : 'Creating...'}
+                                    {isEditMode ? 'Обновление...' : 'Создание...'}
                                 </>
                             ) : (
-                                isEditMode ? 'Update Ticket' : 'Create Ticket'
+                                isEditMode ? 'Обновить тикет' : 'Создать тикет'
                             )}
                         </button>
                     </div>

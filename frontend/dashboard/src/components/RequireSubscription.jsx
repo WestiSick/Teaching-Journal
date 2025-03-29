@@ -6,9 +6,9 @@ export function RequireSubscription({ children, fallback }) {
     if (isFree) {
         return fallback || (
             <div className="card">
-                <h3>Subscription Required</h3>
-                <p>You need a paid subscription to access this feature.</p>
-                <p>Please contact the administrator to upgrade your account.</p>
+                <h3>Требуется подписка</h3>
+                <p>Вам нужна платная подписка для доступа к этой функции.</p>
+                <p>Пожалуйста, свяжитесь с администратором для повышения уровня вашей учетной записи.</p>
             </div>
         );
     }

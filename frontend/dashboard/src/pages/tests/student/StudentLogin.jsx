@@ -5,7 +5,7 @@ import { studentTestsService } from '../../../services/testsService';
 
 function StudentLogin() {
     const navigate = useNavigate();
-    const [mode, setMode] = useState('login'); // 'login' or 'register'
+    const [mode, setMode] = useState('login'); // 'login' или 'register'
     const [formData, setFormData] = useState({
         fio: '',
         email: '',
@@ -13,42 +13,36 @@ function StudentLogin() {
     });
     const [error, setError] = useState('');
 
-    // Login mutation
     const loginMutation = useMutation({
         mutationFn: (data) => studentTestsService.loginStudent(data),
         onSuccess: (response) => {
             const studentData = response.data.data;
-            // Store student info in localStorage
             localStorage.setItem('testStudentId', studentData.student_id);
             localStorage.setItem('testStudentInfo', JSON.stringify(studentData));
-            // Navigate to available tests
             navigate('/tests/student');
         },
         onError: (error) => {
-            setError(error.response?.data?.error || 'Login failed. Please check your credentials.');
+            setError(error.response?.data?.error || 'Не удалось войти. Проверьте введенные данные.');
         }
     });
 
-    // Register mutation
     const registerMutation = useMutation({
         mutationFn: (data) => studentTestsService.registerStudent(data),
         onSuccess: (response) => {
             const studentData = response.data.data;
-            // Store student info in localStorage
             localStorage.setItem('testStudentId', studentData.student_id);
             localStorage.setItem('testStudentInfo', JSON.stringify(studentData));
-            // Navigate to available tests
             navigate('/tests/student');
         },
         onError: (error) => {
-            setError(error.response?.data?.error || 'Registration failed. Please try again.');
+            setError(error.response?.data?.error || 'Не удалось зарегистрироваться. Пожалуйста, попробуйте снова.');
         }
     });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        setError(''); // Clear error when input changes
+        setError('');
     };
 
     const handleSubmit = (e) => {
@@ -57,7 +51,7 @@ function StudentLogin() {
 
         if (mode === 'login') {
             if (!formData.fio || !formData.email) {
-                setError('Please fill in all fields');
+                setError('Пожалуйста, заполните все поля');
                 return;
             }
             loginMutation.mutate({
@@ -66,7 +60,7 @@ function StudentLogin() {
             });
         } else {
             if (!formData.fio || !formData.email || !formData.group_name) {
-                setError('Please fill in all fields');
+                setError('Пожалуйста, заполните все поля');
                 return;
             }
             registerMutation.mutate(formData);
@@ -90,11 +84,11 @@ function StudentLogin() {
                             <line x1="6" y1="18" x2="6.01" y2="18"></line>
                         </svg>
                     </div>
-                    <h1 className="login-title">{mode === 'login' ? 'Student Login' : 'Student Registration'}</h1>
+                    <h1 className="login-title">{mode === 'login' ? 'Вход для студента' : 'Регистрация студента'}</h1>
                     <p className="login-subtitle">
                         {mode === 'login'
-                            ? 'Log in to access your tests'
-                            : 'Register to start taking tests'}
+                            ? 'Войдите, чтобы получить доступ к тестам'
+                            : 'Зарегистрируйтесь, чтобы начать проходить тесты'}
                     </p>
                 </div>
 
@@ -106,7 +100,7 @@ function StudentLogin() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="fio">Full Name</label>
+                        <label htmlFor="fio">ФИО</label>
                         <input
                             type="text"
                             id="fio"
@@ -114,7 +108,7 @@ function StudentLogin() {
                             className="form-control"
                             value={formData.fio}
                             onChange={handleChange}
-                            placeholder="Enter your full name"
+                            placeholder="Введите ваше полное имя"
                             required
                         />
                     </div>
@@ -128,14 +122,14 @@ function StudentLogin() {
                             className="form-control"
                             value={formData.email}
                             onChange={handleChange}
-                            placeholder="Enter your email"
+                            placeholder="Введите ваш email"
                             required
                         />
                     </div>
 
                     {mode === 'register' && (
                         <div className="form-group">
-                            <label htmlFor="group_name">Group</label>
+                            <label htmlFor="group_name">Группа</label>
                             <input
                                 type="text"
                                 id="group_name"
@@ -143,7 +137,7 @@ function StudentLogin() {
                                 className="form-control"
                                 value={formData.group_name}
                                 onChange={handleChange}
-                                placeholder="Enter your group name"
+                                placeholder="Введите название вашей группы"
                                 required
                             />
                         </div>
@@ -155,8 +149,8 @@ function StudentLogin() {
                         disabled={loginMutation.isPending || registerMutation.isPending}
                     >
                         {(loginMutation.isPending || registerMutation.isPending)
-                            ? (mode === 'login' ? 'Logging in...' : 'Registering...')
-                            : (mode === 'login' ? 'Login' : 'Register')}
+                            ? (mode === 'login' ? 'Вход...' : 'Регистрация...')
+                            : (mode === 'login' ? 'Войти' : 'Зарегистрироваться')}
                     </button>
                 </form>
 
@@ -167,8 +161,8 @@ function StudentLogin() {
                         onClick={toggleMode}
                     >
                         {mode === 'login'
-                            ? "Don't have an account? Register"
-                            : 'Already have an account? Login'}
+                            ? "Нет аккаунта? Зарегистрироваться"
+                            : 'Уже есть аккаунт? Войти'}
                     </button>
                 </div>
             </div>

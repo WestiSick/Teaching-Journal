@@ -23,13 +23,15 @@ function SharedLabGrades() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 3000);
             })
-            .catch(err => console.error('Could not copy text: ', err));
+            .catch(err => {
+                // Ошибка при копировании
+            });
     };
 
     // Function to download as PDF (placeholder)
     const downloadAsPdf = () => {
         // This would need an actual PDF generation implementation
-        alert('PDF download functionality would be implemented here');
+        alert('Здесь будет реализована функция скачивания PDF');
     };
 
     if (isLoading) {
@@ -57,15 +59,15 @@ function SharedLabGrades() {
                                 </svg>
                             </div>
                         </div>
-                        <h1 className="text-2xl font-bold mb-4">Shared Link Expired</h1>
-                        <p className="text-secondary mb-6">This shared lab grades link has expired or been deleted.</p>
-                        <p className="text-tertiary mb-6">You can create a new share link from the lab grades page.</p>
+                        <h1 className="text-2xl font-bold mb-4">Срок действия ссылки истек</h1>
+                        <p className="text-secondary mb-6">Срок действия этой ссылки на оценки лабораторных работ истек или она была удалена.</p>
+                        <p className="text-tertiary mb-6">Вы можете создать новую ссылку для общего доступа на странице оценок лабораторных работ.</p>
                         <div className="flex justify-center gap-4">
                             <Link to="/labs/links" className="btn btn-primary">
-                                Manage Share Links
+                                Управление ссылками
                             </Link>
                             <Link to="/labs" className="btn btn-secondary">
-                                Back to Labs
+                                Назад к лабораторным
                             </Link>
                         </div>
                     </div>
@@ -82,13 +84,13 @@ function SharedLabGrades() {
                             <line x1="12" y1="9" x2="12" y2="13"></line>
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
-                        <p>The shared lab grades could not be loaded.</p>
+                        <p>Не удалось загрузить оценки лабораторных работ.</p>
                     </div>
                     <p className="mt-2">{error.message}</p>
                 </div>
                 <div className="flex justify-center mt-6">
                     <Link to="/labs" className="btn btn-secondary">
-                        Back to Labs
+                        Назад к лабораторным
                     </Link>
                 </div>
             </div>
@@ -110,11 +112,11 @@ function SharedLabGrades() {
                             </svg>
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold mb-4">Invalid Link</h1>
-                    <p className="text-secondary mb-6">The shared lab grades link is invalid.</p>
+                    <h1 className="text-2xl font-bold mb-4">Недействительная ссылка</h1>
+                    <p className="text-secondary mb-6">Ссылка на оценки лабораторных работ недействительна.</p>
                     <div className="flex justify-center">
                         <Link to="/labs" className="btn btn-secondary">
-                            Back to Labs
+                            Назад к лабораторным
                         </Link>
                     </div>
                 </div>
@@ -129,8 +131,8 @@ function SharedLabGrades() {
         <div className="container mx-auto max-w-6xl p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold mb-2">Shared Lab Grades</h1>
-                    <p className="text-secondary">Viewing shared grades that are available to students</p>
+                    <h1 className="text-2xl font-bold mb-2">Общий доступ к оценкам лабораторных работ</h1>
+                    <p className="text-secondary">Просмотр оценок, доступных для студентов</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
@@ -141,7 +143,7 @@ function SharedLabGrades() {
                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                         </svg>
-                        {copied ? 'Copied!' : 'Copy Link'}
+                        {copied ? 'Скопировано!' : 'Копировать ссылку'}
                     </button>
                     <button
                         className="btn btn-secondary flex items-center gap-2"
@@ -152,7 +154,7 @@ function SharedLabGrades() {
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        Download PDF
+                        Скачать PDF
                     </button>
                     <Link
                         to="/labs/links"
@@ -162,7 +164,7 @@ function SharedLabGrades() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        Back
+                        Назад
                     </Link>
                 </div>
             </div>
@@ -184,7 +186,7 @@ function SharedLabGrades() {
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
-                                <span>Shared by: <span className="text-primary">{sharedData.shared_by}</span></span>
+                                <span>Опубликовано: <span className="text-primary">{sharedData.shared_by}</span></span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -193,38 +195,38 @@ function SharedLabGrades() {
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
                                     <line x1="3" y1="10" x2="21" y2="10"></line>
                                 </svg>
-                                <span>Created: {new Date(sharedData.created_at).toLocaleDateString()}</span>
+                                <span>Создано: {new Date(sharedData.created_at).toLocaleDateString()}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                <span>Expires: {new Date(sharedData.expires_at).toLocaleDateString()}</span>
+                                <span>Истекает: {new Date(sharedData.expires_at).toLocaleDateString()}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
-                                <span>Views: {sharedData.access_count || 0}</span>
+                                <span>Просмотры: {sharedData.access_count || 0}</span>
                             </div>
                         </div>
                     </div>
                     <div className="flex-shrink-0 flex flex-col items-end gap-2">
                         <div className="text-lg font-medium flex items-center gap-2">
-                            <span className="text-secondary">Status:</span>
+                            <span className="text-secondary">Статус:</span>
                             {new Date(sharedData.expires_at) > new Date() ? (
-                                <span className="badge bg-success-lighter text-success px-3 py-1">Active</span>
+                                <span className="badge bg-success-lighter text-success px-3 py-1">Активно</span>
                             ) : (
-                                <span className="badge bg-danger-lighter text-danger px-3 py-1">Expired</span>
+                                <span className="badge bg-danger-lighter text-danger px-3 py-1">Истекло</span>
                             )}
                         </div>
                         <div className="text-sm text-tertiary">
                             {new Date(sharedData.expires_at) > new Date() ? (
-                                <span>Expires in {getRemainingDays(sharedData.expires_at)} days</span>
+                                <span>Истекает через {getRemainingDays(sharedData.expires_at)} дней</span>
                             ) : (
-                                <span>Expired {Math.abs(getRemainingDays(sharedData.expires_at))} days ago</span>
+                                <span>Истекло {Math.abs(getRemainingDays(sharedData.expires_at))} дней назад</span>
                             )}
                         </div>
                     </div>
@@ -237,7 +239,7 @@ function SharedLabGrades() {
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                             </svg>
-                            <span>Share URL:</span>
+                            <span>URL для общего доступа:</span>
                         </div>
                         <div className="flex-1 min-w-0 flex items-center gap-2">
                             <input
@@ -251,7 +253,7 @@ function SharedLabGrades() {
                                 className="btn btn-sm btn-primary"
                                 onClick={copyShareLink}
                             >
-                                {copied ? 'Copied!' : 'Copy'}
+                                {copied ? 'Скопировано!' : 'Копировать'}
                             </button>
                         </div>
                     </div>
@@ -261,9 +263,9 @@ function SharedLabGrades() {
             {/* Grades Table */}
             <div className="card">
                 <div className="flex justify-between items-center px-6 py-4 border-b border-border-color">
-                    <h2 className="text-xl font-semibold">Lab Grades</h2>
+                    <h2 className="text-xl font-semibold">Оценки лабораторных работ</h2>
                     <div className="flex items-center gap-2">
-                        <span className="text-secondary">Group Average:</span>
+                        <span className="text-secondary">Средний балл группы:</span>
                         <span className={`font-semibold ${getAverageClass(sharedData.group_average)}`}>
                             {sharedData.group_average.toFixed(1)}
                         </span>
@@ -275,11 +277,11 @@ function SharedLabGrades() {
                         <table className="w-full">
                             <thead>
                             <tr className="bg-bg-dark-tertiary">
-                                <th className="px-4 py-3 text-left">Student</th>
+                                <th className="px-4 py-3 text-left">Студент</th>
                                 {Array.from({ length: sharedData.total_labs }, (_, i) => (
-                                    <th key={i} className="px-4 py-3 text-center">Lab {i + 1}</th>
+                                    <th key={i} className="px-4 py-3 text-center">Лаб. {i + 1}</th>
                                 ))}
-                                <th className="px-4 py-3 text-center">Average</th>
+                                <th className="px-4 py-3 text-center">Средний балл</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -294,14 +296,14 @@ function SharedLabGrades() {
                                         </td>
                                     ))}
                                     <td className={`px-4 py-3 text-center font-semibold ${getAverageClass(student.average)}`}>
-                                        {student.average ? student.average.toFixed(1) : 'N/A'}
+                                        {student.average ? student.average.toFixed(1) : 'Н/Д'}
                                     </td>
                                 </tr>
                             ))}
                             </tbody>
                             <tfoot>
                             <tr className="bg-bg-dark-tertiary">
-                                <td className="px-4 py-3 font-semibold">Group Average</td>
+                                <td className="px-4 py-3 font-semibold">Средний балл группы</td>
                                 {Array.from({ length: sharedData.total_labs }, () => (
                                     <td className="px-4 py-3"></td>
                                 ))}
@@ -319,7 +321,7 @@ function SharedLabGrades() {
                             <line x1="12" y1="8" x2="12" y2="12"></line>
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
-                        <p>No students or grades to display</p>
+                        <p>Нет студентов или оценок для отображения</p>
                     </div>
                 )}
             </div>

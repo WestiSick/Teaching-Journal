@@ -14,20 +14,18 @@ function Login() {
     const location = useLocation();
     const { login } = useAuth();
 
-    // Check for message from redirect (e.g., after registration)
+    // Проверка наличия сообщения после перенаправления (например, после регистрации)
     useEffect(() => {
         if (location.state?.message) {
             setError('');
-            // Use a temporary variable to store the message
+            // Используем временную переменную для хранения сообщения
             const message = location.state.message;
 
-            // Create a new history entry without the message to prevent
-            // showing the message again on refresh
+            // Создаем новую запись в истории без сообщения, чтобы предотвратить
+            // повторное отображение сообщения при обновлении страницы
             navigate(location.pathname, { replace: true });
 
-            // Show success message in a toast or alert
-            console.log('Success message:', message);
-            // You could set a success state and show it in the UI here
+            // Здесь можно добавить отображение сообщения об успешной операции
         }
     }, [location, navigate]);
 
@@ -35,7 +33,7 @@ function Login() {
         e.preventDefault();
 
         if (!email || !password) {
-            setError('Email and password are required');
+            setError('Необходимо указать электронную почту и пароль');
             return;
         }
 
@@ -43,40 +41,30 @@ function Login() {
         setLoading(true);
 
         try {
-            // Direct axios call to avoid interceptor issues during login
+            // Прямой вызов axios для избежания проблем с перехватчиком во время входа
             const response = await axios.post('/api/auth/login', {
                 email,
                 password
             });
 
-            console.log('Login response:', response.data); // Add logging to see the response
-
             if (response.data.success && response.data.data) {
                 const { token, user } = response.data.data;
 
-                // Log to verify we have the correct data
-                console.log('Token received:', token);
-                console.log('User data:', user);
-
-                // Set global axios defaults
+                // Устанавливаем глобальные настройки axios по умолчанию
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-                // Login and update context
+                // Вход и обновление контекста
                 login(token, user);
 
-                // Verify the header is set
-                console.log('Auth header after login:', axios.defaults.headers.common['Authorization']);
-
-                // Add a small delay before redirecting to ensure state updates
+                // Добавляем небольшую задержку перед перенаправлением, чтобы гарантировать обновление состояния
                 setTimeout(() => {
                     navigate('/dashboard');
                 }, 100);
             } else {
-                setError('Invalid server response format');
+                setError('Недопустимый формат ответа сервера');
             }
         } catch (err) {
-            console.error('Login error:', err);
-            setError(err.response?.data?.error || 'Failed to login');
+            setError(err.response?.data?.error || 'Не удалось войти');
         } finally {
             setLoading(false);
         }
@@ -98,7 +86,7 @@ function Login() {
                     </div>
                     <h1 className="logo-text">Teacher Journal</h1>
                 </div>
-                <p className="auth-subtitle">Sign in to your account</p>
+                <p className="auth-subtitle">Войдите в свою учетную запись</p>
             </div>
 
             {error && (
@@ -116,7 +104,7 @@ function Login() {
 
             <form onSubmit={handleSubmit} className="auth-form">
                 <div className="form-group">
-                    <label htmlFor="email" className="form-label">Email Address</label>
+                    <label htmlFor="email" className="form-label">Электронная почта</label>
                     <div className="input-with-icon">
                         <input
                             type="email"
@@ -137,7 +125,7 @@ function Login() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="password" className="form-label">Password</label>
+                    <label htmlFor="password" className="form-label">Пароль</label>
                     <div className="input-with-icon">
                         <input
                             type={showPassword ? "text" : "password"}
@@ -177,7 +165,7 @@ function Login() {
 
                 <div className="flex justify-end mb-4">
                     <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                        Forgot password?
+                        Забыли пароль?
                     </Link>
                 </div>
 
@@ -189,7 +177,7 @@ function Login() {
                     {loading ? (
                         <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Signing in...</span>
+                            <span>Выполняется вход...</span>
                         </>
                     ) : (
                         <>
@@ -198,14 +186,14 @@ function Login() {
                                 <polyline points="10 17 15 12 10 7"></polyline>
                                 <line x1="15" y1="12" x2="3" y2="12"></line>
                             </svg>
-                            <span>Sign In</span>
+                            <span>Войти</span>
                         </>
                     )}
                 </button>
             </form>
 
             <div className="auth-footer">
-                <p>Don't have an account? <Link to="/register" className="text-primary hover:underline">Sign up</Link></p>
+                <p>Нет учетной записи? <Link to="/register" className="text-primary hover:underline">Зарегистрироваться</Link></p>
             </div>
 
             <style jsx="true">{`

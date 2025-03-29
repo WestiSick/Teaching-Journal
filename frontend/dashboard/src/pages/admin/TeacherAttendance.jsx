@@ -69,15 +69,15 @@ function TeacherAttendance() {
     }
 
     if (!teacher) {
-        return <div className="alert alert-danger">Teacher not found</div>;
+        return <div className="alert alert-danger">Преподаватель не найден</div>;
     }
 
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Teacher Attendance</h1>
+                <h1 className="page-title">Посещаемость преподавателя</h1>
                 <div>
-                    <Link to={`/admin/teachers/${id}`} className="btn btn-secondary">Back to Teacher</Link>
+                    <Link to={`/admin/teachers/${id}`} className="btn btn-secondary">Назад к преподавателю</Link>
                 </div>
             </div>
 
@@ -107,25 +107,25 @@ function TeacherAttendance() {
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}`)}
                         >
-                            Overview
+                            Обзор
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/groups`)}
                         >
-                            Groups
+                            Группы
                         </button>
                         <button
                             className="tab-button tab-button-active"
                             onClick={() => navigate(`/admin/teachers/${id}/attendance`)}
                         >
-                            Attendance
+                            Посещаемость
                         </button>
                         <button
                             className="tab-button"
                             onClick={() => navigate(`/admin/teachers/${id}/labs`)}
                         >
-                            Labs
+                            Лабораторные
                         </button>
                     </div>
                 </div>
@@ -133,34 +133,34 @@ function TeacherAttendance() {
 
             {/* Attendance Summary */}
             <div className="card mb-6">
-                <h2 className="text-xl font-semibold mb-4">Attendance Summary</h2>
+                <h2 className="text-xl font-semibold mb-4">Сводка посещаемости</h2>
 
                 <div className="summary-stats">
                     <div className="summary-stat">
-                        <div className="stat-label">Total Lessons</div>
+                        <div className="stat-label">Всего занятий</div>
                         <div className="stat-value">{attendance.length}</div>
                     </div>
 
                     <div className="summary-stat">
-                        <div className="stat-label">Average Attendance</div>
+                        <div className="stat-label">Средняя посещаемость</div>
                         <div className="stat-value">
                             {overallRate.toFixed(1)}%
                         </div>
                     </div>
 
                     <div className="summary-stat">
-                        <div className="stat-label">Groups</div>
+                        <div className="stat-label">Группы</div>
                         <div className="stat-value">{groups.length}</div>
                     </div>
 
                     <div className="summary-stat">
-                        <div className="stat-label">Subjects</div>
+                        <div className="stat-label">Предметы</div>
                         <div className="stat-value">{subjects.length}</div>
                     </div>
                 </div>
 
                 <div className="attendance-chart">
-                    <div className="chart-title">Overall Attendance Rate</div>
+                    <div className="chart-title">Общий показатель посещаемости</div>
                     <div className="chart-container">
                         <div className="progress-bar-large">
                             <div
@@ -180,14 +180,14 @@ function TeacherAttendance() {
             {/* Attendance Records */}
             <div className="card">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2 className="text-xl font-semibold">Attendance Records</h2>
+                    <h2 className="text-xl font-semibold">Записи посещаемости</h2>
                 </div>
 
                 {/* Filters */}
                 <div className="filters mb-4">
                     <div className="filters-grid">
                         <div className="filter-group">
-                            <label htmlFor="group">Group</label>
+                            <label htmlFor="group">Группа</label>
                             <select
                                 id="group"
                                 name="group"
@@ -195,7 +195,7 @@ function TeacherAttendance() {
                                 value={filters.group}
                                 onChange={handleFilterChange}
                             >
-                                <option value="">All Groups</option>
+                                <option value="">Все группы</option>
                                 {groups.map((group, index) => (
                                     <option key={index} value={group}>{group}</option>
                                 ))}
@@ -203,7 +203,7 @@ function TeacherAttendance() {
                         </div>
 
                         <div className="filter-group">
-                            <label htmlFor="subject">Subject</label>
+                            <label htmlFor="subject">Предмет</label>
                             <select
                                 id="subject"
                                 name="subject"
@@ -211,7 +211,7 @@ function TeacherAttendance() {
                                 value={filters.subject}
                                 onChange={handleFilterChange}
                             >
-                                <option value="">All Subjects</option>
+                                <option value="">Все предметы</option>
                                 {subjects.map((subject, index) => (
                                     <option key={index} value={subject}>{subject}</option>
                                 ))}
@@ -223,7 +223,7 @@ function TeacherAttendance() {
                                 className="btn btn-secondary"
                                 onClick={clearFilters}
                             >
-                                Clear Filters
+                                Очистить фильтры
                             </button>
                         </div>
                     </div>
@@ -237,11 +237,11 @@ function TeacherAttendance() {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        <h3>No Attendance Records</h3>
-                        <p>No attendance records found for the selected filters.</p>
+                        <h3>Нет записей посещаемости</h3>
+                        <p>Записи посещаемости для выбранных фильтров не найдены.</p>
                         {(filters.group || filters.subject) && (
                             <button className="btn btn-primary mt-3" onClick={clearFilters}>
-                                Clear Filters
+                                Очистить фильтры
                             </button>
                         )}
                     </div>
@@ -250,12 +250,12 @@ function TeacherAttendance() {
                         <table className="table">
                             <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Subject</th>
-                                <th>Group</th>
-                                <th>Topic</th>
-                                <th>Type</th>
-                                <th>Attendance</th>
+                                <th>Дата</th>
+                                <th>Предмет</th>
+                                <th>Группа</th>
+                                <th>Тема</th>
+                                <th>Тип</th>
+                                <th>Посещаемость</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -282,7 +282,7 @@ function TeacherAttendance() {
                                                 <span className="rate-value">{record.attendance_rate.toFixed(0)}%</span>
                                             </div>
                                             <div className="attendance-count">
-                                                {record.attended_students} / {record.total_students} students
+                                                {record.attended_students} / {record.total_students} студентов
                                             </div>
                                         </div>
                                     </td>
