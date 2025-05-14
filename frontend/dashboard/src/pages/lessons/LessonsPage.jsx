@@ -15,6 +15,10 @@ function LessonsPage() {
         to_date: '',
         search: ''
     });
+    const [tempDates, setTempDates] = useState({
+        from_date: '',
+        to_date: ''
+    });
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [expandedLesson, setExpandedLesson] = useState(null);
@@ -47,16 +51,45 @@ function LessonsPage() {
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
         const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
+        const fromDate = firstDay.toISOString().split('T')[0];
+        const toDate = lastDay.toISOString().split('T')[0];
+
         setFilters(prev => ({
             ...prev,
-            from_date: firstDay.toISOString().split('T')[0],
-            to_date: lastDay.toISOString().split('T')[0]
+            from_date: fromDate,
+            to_date: toDate
         }));
+
+        setTempDates({
+            from_date: fromDate,
+            to_date: toDate
+        });
     }, []);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleTempDateChange = (e) => {
+        const { name, value } = e.target;
+        setTempDates(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleDateBlur = (e) => {
+        const { name, value } = e.target;
+        if (value) {
+            setFilters(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleDateKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            const { name, value } = e.target;
+            if (value) {
+                setFilters(prev => ({ ...prev, [name]: value }));
+            }
+        }
     };
 
     const clearFilters = () => {
@@ -71,14 +104,17 @@ function LessonsPage() {
             to_date: lastDay.toISOString().split('T')[0],
             search: ''
         });
+
+        setTempDates({
+            from_date: firstDay.toISOString().split('T')[0],
+            to_date: lastDay.toISOString().split('T')[0]
+        });
     };
 
     const handleExport = async (filterType = null) => {
         try {
-            // Подготавливаем параметры экспорта
             const exportParams = {};
 
-            // Если filterType - 'current', используем текущие фильтры
             if (filterType === 'current') {
                 if (filters.group) exportParams.group = filters.group;
                 if (filters.subject) exportParams.subject = filters.subject;
@@ -88,12 +124,9 @@ function LessonsPage() {
             }
 
             const response = await lessonService.exportLessons(exportParams);
-
-            // Создаем blob из ответа
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
             const url = window.URL.createObjectURL(blob);
 
-            // Создаем описательное имя файла
             let filename = 'lessons_export';
             if (filterType === 'current' && filters.group) {
                 filename += `_${filters.group}`;
@@ -103,14 +136,12 @@ function LessonsPage() {
             }
             filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-            // Создаем временную ссылку и запускаем скачивание
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
 
-            // Очищаем
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
@@ -122,19 +153,17 @@ function LessonsPage() {
         if (window.confirm(`Вы уверены, что хотите удалить занятие "${topic}"?`)) {
             try {
                 await lessonService.deleteLesson(id);
-                refetch(); // Обновляем список после удаления
+                refetch();
             } catch (error) {
                 alert('Не удалось удалить занятие');
             }
         }
     };
 
-    // Переключение выпадающего списка
     const toggleDropdown = () => {
         setDropdownOpen(!dropdownOpen);
     };
 
-    // Закрытие выпадающего списка при клике вне его
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -148,7 +177,6 @@ function LessonsPage() {
         };
     }, []);
 
-    // Фильтрация занятий по поисковому запросу
     const filteredLessons = lessons.filter(lesson => {
         if (!filters.search) return true;
         const searchTerm = filters.search.toLowerCase();
@@ -341,8 +369,10 @@ function LessonsPage() {
                             type="date"
                             id="from_date"
                             name="from_date"
-                            value={filters.from_date}
-                            onChange={handleFilterChange}
+                            value={tempDates.from_date}
+                            onChange={handleTempDateChange}
+                            onBlur={handleDateBlur}
+                            onKeyPress={handleDateKeyPress}
                             className="form-control py-1 text-sm"
                         />
                     </div>
@@ -353,8 +383,10 @@ function LessonsPage() {
                             type="date"
                             id="to_date"
                             name="to_date"
-                            value={filters.to_date}
-                            onChange={handleFilterChange}
+                            value={tempDates.to_date}
+                            onChange={handleTempDateChange}
+                            onBlur={handleDateBlur}
+                            onKeyPress={handleDateKeyPress}
                             className="form-control py-1 text-sm"
                         />
                     </div>
