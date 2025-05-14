@@ -21,18 +21,15 @@ function Register() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
-        // Проверка надежности пароля
         if (name === 'password') {
             checkPasswordStrength(value);
         }
     };
 
     const checkPasswordStrength = (password) => {
-        // Сброс
         let strength = 0;
         let feedback = '';
 
-        // Проверка длины
         if (password.length >= 8) {
             strength += 1;
         } else {
@@ -42,27 +39,22 @@ function Register() {
             return;
         }
 
-        // Содержит цифру
         if (/\d/.test(password)) {
             strength += 1;
         }
 
-        // Содержит строчную букву
         if (/[a-z]/.test(password)) {
             strength += 1;
         }
 
-        // Содержит заглавную букву
         if (/[A-Z]/.test(password)) {
             strength += 1;
         }
 
-        // Содержит специальный символ
         if (/[^A-Za-z0-9]/.test(password)) {
             strength += 1;
         }
 
-        // Обратная связь на основе надежности
         if (strength <= 2) {
             feedback = 'Слабый пароль';
         } else if (strength <= 4) {
@@ -162,15 +154,18 @@ function Register() {
                             value={formData.fio}
                             onChange={handleChange}
                             disabled={loading}
-                            className="form-control pl-10"
+                            className="form-control"
                             placeholder="Иванов Иван Иванович"
+                            style={{ paddingLeft: formData.fio ? '1rem' : '2.5rem' }}
                         />
-                        <div className="input-icon left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
+                        {!formData.fio && (
+                            <div className="input-icon left">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -184,15 +179,18 @@ function Register() {
                             value={formData.email}
                             onChange={handleChange}
                             disabled={loading}
-                            className="form-control pl-10"
+                            className="form-control"
                             placeholder="name@example.com"
+                            style={{ paddingLeft: formData.email ? '1rem' : '2.5rem' }}
                         />
-                        <div className="input-icon left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                        </div>
+                        {!formData.email && (
+                            <div className="input-icon left">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -206,15 +204,18 @@ function Register() {
                             value={formData.password}
                             onChange={handleChange}
                             disabled={loading}
-                            className="form-control pl-10 pr-10"
+                            className="form-control"
                             placeholder="••••••••"
+                            style={{ paddingLeft: formData.password ? '1rem' : '2.5rem' }}
                         />
-                        <div className="input-icon left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                        </div>
+                        {!formData.password && (
+                            <div className="input-icon left">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                        )}
                         <button
                             type="button"
                             className="input-icon right hover:text-primary"
@@ -264,15 +265,18 @@ function Register() {
                             value={formData.confirmPassword}
                             onChange={handleChange}
                             disabled={loading}
-                            className="form-control pl-10"
+                            className="form-control"
                             placeholder="••••••••"
+                            style={{ paddingLeft: formData.confirmPassword ? '1rem' : '2.5rem' }}
                         />
-                        <div className="input-icon left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                        </div>
+                        {!formData.confirmPassword && (
+                            <div className="input-icon left">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                        )}
                     </div>
                     {formData.password && formData.confirmPassword && (
                         <div className="password-match text-xs mt-1">
@@ -372,24 +376,40 @@ function Register() {
                 
                 .input-icon {
                     position: absolute;
-                    top: 0;
-                    height: 100%;
+                    top: 50%;
+                    transform: translateY(-50%);
                     display: flex;
                     align-items: center;
                     color: var(--text-tertiary);
                 }
                 
                 .input-icon.left {
-                    left: 0;
-                    padding-left: 0.75rem;
+                    left: 0.75rem;
                 }
                 
                 .input-icon.right {
-                    right: 0;
-                    padding-right: 0.75rem;
+                    right: 0.75rem;
                     background: transparent;
                     border: none;
                     cursor: pointer;
+                }
+                
+                .form-control {
+                    width: 100%;
+                    padding: 0.75rem 1rem;
+                    font-size: 1rem;
+                    line-height: 1.5;
+                    background-color: var(--bg-dark-tertiary);
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-md);
+                    color: var(--text-primary);
+                    transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+                }
+                
+                .form-control:focus {
+                    border-color: var(--primary);
+                    outline: none;
+                    box-shadow: 0 0 0 3px var(--primary-lighter);
                 }
                 
                 .auth-footer {
