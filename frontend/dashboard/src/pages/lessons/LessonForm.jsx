@@ -9,7 +9,6 @@ function LessonForm() {
     const queryClient = useQueryClient();
     const isEditMode = !!id;
 
-    // Состояние формы
     const [formData, setFormData] = useState({
         group_name: '',
         subject: '',
@@ -21,38 +20,31 @@ function LessonForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // Состояние UI для отображения выпадающих списков
     const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
     const [showGroupDropdown, setShowGroupDropdown] = useState(false);
 
-    // Ссылки на поля ввода для их фокусировки
     const subjectInputRef = useRef(null);
     const groupInputRef = useRef(null);
 
-    // Ссылки на контейнеры выпадающих списков для обнаружения клика вне элемента
     const subjectDropdownRef = useRef(null);
     const groupDropdownRef = useRef(null);
 
-    // Получение групп для выпадающего списка
     const { data: groupsData } = useQuery({
         queryKey: ['groups'],
         queryFn: groupService.getGroups
     });
 
-    // Получение предметов для выпадающего списка
     const { data: subjectsData } = useQuery({
         queryKey: ['subjects'],
         queryFn: lessonService.getSubjects
     });
 
-    // Получение данных занятия в режиме редактирования
     const { data: lessonData, isLoading: lessonLoading } = useQuery({
         queryKey: ['lesson', id],
         queryFn: () => lessonService.getLesson(id),
         enabled: isEditMode
     });
 
-    // Мутация для создания
     const createMutation = useMutation({
         mutationFn: (data) => lessonService.createLesson(data),
         onSuccess: () => {
@@ -66,7 +58,6 @@ function LessonForm() {
         }
     });
 
-    // Мутация для обновления
     const updateMutation = useMutation({
         mutationFn: (data) => lessonService.updateLesson(id, data),
         onSuccess: () => {
@@ -81,7 +72,6 @@ function LessonForm() {
         }
     });
 
-    // Заполнение формы данными занятия в режиме редактирования
     useEffect(() => {
         if (isEditMode && lessonData?.data?.data) {
             const lesson = lessonData.data.data;
@@ -96,7 +86,6 @@ function LessonForm() {
         }
     }, [isEditMode, lessonData]);
 
-    // Обработка клика вне выпадающих списков для их закрытия
     useEffect(() => {
         function handleClickOutside(event) {
             if (subjectDropdownRef.current && !subjectDropdownRef.current.contains(event.target)) {
@@ -178,7 +167,6 @@ function LessonForm() {
         }
     };
 
-    // Состояние загрузки для режима редактирования
     if (isEditMode && lessonLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -259,18 +247,21 @@ function LessonForm() {
                                         onFocus={() => setShowGroupDropdown(true)}
                                         ref={groupInputRef}
                                         required
-                                        className="form-control pl-10"
+                                        className="form-control"
                                         placeholder="Введите или выберите группу"
                                         autoComplete="off"
+                                        style={{ paddingLeft: formData.group_name ? '1rem' : '2.5rem' }}
                                     />
-                                    <div className="input-icon left">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="9" cy="7" r="4"></circle>
-                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                        </svg>
-                                    </div>
+                                    {!formData.group_name && (
+                                        <div className="input-icon left">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="9" cy="7" r="4"></circle>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                            </svg>
+                                        </div>
+                                    )}
                                 </div>
                                 {showGroupDropdown && filteredGroups.length > 0 && (
                                     <div className="dropdown-list">
@@ -308,16 +299,19 @@ function LessonForm() {
                                         onFocus={() => setShowSubjectDropdown(true)}
                                         ref={subjectInputRef}
                                         required
-                                        className="form-control pl-10"
+                                        className="form-control"
                                         placeholder="Введите или выберите предмет"
                                         autoComplete="off"
+                                        style={{ paddingLeft: formData.subject ? '1rem' : '2.5rem' }}
                                     />
-                                    <div className="input-icon left">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                        </svg>
-                                    </div>
+                                    {!formData.subject && (
+                                        <div className="input-icon left">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                            </svg>
+                                        </div>
+                                    )}
                                 </div>
                                 {showSubjectDropdown && filteredSubjects.length > 0 && (
                                     <div className="dropdown-list">
@@ -350,16 +344,19 @@ function LessonForm() {
                                 value={formData.topic}
                                 onChange={handleChange}
                                 required
-                                className="form-control pl-10"
+                                className="form-control"
                                 placeholder="Введите тему занятия"
+                                style={{ paddingLeft: formData.topic ? '1rem' : '2.5rem' }}
                             />
-                            <div className="input-icon left">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                                    <polyline points="2 17 12 22 22 17"></polyline>
-                                    <polyline points="2 12 12 17 22 12"></polyline>
-                                </svg>
-                            </div>
+                            {!formData.topic && (
+                                <div className="input-icon left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                        <polyline points="2 17 12 22 22 17"></polyline>
+                                        <polyline points="2 12 12 17 22 12"></polyline>
+                                    </svg>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -374,21 +371,24 @@ function LessonForm() {
                                     value={formData.type}
                                     onChange={handleChange}
                                     required
-                                    className="form-control pl-10"
+                                    className="form-control"
+                                    style={{ paddingLeft: formData.type ? '1rem' : '2.5rem' }}
                                 >
                                     <option value="Лекция">Лекция</option>
                                     <option value="Практика">Практика</option>
                                     <option value="Лабораторная работа">Лабораторная работа</option>
                                 </select>
-                                <div className="input-icon left">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                                        <polyline points="10 9 9 9 8 9"></polyline>
-                                    </svg>
-                                </div>
+                                {!formData.type && (
+                                    <div className="input-icon left">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -403,16 +403,19 @@ function LessonForm() {
                                     value={formData.date}
                                     onChange={handleChange}
                                     required
-                                    className="form-control pl-10"
+                                    className="form-control"
+                                    style={{ paddingLeft: formData.date ? '1rem' : '2.5rem' }}
                                 />
-                                <div className="input-icon left">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                </div>
+                                {!formData.date && (
+                                    <div className="input-icon left">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -427,16 +430,19 @@ function LessonForm() {
                                     value={formData.hours}
                                     onChange={handleChange}
                                     min="1"
-                                    max="8"
+                                    max="30"
                                     required
-                                    className="form-control pl-10"
+                                    className="form-control"
+                                    style={{ paddingLeft: formData.hours ? '1rem' : '2.5rem' }}
                                 />
-                                <div className="input-icon left">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                </div>
+                                {!formData.hours && (
+                                    <div className="input-icon left">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -523,16 +529,33 @@ function LessonForm() {
                 
                 .input-icon {
                     position: absolute;
-                    top: 0;
-                    height: 100%;
+                    top: 50%;
+                    transform: translateY(-50%);
                     display: flex;
                     align-items: center;
                     color: var(--text-tertiary);
                 }
                 
                 .input-icon.left {
-                    left: 0;
-                    padding-left: 0.75rem;
+                    left: 0.75rem;
+                }
+                
+                .form-control {
+                    width: 100%;
+                    padding: 0.75rem 1rem;
+                    font-size: 1rem;
+                    line-height: 1.5;
+                    background-color: var(--bg-dark-tertiary);
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-md);
+                    color: var(--text-primary);
+                    transition: all var(--transition-fast) ease;
+                }
+                
+                .form-control:focus {
+                    border-color: var(--primary);
+                    outline: none;
+                    box-shadow: 0 0 0 3px var(--primary-lighter);
                 }
                 
                 @keyframes spin {
