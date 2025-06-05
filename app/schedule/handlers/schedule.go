@@ -298,14 +298,7 @@ func (h *ScheduleHandler) AddLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse request body
-	var req scheduleModels.AddLessonRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-
-	// Parse schedule items from request body
+	// Parse request body directly into ScheduleItem
 	var scheduleItem scheduleModels.ScheduleItem
 	if err := json.NewDecoder(r.Body).Decode(&scheduleItem); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -790,37 +783,40 @@ func parseScheduleHTML(html string, userID int, database *gorm.DB, baseCount int
 				auditorium = auditoriumMatch[2] // Use the text content of the link
 			}
 
-			// Create unique ID for this class using continuous counter
-			lessonID := fmt.Sprintf("lesson_%d", itemCount)
+			for _, grp := range groups {
+				// Create unique ID for this class using continuous counter
+				lessonID := fmt.Sprintf("lesson_%d", itemCount)
 
-			// Format group name with subgroup for DB check
-			groupName := groups[0] // Take first group if multiple
-			if subgroup != "Вся группа" && subgroup != "Поток" {
-				groupName = fmt.Sprintf("%s %s", groupName, subgroup)
+				// Format group name with subgroup for DB check
+				groupName := grp
+				if subgroup != "Вся группа" && subgroup != "Поток" {
+					groupName = fmt.Sprintf("%s %s", groupName, subgroup)
+				}
+
+				// Check if class already exists in database
+				var existingCount int64
+				database.Model(&models.Lesson{}).
+					Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
+						userID, dbFormatDate, groupName, subjectName).
+					Count(&existingCount)
+
+				// Create schedule item for this group
+				scheduleItem := scheduleModels.ScheduleItem{
+					ID:         lessonID,
+					Date:       dbFormatDate,
+					Time:       classTime,
+					ClassType:  classTypeFull,
+					Subject:    subjectName,
+					Group:      grp,
+					Subgroup:   subgroup,
+					Auditorium: auditorium, // Add the auditorium information
+					InSystem:   existingCount > 0,
+				}
+
+				scheduleItems = append(scheduleItems, scheduleItem)
+
+				itemCount++ // Increment counter for next item
 			}
-
-			// Check if class already exists in database
-			var existingCount int64
-			database.Model(&models.Lesson{}).
-				Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
-					userID, dbFormatDate, groupName, subjectName).
-				Count(&existingCount)
-
-			// Create schedule item
-			scheduleItem := scheduleModels.ScheduleItem{
-				ID:         lessonID,
-				Date:       dbFormatDate,
-				Time:       classTime,
-				ClassType:  classTypeFull,
-				Subject:    subjectName,
-				Group:      groups[0],
-				Subgroup:   subgroup,
-				Auditorium: auditorium, // Add the auditorium information
-				InSystem:   existingCount > 0,
-			}
-			scheduleItems = append(scheduleItems, scheduleItem)
-
-			itemCount++ // Increment counter for next item
 		}
 	}
 
