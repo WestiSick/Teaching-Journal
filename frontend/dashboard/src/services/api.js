@@ -44,8 +44,8 @@ export const userService = {
 
 // Dashboard services
 export const dashboardService = {
-    getStats: () =>
-        api.get('/dashboard/stats'),
+    getStats: (params) =>
+        api.get('/dashboard/stats', { params }),
 };
 
 // Lesson services
