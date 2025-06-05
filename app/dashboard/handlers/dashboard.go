@@ -4,6 +4,7 @@ import (
 	"TeacherJournal/app/dashboard/models"
 	"TeacherJournal/app/dashboard/utils"
 	"net/http"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -44,18 +45,36 @@ func (h *DashboardHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Determine timeframe filters
+	timeframe := r.URL.Query().Get("timeframe")
+	var dateFrom time.Time
+	now := time.Now()
+	switch timeframe {
+	case "week":
+		dateFrom = now.AddDate(0, 0, -7)
+	case "semester":
+		dateFrom = now.AddDate(0, -6, 0)
+	case "month":
+		fallthrough
+	default:
+		dateFrom = now.AddDate(0, -1, 0)
+	}
+
+	dateStr := dateFrom.Format("2006-01-02")
+
 	// Get lesson statistics
 	var totalLessons int64
 	var totalHours int64
 
-	// Count total lessons
-	h.DB.Model(&models.Lesson{}).
+	lessonQuery := h.DB.Model(&models.Lesson{}).
 		Where("teacher_id = ?", userID).
-		Count(&totalLessons)
+		Where("date >= ?", dateStr)
+
+	// Count total lessons
+	lessonQuery.Count(&totalLessons)
 
 	// Sum total hours
-	h.DB.Model(&models.Lesson{}).
-		Where("teacher_id = ?", userID).
+	lessonQuery.
 		Select("COALESCE(SUM(hours), 0) as total_hours").
 		Pluck("total_hours", &totalHours)
 
