@@ -842,22 +842,23 @@ func parseScheduleHTML(html string, userID int, database *gorm.DB, baseCount int
 			lessonID := fmt.Sprintf("lesson_%d", itemCount)
 
 			// Determine if this lesson already exists for all groups
-			allExist := true
+			groupsWithSub := []string{}
 			for _, grp := range groups {
-				groupName := grp
 				if subgroup != "Вся группа" && subgroup != "Поток" {
-					groupName = fmt.Sprintf("%s %s", groupName, subgroup)
-				}
-
-				var existingCount int64
-				database.Model(&models.Lesson{}).
-					Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
-						userID, dbFormatDate, groupName, subjectName).
-					Count(&existingCount)
-				if existingCount == 0 {
-					allExist = false
+					groupsWithSub = append(groupsWithSub, fmt.Sprintf("%s %s", grp, subgroup))
+				} else {
+					groupsWithSub = append(groupsWithSub, grp)
 				}
 			}
+			groupField := strings.Join(groupsWithSub, ", ")
+
+			var existingCount int64
+			database.Model(&models.Lesson{}).
+				Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
+					userID, dbFormatDate, groupField, subjectName).
+				Count(&existingCount)
+
+			allExist := existingCount > 0
 
 			// Create schedule item with all groups joined
 			scheduleItem := scheduleModels.ScheduleItem{
