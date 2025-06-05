@@ -163,7 +163,7 @@ func (h *LessonHandler) CreateLesson(w http.ResponseWriter, r *http.Request) {
 
 	// Log the creation
 	utils.LogAction(h.DB, userID, "Create Lesson",
-		fmt.Sprintf("Created %s: %s, %s, %s, %d hours", req.Type, req.Subject, req.GroupName, req.Topic))
+		fmt.Sprintf("Created %s: %s, %s, %s, %d hours", req.Type, req.Subject, req.GroupName, req.Topic, req.Hours))
 
 	utils.RespondWithSuccess(w, http.StatusCreated, "Lesson created successfully", map[string]interface{}{
 		"id": lesson.ID,
