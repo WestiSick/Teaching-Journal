@@ -330,7 +330,17 @@ func (h *ScheduleHandler) AddLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupField := strings.Join(cleaned, ", ")
+	// Append subgroup to each group if applicable
+	groupsWithSub := []string{}
+	for _, grp := range cleaned {
+		if scheduleItem.Subgroup != "Вся группа" && scheduleItem.Subgroup != "Поток" {
+			groupsWithSub = append(groupsWithSub, fmt.Sprintf("%s %s", grp, scheduleItem.Subgroup))
+		} else {
+			groupsWithSub = append(groupsWithSub, grp)
+		}
+	}
+
+	groupField := strings.Join(groupsWithSub, ", ")
 
 	var existingCount int64
 	h.DB.Model(&models.Lesson{}).
@@ -345,7 +355,7 @@ func (h *ScheduleHandler) AddLesson(w http.ResponseWriter, r *http.Request) {
 	lesson := models.Lesson{
 		TeacherID:  userID,
 		GroupName:  groupField,
-		Groups:     pq.StringArray(cleaned),
+		Groups:     pq.StringArray(groupsWithSub),
 		Subject:    scheduleItem.Subject,
 		Topic:      "Импортировано из расписания",
 		Hours:      2,
@@ -416,7 +426,17 @@ func (h *ScheduleHandler) AddAllLessons(w http.ResponseWriter, r *http.Request) 
 			continue
 		}
 
-		groupField := strings.Join(cleaned, ", ")
+		// Append subgroup to each group if applicable
+		groupsWithSub := []string{}
+		for _, grp := range cleaned {
+			if item.Subgroup != "Вся группа" && item.Subgroup != "Поток" {
+				groupsWithSub = append(groupsWithSub, fmt.Sprintf("%s %s", grp, item.Subgroup))
+			} else {
+				groupsWithSub = append(groupsWithSub, grp)
+			}
+		}
+
+		groupField := strings.Join(groupsWithSub, ", ")
 
 		var existingCount int64
 		h.DB.Model(&models.Lesson{}).
@@ -432,7 +452,7 @@ func (h *ScheduleHandler) AddAllLessons(w http.ResponseWriter, r *http.Request) 
 		lesson := models.Lesson{
 			TeacherID:  userID,
 			GroupName:  groupField,
-			Groups:     pq.StringArray(cleaned),
+			Groups:     pq.StringArray(groupsWithSub),
 			Subject:    item.Subject,
 			Topic:      "Импортировано из расписания",
 			Hours:      2,
