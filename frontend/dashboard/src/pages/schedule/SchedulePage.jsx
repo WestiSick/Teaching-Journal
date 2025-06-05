@@ -1,4 +1,3 @@
-// frontend/dashboard/src/pages/schedule/SchedulePage.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { RequireSubscription } from '../../components/RequireSubscription';
