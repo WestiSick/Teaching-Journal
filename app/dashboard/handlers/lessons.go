@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 	"github.com/tealeg/xlsx"
 	"gorm.io/gorm"
 	"net/http"
@@ -28,13 +29,14 @@ func NewLessonHandler(database *gorm.DB) *LessonHandler {
 
 // LessonResponse is the standard format for lesson data returned in API responses
 type LessonResponse struct {
-	ID        int    `json:"id"`
-	GroupName string `json:"group_name"`
-	Subject   string `json:"subject"`
-	Topic     string `json:"topic"`
-	Hours     int    `json:"hours"`
-	Date      string `json:"date"`
-	Type      string `json:"type"`
+	ID        int            `json:"id"`
+	GroupName string         `json:"group_name"`
+	Groups    pq.StringArray `json:"groups"`
+	Subject   string         `json:"subject"`
+	Topic     string         `json:"topic"`
+	Hours     int            `json:"hours"`
+	Date      string         `json:"date"`
+	Type      string         `json:"type"`
 }
 
 // GetLessons returns all lessons for the current user
@@ -60,7 +62,7 @@ func (h *LessonHandler) GetLessons(w http.ResponseWriter, r *http.Request) {
 		query = query.Where("subject = ?", subject)
 	}
 	if group != "" {
-		query = query.Where("group_name = ?", group)
+		query = query.Where("? = ANY (groups)", group)
 	}
 	if fromDate != "" {
 		query = query.Where("date >= ?", fromDate)
@@ -412,7 +414,7 @@ func (h *LessonHandler) exportFilteredLessons(userID int, groupFilter, subjectFi
 
 	// Apply filters
 	if groupFilter != "" {
-		query = query.Where("group_name = ?", groupFilter)
+		query = query.Where("? = ANY (groups)", groupFilter)
 	}
 	if subjectFilter != "" {
 		query = query.Where("subject = ?", subjectFilter)
@@ -505,7 +507,7 @@ func (h *LessonHandler) exportGroupLessons(userID int, groupName string, file *x
 	}
 
 	if err := h.DB.Model(&models.Lesson{}).
-		Where("teacher_id = ? AND group_name = ?", userID, groupName).
+		Where("teacher_id = ? AND ? = ANY (groups)", userID, groupName).
 		Order("date ASC, subject ASC").
 		Find(&lessons).Error; err != nil {
 		return err

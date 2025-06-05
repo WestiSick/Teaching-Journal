@@ -402,7 +402,7 @@ function SchedulePage() {
                                     <td>{item.time}</td>
                                     <td className="max-w-xs truncate" title={item.subject}>{item.subject}</td>
                                     <td>{item.classType}</td>
-                                    <td>{item.group} {item.subgroup !== "Вся группа" ? `(${item.subgroup})` : ''}</td>
+                                    <td>{(item.groups ? item.groups.join(', ') : item.group)} {item.subgroup !== "Вся группа" ? `(${item.subgroup})` : ''}</td>
                                     <td>{item.auditorium}</td>
                                     <td>
                                         {item.inSystem ? (

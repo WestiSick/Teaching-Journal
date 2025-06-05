@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -311,54 +312,54 @@ func (h *ScheduleHandler) AddLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := strings.Split(scheduleItem.Group, ",")
+	groups := scheduleItem.Groups
 	if len(groups) == 0 {
+		groups = strings.Split(scheduleItem.Group, ",")
+	}
+
+	cleaned := []string{}
+	for _, g := range groups {
+		grp := strings.TrimSpace(g)
+		if grp != "" {
+			cleaned = append(cleaned, grp)
+		}
+	}
+
+	if len(cleaned) == 0 {
 		utils.RespondWithError(w, http.StatusBadRequest, "Group name is required")
 		return
 	}
 
-	addedCount := 0
+	groupField := strings.Join(cleaned, ", ")
 
-	for _, g := range groups {
-		groupName := strings.TrimSpace(g)
-		if groupName == "" {
-			continue
-		}
-		if scheduleItem.Subgroup != "Вся группа" && scheduleItem.Subgroup != "Поток" {
-			groupName = fmt.Sprintf("%s %s", groupName, scheduleItem.Subgroup)
-		}
-
-		var existingCount int64
-		h.DB.Model(&models.Lesson{}).
-			Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
-				userID, scheduleItem.Date, groupName, scheduleItem.Subject).
-			Count(&existingCount)
-		if existingCount > 0 {
-			continue
-		}
-
-		lesson := models.Lesson{
-			TeacherID:  userID,
-			GroupName:  groupName,
-			Subject:    scheduleItem.Subject,
-			Topic:      "Импортировано из расписания",
-			Hours:      2,
-			Date:       scheduleItem.Date,
-			Type:       scheduleItem.ClassType,
-			Auditorium: scheduleItem.Auditorium,
-		}
-
-		if err := h.DB.Create(&lesson).Error; err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to add lesson")
-			return
-		}
-		addedCount++
-	}
-
-	if addedCount == 0 {
+	var existingCount int64
+	h.DB.Model(&models.Lesson{}).
+		Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
+			userID, scheduleItem.Date, groupField, scheduleItem.Subject).
+		Count(&existingCount)
+	if existingCount > 0 {
 		utils.RespondWithError(w, http.StatusConflict, "Lesson already exists")
 		return
 	}
+
+	lesson := models.Lesson{
+		TeacherID:  userID,
+		GroupName:  groupField,
+		Groups:     pq.StringArray(cleaned),
+		Subject:    scheduleItem.Subject,
+		Topic:      "Импортировано из расписания",
+		Hours:      2,
+		Date:       scheduleItem.Date,
+		Type:       scheduleItem.ClassType,
+		Auditorium: scheduleItem.Auditorium,
+	}
+
+	if err := h.DB.Create(&lesson).Error; err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to add lesson")
+		return
+	}
+
+	addedCount := 1
 
 	utils.LogAction(h.DB, userID, "Import Lesson from Schedule",
 		fmt.Sprintf("Added %d lessons from schedule", addedCount))
@@ -398,40 +399,49 @@ func (h *ScheduleHandler) AddAllLessons(w http.ResponseWriter, r *http.Request) 
 
 	// Process each schedule item
 	for _, item := range req.ScheduleItems {
-		groups := strings.Split(item.Group, ",")
-		for _, g := range groups {
-			groupName := strings.TrimSpace(g)
-			if groupName == "" {
-				continue
-			}
-			if item.Subgroup != "Вся группа" && item.Subgroup != "Поток" {
-				groupName = fmt.Sprintf("%s %s", groupName, item.Subgroup)
-			}
-
-			var existingCount int64
-			h.DB.Model(&models.Lesson{}).
-				Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
-					userID, item.Date, groupName, item.Subject).
-				Count(&existingCount)
-
-			if existingCount > 0 {
-				duplicatesSkipped++
-				continue
-			}
-
-			lesson := models.Lesson{
-				TeacherID:  userID,
-				GroupName:  groupName,
-				Subject:    item.Subject,
-				Topic:      "Импортировано из расписания",
-				Hours:      2,
-				Date:       item.Date,
-				Type:       item.ClassType,
-				Auditorium: item.Auditorium,
-			}
-
-			lessonsToAdd = append(lessonsToAdd, lesson)
+		groups := item.Groups
+		if len(groups) == 0 {
+			groups = strings.Split(item.Group, ",")
 		}
+
+		cleaned := []string{}
+		for _, g := range groups {
+			grp := strings.TrimSpace(g)
+			if grp != "" {
+				cleaned = append(cleaned, grp)
+			}
+		}
+
+		if len(cleaned) == 0 {
+			continue
+		}
+
+		groupField := strings.Join(cleaned, ", ")
+
+		var existingCount int64
+		h.DB.Model(&models.Lesson{}).
+			Where("teacher_id = ? AND date = ? AND group_name = ? AND subject = ?",
+				userID, item.Date, groupField, item.Subject).
+			Count(&existingCount)
+
+		if existingCount > 0 {
+			duplicatesSkipped++
+			continue
+		}
+
+		lesson := models.Lesson{
+			TeacherID:  userID,
+			GroupName:  groupField,
+			Groups:     pq.StringArray(cleaned),
+			Subject:    item.Subject,
+			Topic:      "Импортировано из расписания",
+			Hours:      2,
+			Date:       item.Date,
+			Type:       item.ClassType,
+			Auditorium: item.Auditorium,
+		}
+
+		lessonsToAdd = append(lessonsToAdd, lesson)
 	}
 
 	// If no new lessons to add after duplicate check
@@ -837,6 +847,7 @@ func parseScheduleHTML(html string, userID int, database *gorm.DB, baseCount int
 				ClassType:  classTypeFull,
 				Subject:    subjectName,
 				Group:      strings.Join(groups, ", "),
+				Groups:     groups,
 				Subgroup:   subgroup,
 				Auditorium: auditorium,
 				InSystem:   allExist,
