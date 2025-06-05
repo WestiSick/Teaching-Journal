@@ -49,16 +49,23 @@ func (h *DashboardHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	timeframe := r.URL.Query().Get("timeframe")
 	var dateFrom time.Time
 	now := time.Now()
-	switch timeframe {
-	case "week":
-		dateFrom = now.AddDate(0, 0, -7)
-	case "semester":
-		dateFrom = now.AddDate(0, -6, 0)
-	case "month":
-		fallthrough
-	default:
-		dateFrom = now.AddDate(0, -1, 0)
-	}
+       switch timeframe {
+       case "week":
+               dateFrom = now.AddDate(0, 0, -7)
+       case "semester":
+               dateFrom = now.AddDate(0, -6, 0)
+       case "year":
+               // academic year starts on September 1
+               if now.Month() >= time.September {
+                       dateFrom = time.Date(now.Year(), time.September, 1, 0, 0, 0, 0, now.Location())
+               } else {
+                       dateFrom = time.Date(now.Year()-1, time.September, 1, 0, 0, 0, 0, now.Location())
+               }
+       case "month":
+               fallthrough
+       default:
+               dateFrom = now.AddDate(0, -1, 0)
+       }
 
 	dateStr := dateFrom.Format("2006-01-02")
 

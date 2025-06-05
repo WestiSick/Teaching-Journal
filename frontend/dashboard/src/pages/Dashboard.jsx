@@ -60,6 +60,12 @@ function Dashboard() {
                     >
                         Семестр
                     </button>
+                    <button
+                        className={`btn ${timeframe === 'year' ? 'btn-primary' : 'btn-outline'}`}
+                        onClick={() => setTimeframe('year')}
+                    >
+                        Год
+                    </button>
                 </div>
             </div>
 
@@ -91,7 +97,8 @@ function Dashboard() {
                         </svg>
                         <span className="text-success ml-1">+{stats?.lessons_added || 3} за {
                             timeframe === 'week' ? 'неделю' :
-                                timeframe === 'month' ? 'месяц' : 'семестр'
+                                timeframe === 'month' ? 'месяц' :
+                                    timeframe === 'semester' ? 'семестр' : 'учебный год'
                         }</span>
                     </div>
                 </div>
