@@ -4,15 +4,16 @@ import "time"
 
 // ScheduleItem represents information about a schedule item
 type ScheduleItem struct {
-	ID         string `json:"id"`         // Unique identifier for the schedule item
-	Date       string `json:"date"`       // Date in YYYY-MM-DD format
-	Time       string `json:"time"`       // Time of the class
-	ClassType  string `json:"classType"`  // Type of class (Lecture, Practice, Laboratory)
-	Subject    string `json:"subject"`    // Subject name
-	Group      string `json:"group"`      // Group
-	Subgroup   string `json:"subgroup"`   // Subgroup
-	Auditorium string `json:"auditorium"` // Auditorium/classroom where the class is held
-	InSystem   bool   `json:"inSystem"`   // Flag indicating if the item is already in the system
+	ID         string   `json:"id"`         // Unique identifier for the schedule item
+	Date       string   `json:"date"`       // Date in YYYY-MM-DD format
+	Time       string   `json:"time"`       // Time of the class
+	ClassType  string   `json:"classType"`  // Type of class (Lecture, Practice, Laboratory)
+	Subject    string   `json:"subject"`    // Subject name
+	Group      string   `json:"group"`      // Group (combined string)
+	Groups     []string `json:"groups"`     // Individual groups
+	Subgroup   string   `json:"subgroup"`   // Subgroup
+	Auditorium string   `json:"auditorium"` // Auditorium/classroom where the class is held
+	InSystem   bool     `json:"inSystem"`   // Flag indicating if the item is already in the system
 }
 
 // ScheduleRequest defines the request for fetching schedule

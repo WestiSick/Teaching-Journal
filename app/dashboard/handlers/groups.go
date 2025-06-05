@@ -40,30 +40,41 @@ func (h *GroupHandler) GetGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get groups
-	var groupNames []string
+	var rawNames []string
 	if err := h.DB.Raw(`
-		SELECT DISTINCT group_name 
-		FROM (
-			SELECT group_name FROM lessons WHERE teacher_id = ? 
-			UNION 
-			SELECT group_name FROM students WHERE teacher_id = ?
-		) AS combined_groups 
-		ORDER BY group_name
-	`, userID, userID).Scan(&groupNames).Error; err != nil {
+                SELECT DISTINCT group_name
+                FROM (
+                        SELECT group_name FROM lessons WHERE teacher_id = ?
+                        UNION
+                        SELECT group_name FROM students WHERE teacher_id = ?
+                ) AS combined_groups
+                ORDER BY group_name
+        `, userID, userID).Scan(&rawNames).Error; err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error retrieving groups")
 		return
 	}
 
+	groupSet := make(map[string]struct{})
+	for _, combined := range rawNames {
+		parts := strings.Split(combined, ",")
+		for _, p := range parts {
+			name := strings.TrimSpace(p)
+			if name != "" {
+				groupSet[name] = struct{}{}
+			}
+		}
+	}
+
 	// Get student count for each group
 	var groups []GroupResponse
-	for _, groupName := range groupNames {
+	for name := range groupSet {
 		var count int64
 		h.DB.Model(&models.Student{}).
-			Where("teacher_id = ? AND group_name = ?", userID, groupName).
+			Where("teacher_id = ? AND group_name = ?", userID, name).
 			Count(&count)
 
 		groups = append(groups, GroupResponse{
-			Name:         groupName,
+			Name:         name,
 			StudentCount: int(count),
 		})
 	}

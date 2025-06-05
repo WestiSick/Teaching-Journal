@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // User represents a user in the system
@@ -15,16 +17,17 @@ type User struct {
 
 // Lesson represents a teaching lesson
 type Lesson struct {
-	ID         int    `gorm:"primaryKey"`
-	TeacherID  int    `gorm:"index"`
-	Teacher    User   `gorm:"foreignKey:TeacherID"`
-	GroupName  string `gorm:"not null"`
-	Subject    string `gorm:"not null"`
-	Topic      string `gorm:"not null"`
-	Hours      int    `gorm:"not null"`
-	Date       string `gorm:"not null"`
-	Type       string `gorm:"not null;default:Лекция"`
-	Auditorium string `gorm:""`
+	ID         int            `gorm:"primaryKey"`
+	TeacherID  int            `gorm:"index"`
+	Teacher    User           `gorm:"foreignKey:TeacherID"`
+	GroupName  string         `gorm:"not null"`
+	Groups     pq.StringArray `gorm:"type:text[]" json:"groups"`
+	Subject    string         `gorm:"not null"`
+	Topic      string         `gorm:"not null"`
+	Hours      int            `gorm:"not null"`
+	Date       string         `gorm:"not null"`
+	Type       string         `gorm:"not null;default:Лекция"`
+	Auditorium string         `gorm:""`
 }
 
 // Student represents a student in a group
