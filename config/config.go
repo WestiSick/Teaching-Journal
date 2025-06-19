@@ -20,7 +20,7 @@ var TicketStatusValues = []string{"Новый", "Открытый", "В рабо
 var TicketPriorityValues = []string{"Низкий", "Средний", "Высокий", "Критический"}
 
 // TicketCategoryValues defines the valid category values for tickets
-var TicketCategoryValues = []string{"Технический", "Административный", "Аккаунт", "Особенность", "Баг", "Другая"}
+var TicketCategoryValues = []string{"Технический", "Административный", "Аккаунт", "Особенность", "Баги", "Другая"}
 
 // AttachmentStoragePath defines where file attachments are stored
 const AttachmentStoragePath = "./attachments"
