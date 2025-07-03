@@ -164,9 +164,33 @@ services:
     networks:
       - teacher-network
 
+  analytics_api:
+    build:
+      context: .
+      dockerfile: docker/analytics/Dockerfile
+    container_name: teacher_journal_analytics_api
+    depends_on:
+      - postgres
+      - api
+    ports:
+      - "8085:8085"
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: vadimvadimvadim
+      DB_NAME: teacher
+      DB_PORT: 5432
+      DEBUG: "False"
+    restart: unless-stopped
+    volumes:
+      - analytics_models:/app/analytics/ml/saved_models
+    networks:
+      - teacher-network
+
 volumes:
   postgres_data:
   attachments:
+  analytics_models:
 
 networks:
   teacher-network:
