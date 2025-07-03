@@ -8,6 +8,12 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
+import datetime
+import logging
+
+# Настройка логгирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Определение моделей нейронных сетей
 class LSTMModel(nn.Module):
@@ -99,6 +105,93 @@ class StudentPerformancePredictor:
             ).to(self.device)
         else:
             raise ValueError(f"Неизвестный тип модели: {model_type}")
+
+    def save_model(self, path=None):
+        """
+        Сохранить модель и скейлеры в файл
+
+        Параметры:
+        - path: путь для сохранения модели. Если None, генерируется автоматически
+
+        Возвращает:
+        - путь к сохраненной модели
+        """
+        if path is None:
+            # Генерируем имя файла на основе текущей даты и времени
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{self.model_type}_model_{timestamp}.pt"
+
+            # Убедимся, что директория существует
+            models_dir = os.path.join(os.path.dirname(__file__), "saved_models")
+            os.makedirs(models_dir, exist_ok=True)
+
+            path = os.path.join(models_dir, filename)
+
+        # Сохраняем модель и скейлеры
+        model_state = {
+            'model_state_dict': self.model.state_dict(),
+            'model_type': self.model_type,
+            'feature_dim': self.feature_dim,
+            'seq_length': self.seq_length,
+            'scaler_X': self.scaler_X,
+            'scaler_y': self.scaler_y
+        }
+
+        torch.save(model_state, path)
+        logger.info(f"Модель успешно сохранена по пути: {path}")
+        return path
+
+    def load_model(self, path):
+        """
+        Загрузить модель из файла
+
+        Параметры:
+        - path: путь к файлу модели
+
+        Возвращает:
+        - True если загрузка успешна, иначе False
+        """
+        try:
+            if not os.path.exists(path):
+                logger.error(f"Модель не найдена по пути: {path}")
+                return False
+
+            # Загружаем модель
+            model_state = torch.load(path, map_location=self.device)
+
+            # Устанавливаем параметры
+            self.model_type = model_state['model_type']
+            self.feature_dim = model_state['feature_dim']
+            self.seq_length = model_state['seq_length']
+            self.scaler_X = model_state['scaler_X']
+            self.scaler_y = model_state['scaler_y']
+
+            # Пересоздаем модель с правильными параметрами
+            if self.model_type == 'lstm':
+                self.model = LSTMModel(
+                    input_dim=self.feature_dim,
+                    hidden_dim=64,
+                    num_layers=2,
+                    output_dim=1
+                ).to(self.device)
+            elif self.model_type == 'transformer':
+                self.model = TransformerModel(
+                    input_dim=self.feature_dim,
+                    model_dim=64,
+                    num_heads=4,
+                    num_layers=2,
+                    output_dim=1
+                ).to(self.device)
+
+            # Загружаем веса модели
+            self.model.load_state_dict(model_state['model_state_dict'])
+            self.model.eval()  # Переводим модель в режим оценки
+
+            logger.info(f"Модель успешно загружена из: {path}")
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка при загрузке модели: {str(e)}")
+            return False
 
     def prepare_data(self, grades_data):
         """
@@ -294,18 +387,6 @@ class StudentPerformancePredictor:
 
         return prediction[0][0]
 
-    def save_model(self, path):
-        """Сохранение модели"""
-        model_info = {
-            'model_state_dict': self.model.state_dict(),
-            'model_type': self.model_type,
-            'seq_length': self.seq_length,
-            'feature_dim': self.feature_dim,
-            'scaler_X': self.scaler_X,
-            'scaler_y': self.scaler_y
-        }
-        torch.save(model_info, path)
-
     @classmethod
     def load_model(cls, path):
         """Загрузка сохраненной модели"""
@@ -325,3 +406,37 @@ class StudentPerformancePredictor:
         predictor.scaler_y = model_info['scaler_y']
 
         return predictor
+
+# Функция для поиска последней сохраненной модели
+def get_latest_model_path(model_type=None):
+    """
+    Найти путь к последней сохраненной модели
+
+    Параметры:
+    - model_type: тип модели ('lstm' или 'transformer'). Если None, возвращает самую последнюю модель
+
+    Возвращает:
+    - путь к последней модели или None, если модель не найдена
+    """
+    models_dir = os.path.join(os.path.dirname(__file__), "saved_models")
+
+    if not os.path.exists(models_dir):
+        logger.warning(f"Директория моделей не существует: {models_dir}")
+        return None
+
+    model_files = [f for f in os.listdir(models_dir) if f.endswith('.pt')]
+
+    if model_type:
+        model_files = [f for f in model_files if f.startswith(f"{model_type}_model_")]
+
+    if not model_files:
+        logger.warning("Файлы моделей не найдены")
+        return None
+
+    # Сортируем по дате в имени файла (формат: model_type_model_YYYYMMDD_HHMMSS.pt)
+    latest_model = sorted(model_files)[-1]
+    model_path = os.path.join(models_dir, latest_model)
+
+    logger.info(f"Найдена последняя модель: {model_path}")
+    return model_path
+

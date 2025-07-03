@@ -6,8 +6,9 @@ from sqlalchemy.orm import relationship, sessionmaker
 Base = declarative_base()
 
 class Student(Base):
-    """Модель для хранения данных о студентах"""
-    __tablename__ = 'students'
+    """Модель для хранения данных о студентах, используемая сервисом аналитики"""
+    # Используем отдельную таблицу, чтобы не конфликтовать с основной БД
+    __tablename__ = 'analytics_students'
 
     id = Column(Integer, primary_key=True)
     teacher_id = Column(Integer, nullable=False, index=True)
@@ -24,7 +25,7 @@ class Grade(Base):
     __tablename__ = 'grades'
 
     id = Column(Integer, primary_key=True)
-    student_id = Column(Integer, ForeignKey('students.id'), nullable=False)
+    student_id = Column(Integer, ForeignKey('analytics_students.id'), nullable=False)
     subject = Column(String, nullable=False)
     lab_number = Column(Integer, nullable=False)
     grade_value = Column(Integer, nullable=False)
@@ -56,7 +57,7 @@ class PredictionResult(Base):
     __tablename__ = 'prediction_results'
 
     id = Column(Integer, primary_key=True)
-    student_id = Column(Integer, ForeignKey('students.id'), nullable=False)
+    student_id = Column(Integer, ForeignKey('analytics_students.id'), nullable=False)
     model_id = Column(Integer, ForeignKey('prediction_models.id'), nullable=False)
     subject = Column(String, nullable=False)
     predicted_grade = Column(Float, nullable=False)
