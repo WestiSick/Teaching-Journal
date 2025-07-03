@@ -220,7 +220,7 @@ async def train_model(
 
 @app.get("/models")
 async def list_models(db: Session = Depends(get_db)):
-    """Получение списка доступных моделей прогнозирования"""
+    """Получение списка доступ����ых моделей прогнозирования"""
     models = db.query(PredictionModel).all()
     return [
         {
@@ -289,7 +289,7 @@ async def predict_student_performance(
 
         return {
             "student_id": student_id,
-            "student_name": student.fio,
+            "student_name": student.student_fio,  # Исправлено с fio на student_fio
             "subject": subject,
             "predicted_grade": float(predicted_grade),
             "confidence": 0.9,
@@ -364,7 +364,7 @@ async def group_analytics(
 
         student_analytics.append({
             "student_id": student.id,
-            "student_name": student.fio,
+            "student_name": student.student_fio,
             "grades_count": len(grade_values),
             "avg_grade": np.mean(grade_values) if grade_values else None,
             "max_grade": max(grade_values) if grade_values else None,
