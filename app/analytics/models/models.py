@@ -26,6 +26,7 @@ class Grade(Base):
 
     id = Column(Integer, primary_key=True)
     student_id = Column(Integer, ForeignKey('analytics_students.id'), nullable=False)
+    teacher_id = Column(Integer, nullable=False, index=True)
     subject = Column(String, nullable=False)
     lab_number = Column(Integer, nullable=False)
     grade_value = Column(Integer, nullable=False)

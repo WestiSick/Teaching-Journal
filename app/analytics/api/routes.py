@@ -120,6 +120,7 @@ async def sync_grades(db: Session = Depends(get_db)):
             # Проверяем, существует ли уже такая оценка в нашей БД
             existing_grade = db.query(Grade).filter_by(
                 student_id=student.id,
+                teacher_id=row.teacher_id,
                 subject=row.subject,
                 lab_number=row.lab_number
             ).first()
@@ -128,6 +129,7 @@ async def sync_grades(db: Session = Depends(get_db)):
                 # Создаем новую запись об оценке
                 new_grade = Grade(
                     student_id=student.id,
+                    teacher_id=row.teacher_id,
                     subject=row.subject,
                     lab_number=row.lab_number,
                     grade_value=row.grade
@@ -167,6 +169,7 @@ async def train_model(
             for student, grade in query:
                 records.append({
                     "student_id": student.id,
+                    "teacher_id": grade.teacher_id,
                     "group_name": student.group_name,
                     "subject": grade.subject,
                     "lab_number": grade.lab_number,

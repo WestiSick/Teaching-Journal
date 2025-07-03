@@ -141,58 +141,6 @@ class StudentPerformancePredictor:
         logger.info(f"Модель успешно сохранена по пути: {path}")
         return path
 
-    def load_model(self, path):
-        """
-        Загрузить модель из файла
-
-        Параметры:
-        - path: путь к файлу модели
-
-        Возвращает:
-        - True если загрузка успешна, иначе False
-        """
-        try:
-            if not os.path.exists(path):
-                logger.error(f"Модель не найдена по пути: {path}")
-                return False
-
-            # Загружаем модель
-            model_state = torch.load(path, map_location=self.device)
-
-            # Устанавливаем параметры
-            self.model_type = model_state['model_type']
-            self.feature_dim = model_state['feature_dim']
-            self.seq_length = model_state['seq_length']
-            self.scaler_X = model_state['scaler_X']
-            self.scaler_y = model_state['scaler_y']
-
-            # Пересоздаем модель с правильными параметрами
-            if self.model_type == 'lstm':
-                self.model = LSTMModel(
-                    input_dim=self.feature_dim,
-                    hidden_dim=64,
-                    num_layers=2,
-                    output_dim=1
-                ).to(self.device)
-            elif self.model_type == 'transformer':
-                self.model = TransformerModel(
-                    input_dim=self.feature_dim,
-                    model_dim=64,
-                    num_heads=4,
-                    num_layers=2,
-                    output_dim=1
-                ).to(self.device)
-
-            # Загружаем веса модели
-            self.model.load_state_dict(model_state['model_state_dict'])
-            self.model.eval()  # Переводим модель в режим оценки
-
-            logger.info(f"Модель успешно загружена из: {path}")
-            return True
-        except Exception as e:
-            logger.error(f"Ошибка при загрузке модели: {str(e)}")
-            return False
-
     def prepare_data(self, grades_data):
         """
         Подготовка данных для обучения и прогнозирования
