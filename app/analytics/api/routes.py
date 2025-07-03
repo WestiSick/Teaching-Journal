@@ -70,6 +70,7 @@ async def sync_students(db: Session = Depends(get_db)):
     """Синхронизация данных студентов из основной БД"""
     try:
         # Выполнение запроса к основной БД для получения списка студентов
+        # Используем правильные имена полей из таблицы students
         result = db.execute(text("""
             SELECT s.id, s.teacher_id, s.group_name, s.student_fio
             FROM students s
@@ -81,7 +82,7 @@ async def sync_students(db: Session = Depends(get_db)):
             existing_student = db.query(Student).filter_by(id=row.id).first()
 
             if not existing_student:
-                # Создаем нового студента
+                # Создаем нового студента с правильными именами полей
                 new_student = Student(
                     id=row.id,
                     teacher_id=row.teacher_id,
@@ -194,7 +195,7 @@ async def train_model(
             # Сохраняем информацию о модели в БД
             model_info = PredictionModel(
                 name=model_name,
-                description=f"Модель {model_type.upper()} для прогнозирования успеваемости",
+                description=f"Модель {model_type.upper()} для прогнозировани�� успеваемости",
                 model_type=model_type,
                 accuracy=metrics["r2"],
                 model_path=model_path
