@@ -91,7 +91,7 @@ function Login() {
             <form onSubmit={handleSubmit} className="auth-form">
                 <div className="form-group">
                     <label htmlFor="email" className="form-label">Электронная почта</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon has-left-icon">
                         <input
                             type="email"
                             id="email"
@@ -100,7 +100,6 @@ function Login() {
                             disabled={loading}
                             className="form-control"
                             placeholder="name@example.com"
-                            style={{ paddingLeft: email ? '1rem' : '2.5rem' }}
                         />
                         {!email && (
                             <div className="input-icon left">
@@ -115,7 +114,7 @@ function Login() {
 
                 <div className="form-group">
                     <label htmlFor="password" className="form-label">Пароль</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon has-left-icon has-right-icon">
                         <input
                             type={showPassword ? "text" : "password"}
                             id="password"
@@ -124,7 +123,6 @@ function Login() {
                             disabled={loading}
                             className="form-control"
                             placeholder="••••••••"
-                            style={{ paddingLeft: password ? '1rem' : '2.5rem' }}
                         />
                         {!password && (
                             <div className="input-icon left">
@@ -242,8 +240,8 @@ function Login() {
                 
                 .input-icon {
                     position: absolute;
-                    top: 50%;
-                    transform: translateY(-50%);
+                    top: 0;
+                    bottom: 0;
                     display: flex;
                     align-items: center;
                     color: var(--text-tertiary);

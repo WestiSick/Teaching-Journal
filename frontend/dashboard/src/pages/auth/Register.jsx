@@ -146,7 +146,7 @@ function Register() {
             <form onSubmit={handleSubmit} className="auth-form">
                 <div className="form-group">
                     <label htmlFor="fio" className="form-label">ФИО</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon has-left-icon">
                         <input
                             type="text"
                             id="fio"
@@ -156,7 +156,6 @@ function Register() {
                             disabled={loading}
                             className="form-control"
                             placeholder="Иванов Иван Иванович"
-                            style={{ paddingLeft: formData.fio ? '1rem' : '2.5rem' }}
                         />
                         {!formData.fio && (
                             <div className="input-icon left">
@@ -171,7 +170,7 @@ function Register() {
 
                 <div className="form-group">
                     <label htmlFor="email" className="form-label">Электронная почта</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon has-left-icon">
                         <input
                             type="email"
                             id="email"
@@ -181,7 +180,6 @@ function Register() {
                             disabled={loading}
                             className="form-control"
                             placeholder="name@example.com"
-                            style={{ paddingLeft: formData.email ? '1rem' : '2.5rem' }}
                         />
                         {!formData.email && (
                             <div className="input-icon left">
@@ -196,7 +194,7 @@ function Register() {
 
                 <div className="form-group">
                     <label htmlFor="password" className="form-label">Пароль</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon has-left-icon has-right-icon">
                         <input
                             type={showPassword ? "text" : "password"}
                             id="password"
@@ -206,7 +204,6 @@ function Register() {
                             disabled={loading}
                             className="form-control"
                             placeholder="••••••••"
-                            style={{ paddingLeft: formData.password ? '1rem' : '2.5rem' }}
                         />
                         {!formData.password && (
                             <div className="input-icon left">
@@ -257,7 +254,7 @@ function Register() {
 
                 <div className="form-group">
                     <label htmlFor="confirmPassword" className="form-label">Подтвердите пароль</label>
-                    <div className="input-with-icon">
+                    <div className="input-with-icon has-left-icon">
                         <input
                             type={showPassword ? "text" : "password"}
                             id="confirmPassword"
@@ -267,7 +264,6 @@ function Register() {
                             disabled={loading}
                             className="form-control"
                             placeholder="••••••••"
-                            style={{ paddingLeft: formData.confirmPassword ? '1rem' : '2.5rem' }}
                         />
                         {!formData.confirmPassword && (
                             <div className="input-icon left">
@@ -376,8 +372,8 @@ function Register() {
                 
                 .input-icon {
                     position: absolute;
-                    top: 50%;
-                    transform: translateY(-50%);
+                    top: 0;
+                    bottom: 0;
                     display: flex;
                     align-items: center;
                     color: var(--text-tertiary);
