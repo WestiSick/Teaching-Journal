@@ -124,18 +124,18 @@ jobs:
 
             echo "Currently running containers:"
             if [ "$SUDO_MODE" = "none" ]; then
-              sh -lc "$COMPOSE_CMD ps || true"
+              sh -lc "$COMPOSE_CMD ps" || true
             elif [ "$SUDO_MODE" = "sudo" ]; then
-              sudo sh -lc "$COMPOSE_CMD ps || true"
+              sudo sh -lc "$COMPOSE_CMD ps" || true
             else
-              echo "$SUDO_PASSWORD" | sudo -S sh -lc "$COMPOSE_CMD ps || true"
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "$COMPOSE_CMD ps" || true
             fi
 
             # optional cleanup of dangling images
             if [ "$SUDO_MODE" = "none" ]; then
-              sh -lc "docker image prune -f || true"
+              sh -lc "docker image prune -f" || true
             elif [ "$SUDO_MODE" = "sudo" ]; then
-              sudo sh -lc "docker image prune -f || true"
+              sudo sh -lc "docker image prune -f" || true
             else
-              echo "$SUDO_PASSWORD" | sudo -S sh -lc "docker image prune -f || true"
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "docker image prune -f" || true
             fi
