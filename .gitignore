@@ -6,3 +6,4 @@ dist
 !.idea/codeStyles
 !.idea/codeStyles/*.xml
 !.idea/dataSources.xml
+/.venv/
