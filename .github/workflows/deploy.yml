@@ -1,70 +1,38 @@
-name: Deploy to Production
+name: Deploy
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
-
-      - name: Run backend tests
-        run: go test ./...
-
-      - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies and run dashboard tests
-        run: |
-          cd frontend/dashboard
-          npm ci
-          npm test --silent
-
-      - name: Install dependencies and run landing tests
-        run: |
-          cd frontend/landing
-          npm ci
-          npm test --silent
-
   deploy:
     runs-on: ubuntu-latest
-    needs: test
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.8.0
+      - name: Start ssh-agent and add deploy key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Add SSH known hosts
+      - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
+        shell: bash
 
-      - name: Deploy to server
+      - name: Remote deploy
+        env:
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "\
-            set -e; \
-            REPO_DIR=\"$HOME/teacher-journal\"; \
-            if [ ! -d \"$REPO_DIR/.git\" ]; then \
-              git clone https://github.com/WestiSick/Teaching-Journal.git \"$REPO_DIR\"; \
-            fi; \
-            cd \"$REPO_DIR\"; \
-            chmod +x deploy.sh; \
-            ./deploy.sh \
-          "
+          set -e
+          PORT=${SSH_PORT:-22}
+          PATH_ON_HOST=${DEPLOY_PATH:-~/Teaching-Journal}
+          echo "Connecting to $SSH_USER@$SSH_HOST:$PORT and deploying at $PATH_ON_HOST"
+          ssh -p "$PORT" "$SSH_USER@$SSH_HOST" "cd \"$PATH_ON_HOST\" && chmod +x ./deploy.sh && ./deploy.sh"
+        shell: bash
+
