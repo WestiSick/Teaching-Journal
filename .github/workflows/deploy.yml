@@ -1,38 +1,38 @@
-name: Deploy
-
-on:
-  push:
-    branches: [ master ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Start ssh-agent and add deploy key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
-        shell: bash
-
-      - name: Remote deploy
-        env:
-          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-          SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          set -e
-          PORT=${SSH_PORT:-22}
-          PATH_ON_HOST=${DEPLOY_PATH:-~/Teaching-Journal}
-          echo "Connecting to $SSH_USER@$SSH_HOST:$PORT and deploying at $PATH_ON_HOST"
-          ssh -p "$PORT" "$SSH_USER@$SSH_HOST" "cd \"$PATH_ON_HOST\" && chmod +x ./deploy.sh && ./deploy.sh"
-        shell: bash
-
+#name: Deploy
+#
+#on:
+#  push:
+#    branches: [ master ]
+#
+#jobs:
+#  deploy:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Start ssh-agent and add deploy key
+#        uses: webfactory/ssh-agent@v0.9.0
+#        with:
+#          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+#
+#      - name: Add server to known_hosts
+#        run: |
+#          mkdir -p ~/.ssh
+#          ssh-keyscan -H "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
+#        shell: bash
+#
+#      - name: Remote deploy
+#        env:
+#          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+#          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+#          SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+#          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+#        run: |
+#          set -e
+#          PORT=${SSH_PORT:-22}
+#          PATH_ON_HOST=${DEPLOY_PATH:-~/Teaching-Journal}
+#          echo "Connecting to $SSH_USER@$SSH_HOST:$PORT and deploying at $PATH_ON_HOST"
+#          ssh -p "$PORT" "$SSH_USER@$SSH_HOST" "cd \"$PATH_ON_HOST\" && chmod +x ./deploy.sh && ./deploy.sh"
+#        shell: bash
+#
