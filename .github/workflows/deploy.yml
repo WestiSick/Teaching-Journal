@@ -17,6 +17,7 @@ jobs:
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       REPO_URL: ${{ secrets.REPO_URL != '' && secrets.REPO_URL || format('https://github.com/{0}.git', github.repository) }}
       GIT_AUTH_TOKEN: ${{ secrets.GIT_AUTH_TOKEN }}
+      SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
 
     steps:
       - name: Checkout repository (for metadata only)
@@ -78,43 +79,61 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
-          envs: DEPLOY_PATH
+          envs: DEPLOY_PATH,SUDO_PASSWORD
           script: |
             set -euo pipefail
 
-            # pick compose command
-            COMPOSE_CMD="docker compose"
-            if ! docker compose version >/dev/null 2>&1; then
-              if command -v docker-compose >/dev/null 2>&1; then
-                COMPOSE_CMD="docker-compose"
-              else
-                echo "Docker Compose not installed" >&2
-                exit 1
+            # detect compose command (no daemon permission needed here)
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            else
+              echo "Docker Compose not installed" >&2
+              exit 1
+            fi
+
+            # choose privilege mode for docker access
+            SUDO_MODE="none"
+            if docker ps >/dev/null 2>&1; then
+              SUDO_MODE="none"
+            elif command -v sudo >/dev/null 2>&1 && sudo -n docker ps >/dev/null 2>&1; then
+              SUDO_MODE="sudo"
+            elif command -v sudo >/dev/null 2>&1 && [ -n "${SUDO_PASSWORD:-}" ]; then
+              if echo "$SUDO_PASSWORD" | sudo -S docker ps >/dev/null 2>&1; then
+                SUDO_MODE="password"
               fi
             fi
 
-            RUN_CMD="$COMPOSE_CMD"
-            if ! $COMPOSE_CMD ps >/dev/null 2>&1; then
-              if command -v sudo >/dev/null 2>&1 && sudo -n $COMPOSE_CMD ps >/dev/null 2>&1; then
-                RUN_CMD="sudo $COMPOSE_CMD"
-              fi
-            fi
+            run_cmd() {
+              CMD="$1"
+              case "$SUDO_MODE" in
+                none)      sh -lc "$CMD" ;;
+                sudo)      sudo sh -lc "$CMD" ;;
+                password)  echo "$SUDO_PASSWORD" | sudo -S sh -lc "$CMD" ;;
+                *)         sh -lc "$CMD" ;;
+              esac
+            }
 
-            DOCKER_CMD="docker"
-            if ! docker ps >/dev/null 2>&1; then
-              if command -v sudo >/dev/null 2>&1 && sudo -n docker ps >/dev/null 2>&1; then
-                DOCKER_CMD="sudo docker"
-              fi
+            if [ "$SUDO_MODE" = "none" ]; then
+              echo "Docker access: direct"
+            elif [ "$SUDO_MODE" = "sudo" ]; then
+              echo "Docker access: sudo (passwordless)"
+            elif [ "$SUDO_MODE" = "password" ]; then
+              echo "Docker access: sudo (with password)"
+            else
+              echo "No permission to access Docker daemon. Add user to 'docker' group or provide SUDO_PASSWORD secret." >&2
+              exit 1
             fi
 
             cd "$DEPLOY_PATH"
             echo "Working directory: $(pwd)"
 
             export DOCKER_BUILDKIT=1
-            $RUN_CMD -f docker-compose.yml up -d --build --remove-orphans
+            run_cmd "$COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans"
 
             echo "Currently running containers:"
-            $RUN_CMD ps
+            run_cmd "$COMPOSE_CMD ps"
 
             # optional cleanup of dangling images
-            $DOCKER_CMD image prune -f || true
+            run_cmd "docker image prune -f || true"
