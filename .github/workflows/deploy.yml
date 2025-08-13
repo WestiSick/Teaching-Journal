@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy via SSH and Docker Compose
+    name: Deploy production code to server
     runs-on: ubuntu-latest
 
     env:
@@ -83,7 +83,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            # detect compose command (no daemon permission needed here)
+            # detect compose command
             if docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
             elif command -v docker-compose >/dev/null 2>&1; then
@@ -105,35 +105,37 @@ jobs:
               fi
             fi
 
-            run_cmd() {
-              CMD="$1"
-              case "$SUDO_MODE" in
-                none)      sh -lc "$CMD" ;;
-                sudo)      sudo sh -lc "$CMD" ;;
-                password)  echo "$SUDO_PASSWORD" | sudo -S sh -lc "$CMD" ;;
-                *)         sh -lc "$CMD" ;;
-              esac
-            }
+            cd "$DEPLOY_PATH"
+            echo "Working directory: $(pwd)"
 
+            export DOCKER_BUILDKIT=1
+
+            # up -d --build
             if [ "$SUDO_MODE" = "none" ]; then
-              echo "Docker access: direct"
+              sh -lc "$COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans"
             elif [ "$SUDO_MODE" = "sudo" ]; then
-              echo "Docker access: sudo (passwordless)"
+              sudo sh -lc "$COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans"
             elif [ "$SUDO_MODE" = "password" ]; then
-              echo "Docker access: sudo (with password)"
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "$COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans"
             else
               echo "No permission to access Docker daemon. Add user to 'docker' group or provide SUDO_PASSWORD secret." >&2
               exit 1
             fi
 
-            cd "$DEPLOY_PATH"
-            echo "Working directory: $(pwd)"
-
-            export DOCKER_BUILDKIT=1
-            run_cmd "$COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans"
-
             echo "Currently running containers:"
-            run_cmd "$COMPOSE_CMD ps"
+            if [ "$SUDO_MODE" = "none" ]; then
+              sh -lc "$COMPOSE_CMD ps"
+            elif [ "$SUDO_MODE" = "sudo" ]; then
+              sudo sh -lc "$COMPOSE_CMD ps"
+            else
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "$COMPOSE_CMD ps"
+            fi
 
             # optional cleanup of dangling images
-            run_cmd "docker image prune -f || true"
+            if [ "$SUDO_MODE" = "none" ]; then
+              sh -lc "docker image prune -f || true"
+            elif [ "$SUDO_MODE" = "sudo" ]; then
+              sudo sh -lc "docker image prune -f || true"
+            else
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "docker image prune -f || true"
+            fi
