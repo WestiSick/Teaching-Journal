@@ -1,0 +1,23 @@
+# Global ignores for Docker build context
+.git
+.github
+.gitignore
+**/.DS_Store
+**/.idea
+**/.vscode
+**/.cache
+**/.next
+**/.vite
+**/node_modules
+node_modules
+**/dist
+**/build
+**/coverage
+
+# Logs
+**/*.log
+logs
+
+# Frontend artifacts
+frontend/**/dist
+frontend/**/build

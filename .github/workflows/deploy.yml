@@ -1,38 +1,120 @@
-#name: Deploy
-#
-#on:
-#  push:
-#    branches: [ master ]
-#
-#jobs:
-#  deploy:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Start ssh-agent and add deploy key
-#        uses: webfactory/ssh-agent@v0.9.0
-#        with:
-#          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
-#
-#      - name: Add server to known_hosts
-#        run: |
-#          mkdir -p ~/.ssh
-#          ssh-keyscan -H "${{ secrets.DEPLOY_SSH_HOST }}" >> ~/.ssh/known_hosts
-#        shell: bash
-#
-#      - name: Remote deploy
-#        env:
-#          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-#          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-#          SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
-#          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-#        run: |
-#          set -e
-#          PORT=${SSH_PORT:-22}
-#          PATH_ON_HOST=${DEPLOY_PATH:-~/Teaching-Journal}
-#          echo "Connecting to $SSH_USER@$SSH_HOST:$PORT and deploying at $PATH_ON_HOST"
-#          ssh -p "$PORT" "$SSH_USER@$SSH_HOST" "cd \"$PATH_ON_HOST\" && chmod +x ./deploy.sh && ./deploy.sh"
-#        shell: bash
-#
+name: Deploy to Server
+
+on:
+  push:
+    branches: [ master ]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy via SSH and Docker Compose
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      REPO_URL: ${{ secrets.REPO_URL != '' && secrets.REPO_URL || format('https://github.com/{0}.git', github.repository) }}
+      GIT_AUTH_TOKEN: ${{ secrets.GIT_AUTH_TOKEN }}
+
+    steps:
+      - name: Checkout repository (for metadata only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync code on server (git clone/pull)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          envs: DEPLOY_PATH,REPO_URL,GIT_AUTH_TOKEN
+          script: |
+            set -euo pipefail
+
+            # ensure git exists
+            if ! command -v git >/dev/null 2>&1; then
+              echo "Git is not installed. Attempting to install..."
+              if command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update -y && sudo apt-get install -y git
+              elif command -v yum >/dev/null 2>&1; then
+                sudo yum install -y git
+              else
+                echo "Unsupported package manager. Please install git manually." >&2
+                exit 1
+              fi
+            fi
+
+            # build authenticated URL if token is provided
+            AUTH_REPO_URL="$REPO_URL"
+            if [ -n "${GIT_AUTH_TOKEN:-}" ]; then
+              AUTH_REPO_URL=$(echo "$REPO_URL" | sed -E "s#^https://#https://${GIT_AUTH_TOKEN}@#")
+            fi
+
+            echo "Repo URL: $REPO_URL"
+            echo "Preparing deploy directory: $DEPLOY_PATH"
+
+            if [ -d "$DEPLOY_PATH/.git" ]; then
+              cd "$DEPLOY_PATH"
+              # update remote url temporarily if token provided
+              if [ -n "${GIT_AUTH_TOKEN:-}" ]; then
+                git remote set-url origin "$AUTH_REPO_URL"
+              fi
+              git fetch --all --prune
+              git reset --hard origin/master
+            else
+              rm -rf "$DEPLOY_PATH"
+              mkdir -p "$(dirname "$DEPLOY_PATH")"
+              git clone --branch master --single-branch "$AUTH_REPO_URL" "$DEPLOY_PATH"
+            fi
+
+      - name: Deploy with Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          envs: DEPLOY_PATH
+          script: |
+            set -euo pipefail
+
+            # pick compose command
+            COMPOSE_CMD="docker compose"
+            if ! docker compose version >/dev/null 2>&1; then
+              if command -v docker-compose >/dev/null 2>&1; then
+                COMPOSE_CMD="docker-compose"
+              else
+                echo "Docker Compose not installed" >&2
+                exit 1
+              fi
+            fi
+
+            RUN_CMD="$COMPOSE_CMD"
+            if ! $COMPOSE_CMD ps >/dev/null 2>&1; then
+              if command -v sudo >/dev/null 2>&1 && sudo -n $COMPOSE_CMD ps >/dev/null 2>&1; then
+                RUN_CMD="sudo $COMPOSE_CMD"
+              fi
+            fi
+
+            DOCKER_CMD="docker"
+            if ! docker ps >/dev/null 2>&1; then
+              if command -v sudo >/dev/null 2>&1 && sudo -n docker ps >/dev/null 2>&1; then
+                DOCKER_CMD="sudo docker"
+              fi
+            fi
+
+            cd "$DEPLOY_PATH"
+            echo "Working directory: $(pwd)"
+
+            export DOCKER_BUILDKIT=1
+            $RUN_CMD -f docker-compose.yml up -d --build --remove-orphans
+
+            echo "Currently running containers:"
+            $RUN_CMD ps
+
+            # optional cleanup of dangling images
+            $DOCKER_CMD image prune -f || true
