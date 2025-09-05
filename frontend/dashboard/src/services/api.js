@@ -366,7 +366,6 @@ export const ticketService = {
             }
         })
             .then(response => {
-                console.log('Raw stats response:', response);
                 return response;
             })
             .catch(error => {
