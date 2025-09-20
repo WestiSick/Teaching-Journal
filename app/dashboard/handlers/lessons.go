@@ -758,8 +758,9 @@ func (h *LessonHandler) createMainWorkloadSheet(userID int, teacher models.User,
 	_ = sheet.SetColWidth(1, 1, 30) // B - Subject
 	_ = sheet.SetColWidth(2, 2, 20) // C - Group
 	_ = sheet.SetColWidth(3, 3, 40) // D - Topic
-	_ = sheet.SetColWidth(4, 4, 20) // E - Type
-	_ = sheet.SetColWidth(5, 5, 10) // F - Hours
+	_ = sheet.SetColWidth(4, 4, 8)  // E - Lectures
+	_ = sheet.SetColWidth(5, 5, 9)  // F - Lab works
+	_ = sheet.SetColWidth(6, 6, 10) // G - Signature
 
 	// Add header row
 	header := sheet.AddRow()
@@ -767,8 +768,9 @@ func (h *LessonHandler) createMainWorkloadSheet(userID int, teacher models.User,
 	header.AddCell().SetString("Предмет")
 	header.AddCell().SetString("Группа")
 	header.AddCell().SetString("Тема")
-	header.AddCell().SetString("Тип занятия")
-	header.AddCell().SetString("Часы")
+	header.AddCell().SetString("Лекции")
+	header.AddCell().SetString("Лаб. раб.")
+	header.AddCell().SetString("Подпись")
 
 	// Apply header style
 	for _, cell := range header.Cells {
@@ -808,12 +810,22 @@ func (h *LessonHandler) createMainWorkloadSheet(userID int, teacher models.User,
 			formattedDate = date.Format("02.01.2006")
 		}
 
+		// Calculate lecture/lab columns per requirement
+		lectureHours := 0
+		labHours := 0
+		if lesson.Type == "Лекция" {
+			lectureHours = 2
+		} else if lesson.Type == "Лабораторная работа" {
+			labHours = 2
+		}
+
 		row.AddCell().SetString(formattedDate)
 		row.AddCell().SetString(lesson.Subject)
 		row.AddCell().SetString(lesson.GroupName)
 		row.AddCell().SetString(lesson.Topic)
-		row.AddCell().SetString(lesson.Type)
-		row.AddCell().SetInt(lesson.Hours)
+		row.AddCell().SetInt(lectureHours)
+		row.AddCell().SetInt(labHours)
+		row.AddCell().SetString("") // Signature placeholder
 
 		// Apply alternating row style
 		if i%2 == 1 {
@@ -1108,10 +1120,11 @@ func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjects []string, 
 	_ = f.SetColWidth(sheet, "B", "B", 30)
 	_ = f.SetColWidth(sheet, "C", "C", 20)
 	_ = f.SetColWidth(sheet, "D", "D", 32)
-	_ = f.SetColWidth(sheet, "E", "E", 20)
-	_ = f.SetColWidth(sheet, "F", "F", 6)
+	_ = f.SetColWidth(sheet, "E", "E", 10) // Лекции
+	_ = f.SetColWidth(sheet, "F", "F", 10) // Лаб. раб.
+	_ = f.SetColWidth(sheet, "G", "G", 14) // Подпись
 	// заголовок
-	headers := []string{"Дата", "Предмет", "Группа", "Тема", "Тип занятия", "Часы"}
+	headers := []string{"Дата", "Предмет", "Группа", "Тема", "Лекции", "Лаб. раб.", "Подпись"}
 	for i, htxt := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		_ = f.SetCellValue(sheet, cell, htxt)
@@ -1127,7 +1140,7 @@ func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjects []string, 
 			{Type: "bottom", Color: "000000", Style: 1},
 		},
 	})
-	_ = f.SetCellStyle(sheet, "A1", "F1", headStyle)
+	_ = f.SetCellStyle(sheet, "A1", "G1", headStyle)
 	// данные
 	query := h.DB.Table("lessons").Where("teacher_id = ?", userID)
 	if len(subjects) > 0 {
@@ -1169,13 +1182,20 @@ func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjects []string, 
 		if d, err := time.Parse("2006-01-02", l.Date); err == nil {
 			formatted = d.Format("02.01.2006")
 		}
-		vals := []interface{}{formatted, l.Subject, l.GroupName, l.Topic, l.Type, l.Hours}
+		lectureHours := 0
+		labHours := 0
+		if l.Type == "Лекция" {
+			lectureHours = 2
+		} else if l.Type == "Лабораторная работа" {
+			labHours = 2
+		}
+		vals := []interface{}{formatted, l.Subject, l.GroupName, l.Topic, lectureHours, labHours, ""}
 		for c, v := range vals {
 			cell, _ := excelize.CoordinatesToCellName(c+1, row)
 			_ = f.SetCellValue(sheet, cell, v)
 		}
 		startCell, _ := excelize.CoordinatesToCellName(1, row)
-		endCell, _ := excelize.CoordinatesToCellName(6, row)
+		endCell, _ := excelize.CoordinatesToCellName(7, row)
 		if i%2 == 1 {
 			_ = f.SetCellStyle(sheet, startCell, endCell, altStyle)
 		} else {
