@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +43,49 @@ type LessonResponse struct {
 	Type      string         `json:"type"`
 }
 
+// parseSubjects извлекает список предметов из URL-параметров.
+// Поддерживает варианты: subject, subject[], subjects, subjects[] и CSV в одном параметре.
+func parseSubjects(values url.Values) []string {
+	var res []string
+	add := func(list []string) {
+		for _, s := range list {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				res = append(res, s)
+			}
+		}
+	}
+	// массивы одинаковых ключей
+	add(values["subject"])    // ?subject=a&subject=b
+	add(values["subject[]"])  // ?subject[]=a&subject[]=b
+	add(values["subjects"])   // ?subjects=a&subjects=b
+	add(values["subjects[]"]) // ?subjects[]=a&subjects[]=b
+
+	// CSV в одном ключе
+	if len(res) == 0 {
+		if v := values.Get("subject"); v != "" {
+			add(strings.Split(v, ","))
+		} else if v := values.Get("subjects"); v != "" {
+			add(strings.Split(v, ","))
+		}
+	}
+
+	// дедупликация
+	if len(res) > 1 {
+		seen := make(map[string]struct{}, len(res))
+		out := make([]string, 0, len(res))
+		for _, s := range res {
+			if _, ok := seen[s]; ok {
+				continue
+			}
+			seen[s] = struct{}{}
+			out = append(out, s)
+		}
+		res = out
+	}
+	return res
+}
+
 // GetLessons returns all lessons for the current user
 func (h *LessonHandler) GetLessons(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
@@ -52,7 +96,8 @@ func (h *LessonHandler) GetLessons(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Optional query parameters for filtering
-	subject := r.URL.Query().Get("subject")
+	// subject теперь может быть множественным
+	subjects := parseSubjects(r.URL.Query())
 	group := r.URL.Query().Get("group")
 	fromDate := r.URL.Query().Get("from_date")
 	toDate := r.URL.Query().Get("to_date")
@@ -61,8 +106,8 @@ func (h *LessonHandler) GetLessons(w http.ResponseWriter, r *http.Request) {
 	query := h.DB.Model(&models.Lesson{}).Where("teacher_id = ?", userID)
 
 	// Apply filters if provided
-	if subject != "" {
-		query = query.Where("subject = ?", subject)
+	if len(subjects) > 0 {
+		query = query.Where("subject IN ?", subjects)
 	}
 	if group != "" {
 		query = query.Where("? = ANY (groups)", group)
@@ -340,7 +385,7 @@ func (h *LessonHandler) ExportLessons(w http.ResponseWriter, r *http.Request) {
 
 	// Get filter parameters
 	groupFilter := r.URL.Query().Get("group")
-	subjectFilter := r.URL.Query().Get("subject")
+	subjects := parseSubjects(r.URL.Query())
 	fromDateFilter := r.URL.Query().Get("from_date")
 	toDateFilter := r.URL.Query().Get("to_date")
 
@@ -355,9 +400,14 @@ func (h *LessonHandler) ExportLessons(w http.ResponseWriter, r *http.Request) {
 		filterDesc = append(filterDesc, "group="+groupFilter)
 		fileName += "_" + groupFilter
 	}
-	if subjectFilter != "" {
-		filterDesc = append(filterDesc, "subject="+subjectFilter)
-		fileName += "_" + subjectFilter
+	if len(subjects) > 0 {
+		filterDesc = append(filterDesc, "subjects="+strings.Join(subjects, "+"))
+		// в имени файла слишком длинный список не нужен
+		if len(subjects) == 1 {
+			fileName += "_" + subjects[0]
+		} else {
+			fileName += fmt.Sprintf("_subjects%d", len(subjects))
+		}
 	}
 	if fromDateFilter != "" {
 		filterDesc = append(filterDesc, "from="+fromDateFilter)
@@ -369,7 +419,7 @@ func (h *LessonHandler) ExportLessons(w http.ResponseWriter, r *http.Request) {
 	fileName += ".xlsx"
 
 	// Determine if we're filtering for a specific group only
-	isGroupSpecificExport := groupFilter != "" && subjectFilter == "" && fromDateFilter == "" && toDateFilter == ""
+	isGroupSpecificExport := groupFilter != "" && len(subjects) == 0 && fromDateFilter == "" && toDateFilter == ""
 
 	// If exporting just for one group with no other filters, use the group-specific format
 	var exportErr error
@@ -378,7 +428,7 @@ func (h *LessonHandler) ExportLessons(w http.ResponseWriter, r *http.Request) {
 		exportErr = h.exportGroupLessons(userID, groupFilter, file)
 	} else {
 		// Export with all columns and apply any filters
-		exportErr = h.exportFilteredLessons(userID, groupFilter, subjectFilter, fromDateFilter, toDateFilter, file)
+		exportErr = h.exportFilteredLessons(userID, groupFilter, subjects, fromDateFilter, toDateFilter, file)
 	}
 
 	if exportErr != nil {
@@ -405,7 +455,7 @@ func (h *LessonHandler) ExportLessons(w http.ResponseWriter, r *http.Request) {
 }
 
 // exportFilteredLessons exports lessons with filters applied
-func (h *LessonHandler) exportFilteredLessons(userID int, groupFilter, subjectFilter, fromDateFilter, toDateFilter string, file *xlsx.File) error {
+func (h *LessonHandler) exportFilteredLessons(userID int, groupFilter string, subjects []string, fromDateFilter, toDateFilter string, file *xlsx.File) error {
 	// Create sheet
 	sheet, err := file.AddSheet("All Lessons")
 	if err != nil {
@@ -419,8 +469,8 @@ func (h *LessonHandler) exportFilteredLessons(userID int, groupFilter, subjectFi
 	if groupFilter != "" {
 		query = query.Where("? = ANY (groups)", groupFilter)
 	}
-	if subjectFilter != "" {
-		query = query.Where("subject = ?", subjectFilter)
+	if len(subjects) > 0 {
+		query = query.Where("subject IN ?", subjects)
 	}
 	if fromDateFilter != "" {
 		query = query.Where("date >= ?", fromDateFilter)
@@ -577,7 +627,7 @@ func (h *LessonHandler) ExportWorkloadJournal(w http.ResponseWriter, r *http.Req
 	}
 
 	// Get filter parameters
-	subjectFilter := r.URL.Query().Get("subject")
+	subjects := parseSubjects(r.URL.Query())
 	groupFilter := r.URL.Query().Get("group")
 	fromDateFilter := r.URL.Query().Get("from_date")
 	toDateFilter := r.URL.Query().Get("to_date")
@@ -613,8 +663,8 @@ func (h *LessonHandler) ExportWorkloadJournal(w http.ResponseWriter, r *http.Req
 	}()
 
 	query := h.DB.Model(&models.Lesson{}).Where("teacher_id = ?", userID)
-	if subjectFilter != "" {
-		query = query.Where("subject = ?", subjectFilter)
+	if len(subjects) > 0 {
+		query = query.Where("subject IN ?", subjects)
 	}
 	if groupFilter != "" {
 		query = query.Where("group_name = ?", groupFilter)
@@ -631,11 +681,12 @@ func (h *LessonHandler) ExportWorkloadJournal(w http.ResponseWriter, r *http.Req
 	_ = query.Select("SUM(hours)").Row().Scan(&totalHours)
 
 	periodText := h.buildPeriodText(fromDateFilter, toDateFilter)
+	subjectText := strings.Join(subjects, ", ")
 	placeholders := map[string]string{
 		"{{FIO}}":           teacher.FIO,
 		"{{YEAR}}":          academicYear,
 		"{{PERIOD}}":        periodText,
-		"{{SUBJECT}}":       subjectFilter,
+		"{{SUBJECT}}":       subjectText,
 		"{{GROUP}}":         groupFilter,
 		"{{TOTAL_HOURS}}":   fmt.Sprintf("%d", totalHours),
 		"{{TOTAL_LESSONS}}": fmt.Sprintf("%d", totalLessons),
@@ -647,13 +698,20 @@ func (h *LessonHandler) ExportWorkloadJournal(w http.ResponseWriter, r *http.Req
 	}
 
 	// Создаём листы с данными (excelize)
-	if err := h.createWorkloadJournalX(userID, teacher, subjectFilter, groupFilter, fromDateFilter, toDateFilter, f); err != nil {
+	if err := h.createWorkloadJournalX(userID, teacher, subjects, groupFilter, fromDateFilter, toDateFilter, f); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "Error creating workload journal")
 		return
 	}
 
 	// Имя файла и лог
-	fileName := fmt.Sprintf("workload_journal_%s.xlsx", teacher.FIO)
+	// если выбрано несколько предметов, укажем их количество
+	nameSuffix := ""
+	if len(subjects) == 1 {
+		nameSuffix = "_" + subjects[0]
+	} else if len(subjects) > 1 {
+		nameSuffix = fmt.Sprintf("_subjects%d", len(subjects))
+	}
+	fileName := fmt.Sprintf("workload_journal_%s%s.xlsx", teacher.FIO, nameSuffix)
 	utils.LogAction(h.DB, userID, "Export Workload Journal", "Exported workload journal to Excel")
 
 	// Отдаём файл в ответ, сохраняя форматирование
@@ -1029,28 +1087,29 @@ func (h *LessonHandler) getSummaryStyle() *xlsx.Style {
 }
 
 // createWorkloadJournalX — версия на excelize, добавляет листы с данными и сводку
-func (h *LessonHandler) createWorkloadJournalX(userID int, teacher models.User, subjectFilter, groupFilter, fromDateFilter, toDateFilter string, f *excelize.File) error {
-	if err := h.createMainWorkloadSheetX(userID, subjectFilter, groupFilter, fromDateFilter, toDateFilter, f); err != nil {
+func (h *LessonHandler) createWorkloadJournalX(userID int, teacher models.User, subjects []string, groupFilter, fromDateFilter, toDateFilter string, f *excelize.File) error {
+	_ = teacher
+	if err := h.createMainWorkloadSheetX(userID, subjects, groupFilter, fromDateFilter, toDateFilter, f); err != nil {
 		return err
 	}
-	if err := h.createSummarySheetX(userID, subjectFilter, groupFilter, fromDateFilter, toDateFilter, f); err != nil {
+	if err := h.createSummarySheetX(userID, subjects, groupFilter, fromDateFilter, toDateFilter, f); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjectFilter, groupFilter, fromDateFilter, toDateFilter string, f *excelize.File) error {
+func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjects []string, groupFilter, fromDateFilter, toDateFilter string, f *excelize.File) error {
 	sheet := "Рабочая нагрузка"
 	if idx, _ := f.GetSheetIndex(sheet); idx == -1 {
 		_, _ = f.NewSheet(sheet)
 	}
 	// ширины колонок
-	_ = f.SetColWidth(sheet, "A", "A", 12)
+	_ = f.SetColWidth(sheet, "A", "A", 10)
 	_ = f.SetColWidth(sheet, "B", "B", 30)
 	_ = f.SetColWidth(sheet, "C", "C", 20)
-	_ = f.SetColWidth(sheet, "D", "D", 40)
+	_ = f.SetColWidth(sheet, "D", "D", 32)
 	_ = f.SetColWidth(sheet, "E", "E", 20)
-	_ = f.SetColWidth(sheet, "F", "F", 10)
+	_ = f.SetColWidth(sheet, "F", "F", 6)
 	// заголовок
 	headers := []string{"Дата", "Предмет", "Группа", "Тема", "Тип занятия", "Часы"}
 	for i, htxt := range headers {
@@ -1071,8 +1130,8 @@ func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjectFilter, grou
 	_ = f.SetCellStyle(sheet, "A1", "F1", headStyle)
 	// данные
 	query := h.DB.Table("lessons").Where("teacher_id = ?", userID)
-	if subjectFilter != "" {
-		query = query.Where("subject = ?", subjectFilter)
+	if len(subjects) > 0 {
+		query = query.Where("subject IN ?", subjects)
 	}
 	if groupFilter != "" {
 		query = query.Where("group_name = ?", groupFilter)
@@ -1126,7 +1185,7 @@ func (h *LessonHandler) createMainWorkloadSheetX(userID int, subjectFilter, grou
 	return nil
 }
 
-func (h *LessonHandler) createSummarySheetX(userID int, subjectFilter, groupFilter, fromDateFilter, toDateFilter string, f *excelize.File) error {
+func (h *LessonHandler) createSummarySheetX(userID int, subjects []string, groupFilter, fromDateFilter, toDateFilter string, f *excelize.File) error {
 	sheet := "Сводная информация"
 	if idx, _ := f.GetSheetIndex(sheet); idx == -1 {
 		_, _ = f.NewSheet(sheet)
@@ -1148,8 +1207,8 @@ func (h *LessonHandler) createSummarySheetX(userID int, subjectFilter, groupFilt
 	})
 	_ = f.SetCellStyle(sheet, "A1", "B1", headStyle)
 	query := h.DB.Model(&models.Lesson{}).Where("teacher_id = ?", userID)
-	if subjectFilter != "" {
-		query = query.Where("subject = ?", subjectFilter)
+	if len(subjects) > 0 {
+		query = query.Where("subject IN ?", subjects)
 	}
 	if groupFilter != "" {
 		query = query.Where("group_name = ?", groupFilter)

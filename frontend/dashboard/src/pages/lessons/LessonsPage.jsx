@@ -7,7 +7,7 @@ import { RequireSubscription } from '../../components/RequireSubscription';
 function LessonsPage() {
     const navigate = useNavigate();
     const [filters, setFilters] = useState({
-        subject: '',
+        subjects: [],
         group: '',
         from_date: '',
         to_date: '',
@@ -19,6 +19,8 @@ function LessonsPage() {
     });
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const [subjectsDropdownOpen, setSubjectsDropdownOpen] = useState(false);
+    const subjectsDropdownRef = useRef(null);
     const [expandedLesson, setExpandedLesson] = useState(null);
 
     // Получаем занятия с фильтрами
@@ -69,6 +71,19 @@ function LessonsPage() {
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
+    // удалён handleSubjectsChange; используем add/remove
+    const addSubject = (subject) => {
+        setFilters(prev => (
+            prev.subjects.includes(subject)
+                ? prev
+                : { ...prev, subjects: [...prev.subjects, subject] }
+        ));
+    };
+
+    const removeSubject = (subject) => {
+        setFilters(prev => ({ ...prev, subjects: prev.subjects.filter(s => s !== subject) }));
+    };
+
     const handleTempDateChange = (e) => {
         const { name, value } = e.target;
         setTempDates(prev => ({ ...prev, [name]: value }));
@@ -96,7 +111,7 @@ function LessonsPage() {
         const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
         setFilters({
-            subject: '',
+            subjects: [],
             group: '',
             from_date: firstDay.toISOString().split('T')[0],
             to_date: lastDay.toISOString().split('T')[0],
@@ -115,7 +130,7 @@ function LessonsPage() {
 
             if (filterType === 'current') {
                 if (filters.group) exportParams.group = filters.group;
-                if (filters.subject) exportParams.subject = filters.subject;
+                if (filters.subjects && filters.subjects.length) exportParams.subjects = filters.subjects;
                 if (filters.from_date) exportParams.from_date = filters.from_date;
                 if (filters.to_date) exportParams.to_date = filters.to_date;
                 if (filters.search) exportParams.search = filters.search;
@@ -129,8 +144,12 @@ function LessonsPage() {
             if (filterType === 'current' && filters.group) {
                 filename += `_${filters.group}`;
             }
-            if (filterType === 'current' && filters.subject) {
-                filename += `_${filters.subject}`;
+            if (filterType === 'current') {
+                if (filters.subjects?.length === 1) {
+                    filename += `_${filters.subjects[0]}`;
+                } else if (filters.subjects?.length > 1) {
+                    filename += `_subjects${filters.subjects.length}`;
+                }
             }
             filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
 
@@ -153,7 +172,7 @@ function LessonsPage() {
 
             if (filterType === 'current') {
                 if (filters.group) exportParams.group = filters.group;
-                if (filters.subject) exportParams.subject = filters.subject;
+                if (filters.subjects && filters.subjects.length) exportParams.subjects = filters.subjects;
                 if (filters.from_date) exportParams.from_date = filters.from_date;
                 if (filters.to_date) exportParams.to_date = filters.to_date;
             }
@@ -166,8 +185,12 @@ function LessonsPage() {
             if (filterType === 'current' && filters.group) {
                 filename += `_${filters.group}`;
             }
-            if (filterType === 'current' && filters.subject) {
-                filename += `_${filters.subject}`;
+            if (filterType === 'current') {
+                if (filters.subjects?.length === 1) {
+                    filename += `_${filters.subjects[0]}`;
+                } else if (filters.subjects?.length > 1) {
+                    filename += `_subjects${filters.subjects.length}`;
+                }
             }
             filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
 
@@ -203,6 +226,9 @@ function LessonsPage() {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
+            }
+            if (subjectsDropdownRef.current && !subjectsDropdownRef.current.contains(event.target)) {
+                setSubjectsDropdownOpen(false);
             }
         }
 
@@ -379,20 +405,58 @@ function LessonsPage() {
             {/* Компактные фильтры */}
             <div className="bg-dark-secondary rounded-lg mb-6 p-3">
                 <div className="flex flex-wrap items-end gap-2">
-                    <div className="flex-1 min-w-[130px]">
-                        <label htmlFor="subject" className="form-label text-xs mb-1">Предмет</label>
-                        <select
-                            id="subject"
-                            name="subject"
-                            value={filters.subject}
-                            onChange={handleFilterChange}
-                            className="form-control py-1 text-sm"
-                        >
-                            <option value="">Все предметы</option>
-                            {subjects.map(subject => (
-                                <option key={subject} value={subject}>{subject}</option>
-                            ))}
-                        </select>
+                    <div className="flex-1 min-w-[220px]" ref={subjectsDropdownRef}>
+                        <label htmlFor="subjects" className="form-label text-xs mb-1">Предметы</label>
+                        <div className="multi-select">
+                            <div
+                                className={`multi-select-control ${subjectsDropdownOpen ? 'open' : ''}`}
+                                onClick={() => setSubjectsDropdownOpen(o => !o)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSubjectsDropdownOpen(o => !o); }}
+                            >
+                                {filters.subjects.length === 0 && (
+                                    <span className="multi-select-placeholder">Все предметы</span>
+                                )}
+                                {filters.subjects.map(subject => (
+                                    <span key={subject} className="multi-select-chip" onClick={(e) => e.stopPropagation()}>
+                                        <span className="chip-label" title={subject}>{subject}</span>
+                                        <button
+                                            type="button"
+                                            className="chip-remove"
+                                            aria-label={`Убрать ${subject}`}
+                                            onClick={() => removeSubject(subject)}
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                                <span className="multi-select-caret" aria-hidden>▾</span>
+                            </div>
+                            {subjectsDropdownOpen && (
+                                <div className="multi-select-menu">
+                                    {subjects.length === 0 && (
+                                        <div className="multi-select-empty">Нет предметов</div>
+                                    )}
+                                    {subjects.map(subject => {
+                                        const selected = filters.subjects.includes(subject);
+                                        return (
+                                            <button
+                                                key={subject}
+                                                type="button"
+                                                className={`multi-select-item ${selected ? 'selected' : ''}`}
+                                                disabled={selected}
+                                                onClick={() => addSubject(subject)}
+                                                title={subject}
+                                            >
+                                                <span className="item-text">{subject}</span>
+                                                {selected && <span className="item-check">✓</span>}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex-1 min-w-[130px]">
@@ -616,9 +680,75 @@ function LessonsPage() {
 
             {/* Пользовательские стили */}
             <style>{`
-                .dropdown {
-                    position: relative;
+                /* multi-select */
+                .multi-select { position: relative; }
+                .multi-select-control {
+                    min-height: 50px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                    padding: 0.25rem 28px 0.25rem 1rem; /* как .form-control py-1 + стрелка справа */
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-md);
+                    background-color: var(--bg-dark-tertiary);
+                    color: var(--text-primary);
+                    font-size: 0.95rem; /* text-sm */
+                    line-height: 1.5;
+                    cursor: pointer;
+                    transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
                 }
+                .multi-select-control.open { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-lighter); }
+                .multi-select-placeholder { color: var(--text-tertiary); font-size: 0.85rem; }
+                .multi-select-chip {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    max-width: 100%;
+                    background: var(--primary-lighter);
+                    color: var(--primary);
+                    border-radius: 9999px;
+                    padding: 2px 6px;
+                    font-size: 12px;
+                }
+                .multi-select-chip .chip-label { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .multi-select-chip .chip-remove { border: none; background: transparent; color: var(--primary); cursor: pointer; line-height: 1; font-size: 14px; padding: 0; }
+                .multi-select-caret { position: absolute; right: 8px; color: var(--text-tertiary); }
+
+                .multi-select-menu {
+                    position: absolute;
+                    top: calc(100% + 4px);
+                    left: 0;
+                    z-index: 1000;
+                    width: 100%;
+                    max-height: 220px;
+                    overflow: auto;
+                    background-color: var(--bg-dark-tertiary);
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-md);
+                    box-shadow: var(--shadow-lg);
+                    font-size: 0.875rem;
+                }
+                .multi-select-item {
+                    width: 100%;
+                    padding: 8px 10px;
+                    border: 0;
+                    background: transparent;
+                    color: var(--text-secondary);
+                    text-align: left;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+                    cursor: pointer;
+                }
+                .multi-select-item:hover:not(.selected) { background: var(--bg-dark-secondary); color: var(--text-primary); }
+                .multi-select-item.selected { color: var(--text-tertiary); opacity: 0.6; cursor: default; }
+                .item-check { color: var(--primary); font-weight: 700; }
+                .multi-select-empty { padding: 8px 10px; color: var(--text-tertiary); }
+
+                /* restored previous lesson and dropdown styles */
+                .dropdown { position: relative; }
                 .dropdown-menu {
                     position: absolute;
                     top: calc(100% + 4px);
@@ -642,11 +772,7 @@ function LessonsPage() {
                     word-break: break-word;
                     overflow-wrap: anywhere;
                 }
-                
-                .dropdown-menu.show {
-                    display: block;
-                }
-                
+                .dropdown-menu.show { display: block; }
                 .dropdown-item {
                     display: block;
                     width: 100%;
@@ -666,23 +792,10 @@ function LessonsPage() {
                     transition: all var(--transition-fast) ease;
                     line-height: 1.3;
                 }
-                
-                .dropdown-item:hover {
-                    background-color: var(--bg-dark-tertiary);
-                    color: var(--text-primary);
-                }
-                
-                .dropdown-divider {
-                    height: 0;
-                    margin: 0.5rem 0;
-                    overflow: hidden;
-                    border-top: 1px solid var(--border-color);
-                }
-                
-                .lesson-cards-container {
-                    margin-bottom: 2rem;
-                }
-                
+                .dropdown-item:hover { background-color: var(--bg-dark-tertiary); color: var(--text-primary); }
+                .dropdown-divider { height: 0; margin: 0.5rem 0; overflow: hidden; border-top: 1px solid var(--border-color); }
+
+                .lesson-cards-container { margin-bottom: 2rem; }
                 .lesson-card {
                     background-color: var(--bg-card);
                     border-radius: var(--radius-lg);
@@ -692,24 +805,9 @@ function LessonsPage() {
                     cursor: pointer;
                     position: relative;
                 }
-                
-                .lesson-card:hover {
-                    transform: translateY(-3px);
-                    box-shadow: var(--shadow-md);
-                    border-color: var(--border-color-light);
-                }
-                
-                .lesson-card.expanded {
-                    box-shadow: var(--shadow-lg);
-                    border-color: var(--primary);
-                }
-                
-                .lesson-card-header {
-                    padding: 1.25rem;
-                    position: relative;
-                    border-bottom: 1px solid var(--border-color);
-                }
-                
+                .lesson-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border-color-light); }
+                .lesson-card.expanded { box-shadow: var(--shadow-lg); border-color: var(--primary); }
+                .lesson-card-header { padding: 1.25rem; position: relative; border-bottom: 1px solid var(--border-color); }
                 .lesson-type-icon {
                     position: absolute;
                     top: 1.25rem;
@@ -723,127 +821,26 @@ function LessonsPage() {
                     align-items: center;
                     justify-content: center;
                 }
-                
-                .lesson-date-badge {
-                    position: absolute;
-                    top: 1.25rem;
-                    right: 1.25rem;
-                    padding: 0.25rem 0.5rem;
-                    background-color: var(--bg-dark-tertiary);
-                    color: var(--text-secondary);
-                    border-radius: var(--radius-md);
-                    font-size: 0.75rem;
-                }
-                
-                .lesson-title {
-                    margin-top: 2.5rem;
-                    margin-bottom: 0.5rem;
-                    font-size: 1.125rem;
-                    font-weight: 600;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                
-                .lesson-meta {
-                    display: flex;
-                    align-items: center;
-                    color: var(--text-secondary);
-                    font-size: 0.875rem;
-                }
-                
-                .lesson-divider {
-                    margin: 0 0.5rem;
-                }
-                
-                .lesson-subject, .lesson-group {
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                
-                .lesson-group {
-                    color: var(--primary-light);
-                    max-width: 120px;
-                }
-                
-                .lesson-card-content {
-                    max-height: 0;
-                    overflow: hidden;
-                    transition: max-height var(--transition-normal) ease;
-                    background-color: var(--bg-dark-secondary);
-                }
-                
-                .lesson-card.expanded .lesson-card-content {
-                    max-height: 300px;
-                }
-                
-                .lesson-details {
-                    padding: 1rem 1.25rem;
-                }
-                
-                .lesson-detail-item {
-                    display: flex;
-                    margin-bottom: 0.5rem;
-                }
-                
-                .lesson-detail-label {
-                    width: 80px;
-                    color: var(--text-tertiary);
-                }
-                
-                .lesson-detail-value {
-                    color: var(--text-secondary);
-                }
-                
-                .lesson-actions {
-                    display: flex;
-                    justify-content: flex-end;
-                    padding: 0.75rem 1.25rem;
-                    gap: 0.75rem;
-                    border-top: 1px solid var(--border-color);
-                }
-                
-                .lesson-action-btn {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: var(--radius-md);
-                    border: 1px solid var(--border-color);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all var(--transition-fast) ease;
-                }
-                
-                .view-btn {
-                    background-color: var(--bg-dark-tertiary);
-                    color: var(--text-primary);
-                }
-                
-                .view-btn:hover {
-                    background-color: var(--bg-dark-tertiary);
-                    color: var(--primary);
-                }
-                
-                .edit-btn {
-                    background-color: var(--primary-lighter);
-                    color: var(--primary);
-                }
-                
-                .edit-btn:hover {
-                    background-color: var(--primary-light);
-                    color: var(--bg-dark);
-                }
-                
-                .delete-btn {
-                    background-color: var(--danger-lighter);
-                    color: var(--danger);
-                }
-                
-                .delete-btn:hover {
-                    background-color: var(--danger-light);
-                    color: white;
-                }
+                .lesson-date-badge { position: absolute; top: 1.25rem; right: 1.25rem; padding: 0.25rem 0.5rem; background-color: var(--bg-dark-tertiary); color: var(--text-secondary); border-radius: var(--radius-md); font-size: 0.75rem; }
+                .lesson-title { margin-top: 2.5rem; margin-bottom: 0.5rem; font-size: 1.125rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .lesson-meta { display: flex; align-items: center; color: var(--text-secondary); font-size: 0.875rem; }
+                .lesson-divider { margin: 0 0.5rem; }
+                .lesson-subject, .lesson-group { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .lesson-group { color: var(--primary-light); max-width: 120px; }
+                .lesson-card-content { max-height: 0; overflow: hidden; transition: max-height var(--transition-normal) ease; background-color: var(--bg-dark-secondary); }
+                .lesson-card.expanded .lesson-card-content { max-height: 300px; }
+                .lesson-details { padding: 1rem 1.25rem; }
+                .lesson-detail-item { display: flex; margin-bottom: 0.5rem; }
+                .lesson-detail-label { width: 80px; color: var(--text-tertiary); }
+                .lesson-detail-value { color: var(--text-secondary); }
+                .lesson-actions { display: flex; justify-content: flex-end; padding: 0.75rem 1.25rem; gap: 0.75rem; border-top: 1px solid var(--border-color); }
+                .lesson-action-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; transition: all var(--transition-fast) ease; }
+                .view-btn { background-color: var(--bg-dark-tertiary); color: var(--text-primary); }
+                .view-btn:hover { background-color: var(--bg-dark-tertiary); color: var(--primary); }
+                .edit-btn { background-color: var(--primary-lighter); color: var(--primary); }
+                .edit-btn:hover { background-color: var(--primary-light); color: var(--bg-dark); }
+                .delete-btn { background-color: var(--danger-lighter); color: var(--danger); }
+                .delete-btn:hover { background-color: var(--danger-light); color: white; }
             `}</style>
         </div>
     );
