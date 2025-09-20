@@ -2,11 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { lessonService, groupService } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 import { RequireSubscription } from '../../components/RequireSubscription';
 
 function LessonsPage() {
-    const { isFree } = useAuth();
     const navigate = useNavigate();
     const [filters, setFilters] = useState({
         subject: '',
@@ -314,13 +312,13 @@ function LessonsPage() {
                                     className="dropdown-item"
                                     onClick={() => { handleExport(); setDropdownOpen(false); }}
                                 >
-                                    Экспортировать все занятия
+                                    Все занятия
                                 </button>
                                 <button
                                     className="dropdown-item"
                                     onClick={() => { handleExport('current'); setDropdownOpen(false); }}
                                 >
-                                    Экспортировать с текущими фильтрами
+                                    С текущими фильтрами
                                 </button>
                             </div>
                         </div>
@@ -567,20 +565,32 @@ function LessonsPage() {
             )}
 
             {/* Пользовательские стили */}
-            <style jsx="true">{`
+            <style>{`
+                .dropdown {
+                    position: relative;
+                }
                 .dropdown-menu {
                     position: absolute;
-                    top: 100%;
+                    top: calc(100% + 4px);
                     right: 0;
                     z-index: 1000;
                     display: none;
-                    min-width: 10rem;
+                    min-width: 12rem;
+                    max-width: min(95vw, 24rem);
+                    width: auto;
                     padding: 0.5rem 0;
                     margin: 0.125rem 0 0;
                     background-color: var(--bg-card);
                     border: 1px solid var(--border-color);
                     border-radius: var(--radius-md);
                     box-shadow: var(--shadow-lg);
+                    box-sizing: border-box;
+                    overflow-x: hidden;
+                    overflow-y: auto;
+                    max-height: 60vh;
+                    white-space: normal;
+                    word-break: break-word;
+                    overflow-wrap: anywhere;
                 }
                 
                 .dropdown-menu.show {
@@ -590,16 +600,21 @@ function LessonsPage() {
                 .dropdown-item {
                     display: block;
                     width: 100%;
-                    padding: 0.5rem 1.5rem;
+                    padding: 0.5rem 1rem;
                     clear: both;
                     text-align: inherit;
-                    white-space: nowrap;
+                    white-space: normal;
+                    word-break: break-word;
+                    overflow-wrap: anywhere;
+                    word-break: break-all;
+                    hyphens: auto;
                     background-color: transparent;
                     border: 0;
                     cursor: pointer;
                     color: var(--text-secondary);
                     text-align: left;
                     transition: all var(--transition-fast) ease;
+                    line-height: 1.3;
                 }
                 
                 .dropdown-item:hover {
