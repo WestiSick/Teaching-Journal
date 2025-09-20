@@ -131,11 +131,14 @@ jobs:
               echo "$SUDO_PASSWORD" | sudo -S sh -lc "$COMPOSE_CMD ps" || true
             fi
 
-            # optional cleanup of dangling images
+            # cleanup of docker/compose junk: stopped containers, unused images, networks, volumes, and build cache
             if [ "$SUDO_MODE" = "none" ]; then
-              sh -lc "docker image prune -f" || true
+              sh -lc "docker system prune -af --volumes" || true
+              sh -lc "docker builder prune -af" || true
             elif [ "$SUDO_MODE" = "sudo" ]; then
-              sudo sh -lc "docker image prune -f" || true
+              sudo sh -lc "docker system prune -af --volumes" || true
+              sudo sh -lc "docker builder prune -af" || true
             else
-              echo "$SUDO_PASSWORD" | sudo -S sh -lc "docker image prune -f" || true
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "docker system prune -af --volumes" || true
+              echo "$SUDO_PASSWORD" | sudo -S sh -lc "docker builder prune -af" || true
             fi
