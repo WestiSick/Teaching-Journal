@@ -147,6 +147,43 @@ function LessonsPage() {
         }
     };
 
+    const handleWorkloadJournalExport = async (filterType = null) => {
+        try {
+            const exportParams = {};
+
+            if (filterType === 'current') {
+                if (filters.group) exportParams.group = filters.group;
+                if (filters.subject) exportParams.subject = filters.subject;
+                if (filters.from_date) exportParams.from_date = filters.from_date;
+                if (filters.to_date) exportParams.to_date = filters.to_date;
+            }
+
+            const response = await lessonService.exportWorkloadJournal(exportParams);
+            const blob = new Blob([response.data], { type: response.headers['content-type'] });
+            const url = window.URL.createObjectURL(blob);
+
+            let filename = 'workload_journal';
+            if (filterType === 'current' && filters.group) {
+                filename += `_${filters.group}`;
+            }
+            if (filterType === 'current' && filters.subject) {
+                filename += `_${filters.subject}`;
+            }
+            filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            alert('Не удалось экспортировать журнал нагрузки. Убедитесь, что у вас есть платная подписка.');
+        }
+    };
+
     const handleDelete = async (id, topic) => {
         if (window.confirm(`Вы уверены, что хотите удалить занятие "${topic}"?`)) {
             try {
@@ -319,6 +356,19 @@ function LessonsPage() {
                                     onClick={() => { handleExport('current'); setDropdownOpen(false); }}
                                 >
                                     С текущими фильтрами
+                                </button>
+                                <div className="dropdown-divider"></div>
+                                <button
+                                    className="dropdown-item"
+                                    onClick={() => { handleWorkloadJournalExport(); setDropdownOpen(false); }}
+                                >
+                                    Журнал нагрузки (все)
+                                </button>
+                                <button
+                                    className="dropdown-item"
+                                    onClick={() => { handleWorkloadJournalExport('current'); setDropdownOpen(false); }}
+                                >
+                                    Журнал нагрузки (с фильтрами)
                                 </button>
                             </div>
                         </div>
@@ -620,6 +670,13 @@ function LessonsPage() {
                 .dropdown-item:hover {
                     background-color: var(--bg-dark-tertiary);
                     color: var(--text-primary);
+                }
+                
+                .dropdown-divider {
+                    height: 0;
+                    margin: 0.5rem 0;
+                    overflow: hidden;
+                    border-top: 1px solid var(--border-color);
                 }
                 
                 .lesson-cards-container {

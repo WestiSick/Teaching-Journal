@@ -54,6 +54,7 @@ func main() {
 	apiRouter.HandleFunc("/subjects", auth.JWTMiddleware(lessonHandler.GetSubjects)).Methods("GET")
 	apiRouter.HandleFunc("/subjects/{subject}/lessons", auth.JWTMiddleware(lessonHandler.GetLessonsBySubject)).Methods("GET")
 	apiRouter.HandleFunc("/export/lessons", auth.JWTMiddleware(auth.SubscriberMiddleware(lessonHandler.ExportLessons))).Methods("GET")
+	apiRouter.HandleFunc("/export/workload-journal", auth.JWTMiddleware(auth.SubscriberMiddleware(lessonHandler.ExportWorkloadJournal))).Methods("GET")
 
 	// Group routes
 	groupHandler := handlers.NewGroupHandler(database)

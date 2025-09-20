@@ -27,6 +27,12 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 
 COPY --from=builder /app/server /app/server
 
+# Ensure template directory exists and copy Excel template(s)
+RUN mkdir -p /app/dashboard/tmp_excel
+COPY app/dashboard/tmp_excel/WorkLoad_Titul.xlsx /app/dashboard/tmp_excel/WorkLoad_Titul.xlsx
+# Duplicate with lowercase filename for robust lookup
+COPY app/dashboard/tmp_excel/WorkLoad_Titul.xlsx /app/dashboard/tmp_excel/workload_titul.xlsx
+
 RUN mkdir -p /app/attachments
 
 RUN chmod +x /app/server

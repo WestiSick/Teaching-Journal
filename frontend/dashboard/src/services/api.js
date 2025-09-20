@@ -71,6 +71,12 @@ export const lessonService = {
             responseType: 'blob',
         }),
 
+    exportWorkloadJournal: (params) =>
+        api.get('/export/workload-journal', {
+            params,
+            responseType: 'blob',
+        }),
+
     getSubjects: () =>
         api.get('/subjects'),
 
